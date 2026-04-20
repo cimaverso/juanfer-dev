@@ -1,25 +1,58 @@
-# --- UV (Python Package Manager) ---
+# ── Entorno virtual ──────────────────────────────────────
+venv/
 .venv/
+env/
+.env/
 
-# --- Python & Caché ---
-**/__pycache__/
+# ── Variables de entorno ──────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# ── pytest / coverage ─────────────────────────────────────
 .pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ── mypy / ruff / linters ─────────────────────────────────
+.mypy_cache/
 .ruff_cache/
 
-# --- Variables de Entorno (Uvicorn / FastAPI) ---
-.env
-.env.*
-!.env.example
+# ── Alembic ───────────────────────────────────────────────
+# Mantener las migraciones, ignorar solo temporales
+alembic/versions/*.pyc
 
-# --- Alembic (Migraciones) ---
-alembic/__pycache__/
+# ── Archivos generados (PDFs, uploads) ───────────────────
+media/
+uploads/
+static/pdfs/
 
-# --- Base de Datos Local ---
-*.db
-
-# --- Logs y Otros ---
-*.log
-.DS_Store
+# ── IDEs ──────────────────────────────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Docker (opcional, si lo usas luego) ──────────────────
+*.env.docker
