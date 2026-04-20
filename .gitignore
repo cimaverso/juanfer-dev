@@ -1,0 +1,25 @@
+# --- UV (Python Package Manager) ---
+.venv/
+
+# --- Python & Caché ---
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# --- Variables de Entorno (Uvicorn / FastAPI) ---
+.env
+.env.*
+!.env.example
+
+# --- Alembic (Migraciones) ---
+alembic/__pycache__/
+
+# --- Base de Datos Local ---
+*.db
+
+# --- Logs y Otros ---
+*.log
+.DS_Store
+.vscode/
+.idea/
