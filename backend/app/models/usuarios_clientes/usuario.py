@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.roles_permisos.rol import Rol
     from app.models.usuarios_clientes.cliente import Cliente
+    from app.models.modulos_negocio.prospecto import Prospecto
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -59,5 +60,10 @@ class Usuario(Base):
 
     clientes: Mapped[list["Cliente"]] = relationship(
         "Cliente",
+        back_populates="responsable"
+    )
+
+    prospectos: Mapped[list["Prospecto"]] = relationship(
+        "Prospecto",
         back_populates="responsable"
     )
