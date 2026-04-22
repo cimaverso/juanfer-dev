@@ -1,0 +1,511 @@
+/* ============================================================
+   JUANFER SEGUROS — Sistema de Gestión
+   global.css · Variables de marca, reset y tipografía
+   ============================================================ */
+
+/* ── Google Fonts ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+/* ── Variables de marca ───────────────────────────────────── */
+:root {
+  /* Paleta principal */
+  --color-navy:         #1B2A4A;
+  --color-navy-light:   #243659;
+  --color-azul:         #3B6CB7;
+  --color-azul-hover:   #2F5A9E;
+  --color-azul-light:   #EBF1FA;
+  --color-blanco:       #FFFFFF;
+  --color-fondo:        #F0F4FA;
+  --color-fondo-alt:    #E8EDF6;
+  --color-borde:        #D8E0ED;
+  --color-borde-dark:   #C2CEDF;
+
+  --color-superficie: #FFFFFF;
+
+  /* Texto */
+  --color-texto:        #1A2332;
+  --color-texto-sub:    #5A6A82;
+  --color-texto-light:  #8A9BB5;
+  --color-texto-inv:    #FFFFFF;
+
+  /* Semáforo de estados de póliza (REQ-03) */
+  --estado-expedido:    #2D7D46;
+  --estado-expedido-bg: #E8F5ED;
+  --estado-proceso:     #B07D0A;
+  --estado-proceso-bg:  #FEF7E0;
+  --estado-evaluacion:  #3B6CB7;
+  --estado-evaluacion-bg: #EBF1FA;
+  --estado-declinado:   #C0392B;
+  --estado-declinado-bg:#FDECEA;
+  --estado-pospuesto:   #7D3C98;
+  --estado-pospuesto-bg:#F5EEF8;
+  --estado-cancelado:   #5A6A82;
+  --estado-cancelado-bg:#F0F2F5;
+  --estado-pendiente:   #C0392B;
+  --estado-pendiente-bg:#FDECEA;
+
+  /* Alertas */
+  --alerta-info:        #3B6CB7;
+  --alerta-info-bg:     #EBF1FA;
+  --alerta-atencion:    #B07D0A;
+  --alerta-atencion-bg: #FEF7E0;
+  --alerta-critico:     #C0392B;
+  --alerta-critico-bg:  #FDECEA;
+
+  /* Tipografía */
+  --font-display:       'DM Sans', sans-serif;
+  --font-body:          'IBM Plex Sans', sans-serif;
+
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-md:   1.125rem;   /* 18px */
+  --text-lg:   1.25rem;    /* 20px */
+  --text-xl:   1.5rem;     /* 24px */
+  --text-2xl:  1.875rem;   /* 30px */
+  --text-3xl:  2.25rem;    /* 36px */
+
+  /* Espaciado */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Layout */
+  --sidebar-width:      240px;
+  --navbar-height:      60px;
+  --content-max-width:  1280px;
+
+  /* Bordes */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-sm:  0 1px 3px rgba(27, 42, 74, 0.08);
+  --shadow-md:  0 4px 12px rgba(27, 42, 74, 0.10);
+  --shadow-lg:  0 8px 24px rgba(27, 42, 74, 0.12);
+  --shadow-xl:  0 16px 40px rgba(27, 42, 74, 0.15);
+
+  /* Transiciones */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* Z-index */
+  --z-sidebar:  100;
+  --z-navbar:   200;
+  --z-modal:    300;
+  --z-toast:    400;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Tipografía base ──────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-texto);
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+h5 { font-size: var(--text-md); }
+h6 { font-size: var(--text-base); }
+
+p {
+  line-height: 1.6;
+  color: var(--color-texto);
+}
+
+a {
+  color: var(--color-azul);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-azul-hover);
+}
+
+/* ── Elementos de formulario base ────────────────────────── */
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input,
+select,
+textarea {
+  outline: none;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-texto);
+  background-color: var(--color-blanco);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-azul);
+  box-shadow: 0 0 0 3px rgba(59, 108, 183, 0.12);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-texto-light);
+}
+
+/* ── Tablas base ─────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-texto-sub);
+  background-color: var(--color-fondo);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 2px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-borde);
+  color: var(--color-texto);
+  vertical-align: middle;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background-color: var(--color-azul-light);
+  transition: background-color var(--transition-fast);
+}
+
+/* ── Scrollbar personalizada ─────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-fondo);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-borde-dark);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-texto-light);
+}
+
+/* ── Utilidades globales ─────────────────────────────────── */
+
+/* Texto */
+.text-sub    { color: var(--color-texto-sub); }
+.text-light  { color: var(--color-texto-light); }
+.text-sm     { font-size: var(--text-sm); }
+.text-xs     { font-size: var(--text-xs); }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold   { font-weight: 700; }
+
+/* Layout */
+.flex        { display: flex; }
+.flex-col    { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2       { gap: var(--space-2); }
+.gap-3       { gap: var(--space-3); }
+.gap-4       { gap: var(--space-4); }
+
+/* Animación de entrada para páginas */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: fadeInUp var(--transition-slow) ease both;
+}
+
+/* Animación para modales */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Spinner de carga */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-borde);
+  border-top-color: var(--color-azul);
+  border-radius: var(--radius-full);
+  animation: spin 0.7s linear infinite;
+}
+
+/* ============================================================
+   TEMA OSCURO — añadir al final de global.css
+   ============================================================
+
+   PROBLEMA RAÍZ RESUELTO:
+   --color-blanco tenía dos roles incompatibles:
+     1. Blanco puro para texto sobre fondos oscuros (sidebar, badges)
+     2. Fondo de superficies (tarjetas, inputs, navbar)
+
+   SOLUCIÓN: Se introduce --color-superficie para el rol de fondo.
+   En global.css (tema claro) --color-superficie = --color-blanco = #FFFFFF.
+   En dark, --color-blanco sigue siendo blanco, --color-superficie oscurece.
+
+   PASO EXTRA REQUERIDO: En :root de global.css añadir:
+     --color-superficie: #FFFFFF;
+   ============================================================ */
+
+[data-theme="dark"] {
+
+  /* Paleta principal */
+  --color-navy:         #0F1929;
+  --color-navy-light:   #182236;
+  --color-azul:         #5B8FD4;
+  --color-azul-hover:   #7AAAE0;
+  --color-azul-light:   #1A2D4A;
+
+  /* --color-blanco NO se sobreescribe — debe permanecer blanco puro.
+     Lo usan: sidebar (texto sobre navy), avatares, texto-inv en badges */
+
+  /* Nueva variable: fondo de superficies (tarjetas, navbar, inputs) */
+  --color-superficie:   #1E2A3B;
+
+  /* Fondos de página */
+  --color-fondo:        #111827;
+  --color-fondo-alt:    #182234;
+
+  /* Bordes */
+  --color-borde:        #2A3A52;
+  --color-borde-dark:   #364D6B;
+
+  /* Texto */
+  --color-texto:        #E8EDF5;
+  --color-texto-sub:    #8FA3BF;
+  --color-texto-light:  #4A6080;
+  --color-texto-inv:    #111827;
+
+  /* Semáforo — más luminosos para legibilidad en dark */
+  --estado-expedido:      #4ABA6E;
+  --estado-expedido-bg:   #0D2318;
+  --estado-proceso:       #E0A020;
+  --estado-proceso-bg:    #241A04;
+  --estado-evaluacion:    #5B8FD4;
+  --estado-evaluacion-bg: #162440;
+  --estado-declinado:     #E05C4A;
+  --estado-declinado-bg:  #260E0A;
+  --estado-pospuesto:     #B06FD4;
+  --estado-pospuesto-bg:  #1C0E26;
+  --estado-cancelado:     #6A7F98;
+  --estado-cancelado-bg:  #161E2A;
+  --estado-pendiente:     #E05C4A;
+  --estado-pendiente-bg:  #260E0A;
+
+  /* Alertas */
+  --alerta-info:        #5B8FD4;
+  --alerta-info-bg:     #162440;
+  --alerta-atencion:    #E0A020;
+  --alerta-atencion-bg: #241A04;
+  --alerta-critico:     #E05C4A;
+  --alerta-critico-bg:  #260E0A;
+
+  /* Sombras */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xl:  0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+/* ── Overrides de componentes en dark ───────────────────────
+   Componentes que usan --color-blanco como fondo de superficie.
+   Se corrigen aquí sin tocar los CSS originales.
+   ──────────────────────────────────────────────────────────── */
+
+/* Navbar — fondo superficie */
+[data-theme="dark"] .navbar {
+  background-color: #1E2A3B;
+}
+
+/* Badge — borde debe coincidir con fondo del navbar */
+[data-theme="dark"] .navbar__badge {
+  border-color: #1E2A3B;
+}
+
+/* Filtros y tabla de producción */
+[data-theme="dark"] .produccion__filtros,
+[data-theme="dark"] .prod-tabla__wrap {
+  background-color: #1E2A3B;
+}
+
+/* Secciones del formulario */
+[data-theme="dark"] .poliza-form__seccion {
+  background-color: #1E2A3B;
+}
+
+/* Botón secundario */
+[data-theme="dark"] .btn-secundario {
+  background-color: #1E2A3B;
+  color: var(--color-texto);
+  border-color: var(--color-borde);
+}
+[data-theme="dark"] .btn-secundario:hover {
+  background-color: #182234;
+  border-color: var(--color-borde-dark);
+}
+
+/* Inputs globales */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1E2A3B;
+  color: var(--color-texto);
+  border-color: var(--color-borde);
+}
+
+/* Encabezado de tabla */
+[data-theme="dark"] th {
+  background-color: #182234;
+  border-bottom-color: var(--color-borde);
+}
+
+/* Hover de filas */
+[data-theme="dark"] .prod-tabla__fila:hover td {
+  background-color: #1A2D4A;
+}
+
+/* Chip número póliza */
+[data-theme="dark"] .prod-tabla__numero {
+  background-color: #182234;
+  color: var(--color-texto-sub);
+}
+
+/* Chip días transcurridos */
+[data-theme="dark"] .prod-tabla__dias {
+  background-color: #182234;
+}
+
+/* Aseguradora — en light era navy, en dark aclara */
+[data-theme="dark"] .prod-tabla__aseguradora {
+  color: var(--color-texto-sub);
+}
+
+/* Separador navbar */
+[data-theme="dark"] .navbar__sep {
+  background-color: var(--color-borde);
+}
+
+/* Panel de traspaso */
+[data-theme="dark"] .poliza-form__traspaso-panel {
+  background-color: #182234;
+  border-color: var(--color-borde);
+}
+
+/* ── Transición suave al cambiar tema ───────────────────────
+   Solo propiedades visuales — no afecta layout ni transforms
+   ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  transition:
+    background-color var(--transition-base),
+    border-color     var(--transition-base),
+    color            var(--transition-fast),
+    box-shadow       var(--transition-base);
+}
+
+/* Interactivos — hover/focus deben seguir siendo instantáneos */
+input, select, textarea, button, a {
+  transition:
+    background-color var(--transition-base),
+    border-color     var(--transition-fast),
+    color            var(--transition-fast),
+    box-shadow       var(--transition-fast),
+    opacity          var(--transition-fast);
+}

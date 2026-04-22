@@ -1,0 +1,333 @@
+/* ============================================================
+   Login.css
+   Pantalla dividida: panel de marca (navy) + formulario
+   ============================================================ */
+
+/* ── Shell ────────────────────────────────────────────── */
+.login-shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* ── Panel izquierdo — marca ──────────────────────────── */
+.login-marca {
+  background-color: var(--color-navy);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--space-12);
+}
+
+.login-marca__contenido {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+/* Logo */
+.login-marca__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.login-marca__sigla {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 3.5rem;
+  color: var(--color-azul);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.login-marca__texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.login-marca__nombre {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  color: var(--color-blanco);
+  letter-spacing: 0.1em;
+}
+
+.login-marca__sub {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.16em;
+}
+
+/* Copy */
+.login-marca__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.login-marca__titular {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-blanco);
+  line-height: 1.15;
+}
+
+.login-marca__descripcion {
+  font-size: var(--text-base);
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+/* Valores */
+.login-marca__valores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.login-marca__valor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.login-marca__valor i {
+  font-size: 1rem;
+  color: var(--color-azul);
+  flex-shrink: 0;
+}
+
+/* Patrón decorativo JF */
+.login-marca__patron {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-8);
+  padding: var(--space-8);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.04;
+  transform: rotate(-15deg) scale(1.3);
+}
+
+.login-marca__patron-item {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: var(--color-blanco);
+  user-select: none;
+}
+
+/* ── Panel derecho — formulario ───────────────────────── */
+.login-form-panel {
+  background-color: var(--color-blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-10);
+}
+
+.login-form-wrap {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  animation: fadeInUp var(--transition-slow) ease both;
+}
+
+/* Header */
+.login-form__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.login-form__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.login-form__subtitulo {
+  font-size: var(--text-base);
+  color: var(--color-texto-sub);
+}
+
+/* Formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.login-form__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.login-form__label {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.login-form__input-wrap {
+  position: relative;
+}
+
+.login-form__input-icono {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-texto-light);
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.login-form__input-wrap input {
+  padding-left: calc(var(--space-4) + 1.2rem + var(--space-2));
+  height: 46px;
+  font-size: var(--text-base);
+}
+
+.login-form__input-wrap input.input-error {
+  border-color: var(--estado-declinado);
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1);
+}
+
+/* Error */
+.login-form__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--estado-declinado-bg);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--estado-declinado);
+  font-size: var(--text-sm);
+  animation: fadeInUp 200ms ease both;
+}
+
+.login-form__error i {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* Botón submit */
+.login-form__btn {
+  height: 48px;
+  background-color: var(--color-azul);
+  color: var(--color-blanco);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: background-color var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  margin-top: var(--space-2);
+  letter-spacing: 0.01em;
+}
+
+.login-form__btn:hover:not(:disabled) {
+  background-color: var(--color-azul-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.login-form__btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-form__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-form__btn i {
+  font-size: 1rem;
+  transition: transform var(--transition-fast);
+}
+
+.login-form__btn:hover:not(:disabled) i {
+  transform: translateX(3px);
+}
+
+/* Hint de desarrollo */
+.login-form__hint {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--alerta-info-bg);
+  border: 1px solid rgba(59, 108, 183, 0.2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
+.login-form__hint i {
+  color: var(--color-azul);
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.login-form__hint strong {
+  display: block;
+  color: var(--color-azul);
+  font-family: var(--font-display);
+  margin-bottom: var(--space-1);
+}
+
+.login-form__hint p {
+  color: var(--color-texto-sub);
+  line-height: 1.6;
+}
+
+.login-form__hint code {
+  background-color: rgba(59, 108, 183, 0.12);
+  color: var(--color-azul);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-marca {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: var(--space-8) var(--space-6);
+  }
+}

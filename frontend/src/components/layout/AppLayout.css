@@ -1,0 +1,47 @@
+/* ============================================================
+   AppLayout.css
+   Shell principal — grid de dos columnas con transición suave
+   ============================================================ */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  min-height: 100vh;
+  transition: grid-template-columns var(--transition-base);
+}
+
+.app-shell.sidebar-colapsado {
+  grid-template-columns: 60px 1fr;
+}
+
+/* Columna derecha: navbar arriba + contenido abajo */
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0; /* evita overflow horizontal */
+  background-color: var(--color-fondo);
+}
+
+/* Área de contenido scrolleable */
+.app-content {
+  flex: 1;
+  padding: var(--space-6) var(--space-8);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Responsive: en pantallas pequeñas el sidebar flota */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell.sidebar-colapsado {
+    grid-template-columns: 1fr;
+  }
+
+  .app-content {
+    padding: var(--space-4);
+  }
+}

@@ -1,0 +1,411 @@
+/* ============================================================
+   ImportarPolizas.css
+   Modal de importación masiva — compatible claro y oscuro
+   ============================================================ */
+
+/* ── Overlay ──────────────────────────────────────────── */
+.importar-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+  animation: fadeIn var(--transition-base) ease both;
+}
+
+/* ── Modal ────────────────────────────────────────────── */
+.importar-modal {
+  background-color: var(--color-superficie, var(--color-blanco));
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp var(--transition-slow) ease both;
+}
+
+/* ── Header ───────────────────────────────────────────── */
+.importar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.importar-header__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-azul);
+}
+
+.importar-header__titulo i { font-size: 1.2rem; }
+
+.importar-header__titulo h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.importar-header__cerrar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-texto-sub);
+  font-size: 1rem;
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.importar-header__cerrar:hover {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+/* ── Cuerpo scrolleable ───────────────────────────────── */
+.importar-cuerpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Error global ─────────────────────────────────────── */
+.importar-error-global {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--alerta-critico-bg);
+  border: 1px solid var(--alerta-critico);
+  border-radius: var(--radius-md);
+  color: var(--alerta-critico);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+/* ── Dropzone ─────────────────────────────────────────── */
+.importar-dropzone {
+  border: 2px dashed var(--color-borde-dark);
+  border-radius: var(--radius-lg);
+  padding: var(--space-10) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: border-color var(--transition-fast),
+              background-color var(--transition-fast);
+  text-align: center;
+}
+
+.importar-dropzone:hover {
+  border-color: var(--color-azul);
+  background-color: var(--color-azul-light);
+}
+
+.importar-dropzone i {
+  font-size: 2.5rem;
+  color: var(--color-texto-light);
+}
+
+.importar-dropzone__texto {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+}
+
+.importar-dropzone__texto span {
+  color: var(--color-azul);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.importar-dropzone__hint {
+  font-size: var(--text-xs);
+  color: var(--color-texto-light);
+}
+
+/* ── Info ─────────────────────────────────────────────── */
+.importar-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.importar-info__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
+.importar-info__item i {
+  color: var(--color-azul);
+  font-size: 0.85rem;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* ── Botón plantilla ──────────────────────────────────── */
+.importar-btn-plantilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto-sub);
+  align-self: flex-start;
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.importar-btn-plantilla:hover {
+  background-color: var(--color-azul-light);
+  border-color: var(--color-azul);
+  color: var(--color-azul);
+}
+
+/* ── Cargando ─────────────────────────────────────────── */
+.importar-cargando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) 0;
+  color: var(--color-texto-sub);
+}
+
+.importar-cargando p { font-weight: 600; }
+.importar-cargando span { font-size: var(--text-xs); }
+
+/* ── Resumen ──────────────────────────────────────────── */
+.importar-resumen {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.importar-resumen__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-borde);
+}
+
+.importar-resumen__item--total {
+  background-color: var(--color-fondo);
+}
+
+.importar-resumen__item--ok {
+  background-color: var(--estado-expedido-bg);
+  border-color: var(--estado-expedido);
+}
+
+.importar-resumen__item--error {
+  background-color: var(--alerta-critico-bg);
+  border-color: var(--alerta-critico);
+}
+
+.importar-resumen__num {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-texto);
+  line-height: 1;
+}
+
+.importar-resumen__item--ok    .importar-resumen__num { color: var(--estado-expedido); }
+.importar-resumen__item--error .importar-resumen__num { color: var(--alerta-critico); }
+
+.importar-resumen__label {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  font-weight: 500;
+}
+
+/* ── Errores ──────────────────────────────────────────── */
+.importar-errores__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--alerta-atencion);
+  padding: var(--space-2) 0;
+}
+
+.importar-errores__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.importar-errores__fila {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--alerta-critico-bg);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.importar-errores__num {
+  font-weight: 700;
+  color: var(--alerta-critico);
+}
+
+.importar-errores__nombre { color: var(--color-texto-sub); }
+.importar-errores__msg    { color: var(--alerta-critico); }
+
+/* ── Tabla preview ────────────────────────────────────── */
+.importar-tabla-label {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  margin-bottom: var(--space-2);
+}
+
+.importar-tabla-wrap {
+  overflow-x: auto;
+}
+
+.importar-tabla {
+  width: 100%;
+  min-width: 500px;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.importar-tabla th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-texto-sub);
+  background-color: var(--color-fondo);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+.importar-tabla td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-borde);
+  color: var(--color-texto);
+}
+
+/* ── Sin válidas ──────────────────────────────────────── */
+.importar-sin-validas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--alerta-critico-bg);
+  border-radius: var(--radius-md);
+  color: var(--alerta-critico);
+  font-size: var(--text-sm);
+}
+
+/* ── Progreso ─────────────────────────────────────────── */
+.importar-progreso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-10) 0;
+  color: var(--color-texto-sub);
+}
+
+.importar-progreso i {
+  font-size: 2.5rem;
+  color: var(--color-azul);
+}
+
+.importar-progreso p {
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.importar-progreso__barra-wrap {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.importar-progreso__barra {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-azul), var(--color-azul-hover, #7AAAE0));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+.importar-progreso__pct {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-azul);
+}
+
+/* ── Resultado ────────────────────────────────────────── */
+.importar-resultado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) 0;
+  text-align: center;
+}
+
+.importar-resultado__icono i {
+  font-size: 3rem;
+  color: var(--estado-expedido);
+}
+
+.importar-resultado h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-texto);
+}
+
+.importar-resultado p {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+.importar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-borde);
+}
