@@ -1,10 +1,28 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, String, Text
 from app.db.base import Base
 
 class Banco(Base):
     __tablename__ = "banco"
 
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False, unique=True)
-    correo = Column(String(100), nullable=True)
-    requisitos = Column(Text, nullable=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True
+    )
+
+    nombre: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True
+    )
+
+    correo: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    requisitos: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )

@@ -1,8 +1,18 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, BigInteger
 from app.db.base import Base
 
 class Aseguradora(Base):
     __tablename__ = "aseguradora"
 
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False, unique=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True
+    )
+
+    nombre: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True
+    )
