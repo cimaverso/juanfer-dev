@@ -19,7 +19,7 @@ class EndosoBanco(Base):
         primary_key=True,
         autoincrement=True
     )
-    #Preguntar sobre la relación
+    
     poliza_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("poliza.id", ondelete="RESTRICT"),
