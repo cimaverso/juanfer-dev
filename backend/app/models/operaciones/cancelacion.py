@@ -22,7 +22,7 @@ class Cancelacion(Base):
         BigInteger,
         ForeignKey("poliza.id", ondelete="RESTRICT"),
         nullable=False,
-        unique=True
+        unique=True # Relación 1:1
     )
 
     responsable_id: Mapped[int] = mapped_column(
@@ -68,6 +68,7 @@ class Cancelacion(Base):
 
     # Relaciones
 
+    # Relación 1:1, evitar duplicidad
     poliza: Mapped["Poliza"] = relationship(
         "Poliza",
         back_populates="cancelacion"
