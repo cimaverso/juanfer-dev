@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.historial_responsable import HistorialResponsable
     from app.models.historial_responsable_cliente import HistorialResponsableCliente
     from app.models.operaciones.cancelacion import Cancelacion
+    from app.models.operaciones.endoso_banco import EndosoBanco
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -129,5 +130,10 @@ class Usuario(Base):
 
     cancelaciones: Mapped[list["Cancelacion"]] = relationship(
         "Cancelacion",
+        back_populates="responsable"
+    )
+
+    endosos: Mapped[list["EndosoBanco"]] = relationship(
+        "EndosoBanco",
         back_populates="responsable"
     )

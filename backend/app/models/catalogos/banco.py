@@ -1,7 +1,10 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import BigInteger, String, Text
 from app.db.base import Base
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.operaciones.endoso_banco import EndosoBanco
 
 class Banco(Base):
     __tablename__ = "banco"
@@ -26,4 +29,11 @@ class Banco(Base):
     requisitos: Mapped[Optional[str | None]] = mapped_column(
         Text,
         nullable=True
+    )
+
+    # Relaciones
+
+    endosos_banco: Mapped[list["EndosoBanco"]] = relationship(
+        "EndosoBanco",
+        back_populates="banco"
     )

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.poliza import Poliza
     from app.models.historial_responsable_cliente import HistorialResponsableCliente
+    from app.models.operaciones.endoso_banco import EndosoBanco
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -94,4 +95,7 @@ class Cliente(Base):
         back_populates="cliente"
     )
 
-    
+    endosos_tomados: Mapped[list["EndosoBanco"]] = relationship(
+        "EndosoBanco",
+        back_populates="tomador"
+    )
