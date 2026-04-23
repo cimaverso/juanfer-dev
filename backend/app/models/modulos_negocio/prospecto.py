@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Date
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Date, func
 from app.db.base import Base
-from datetime import datetime, timezone, date
-from typing import TYPE_CHECKING
+from datetime import datetime, date
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.usuarios_clientes.cliente import Cliente
@@ -39,21 +39,22 @@ class Prospecto(Base):
         nullable=False
     )
 
-    responsable_id: Mapped[int] = mapped_column(
+    responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("usuario.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    fecha_contacto: Mapped[date] = mapped_column(
+    fecha_contacto: Mapped[Optional[date]] = mapped_column(
         Date,
-        default=lambda: datetime.now(timezone.utc).date()
+        server_default=func.current_date(),
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        server_default=func.now()
     )
 
     # Relaciones

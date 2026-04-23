@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import BigInteger, Text, ForeignKey, DateTime
 from app.db.base import Base
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.modulos_negocio.prospecto import Prospecto
@@ -34,9 +34,10 @@ class NotaProspecto(Base):
         nullable=False
     )
 
-    fecha: Mapped[datetime] = mapped_column(
+    fecha: Mapped[Optional[datetime]] = mapped_column(
         DateTime,
-        server_default=lambda: datetime.now(timezone.utc)
+        server_default=lambda: datetime.now(timezone.utc),
+        nullable=True
     )
 
     # Relaciones

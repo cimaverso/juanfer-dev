@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, ForeignKey, Boolean, DateTime, text
+from sqlalchemy import BigInteger, String, ForeignKey, Boolean, DateTime, text, func
 from app.db.base import Base
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ class Usuario(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        server_default=func.now()
     )
 
     # Relaciones

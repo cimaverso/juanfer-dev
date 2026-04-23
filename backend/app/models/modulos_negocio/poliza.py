@@ -62,9 +62,10 @@ class Poliza(Base):
         nullable=False
     )
 
-    responsable_id: Mapped[int] = mapped_column(
+    responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("usuario.id", ondelete="RESTRICT")
+        ForeignKey("usuario.id", ondelete="RESTRICT"),
+        nullable=True
     )
 
     cotizacion_id: Mapped[Optional[int]] = mapped_column(

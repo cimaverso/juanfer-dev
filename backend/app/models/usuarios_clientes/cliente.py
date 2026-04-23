@@ -45,7 +45,7 @@ class Cliente(Base):
         nullable=False
     )
 
-    responsable_id: Mapped[Optional[int | None]] = mapped_column(
+    responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("usuario.id", ondelete="SET NULL"),
         nullable=True

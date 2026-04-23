@@ -25,6 +25,8 @@ class Permiso(Base):
         nullable=False,
     )
 
+    # Relaciones
+
     roles: Mapped[list["Rol"]] = relationship(
         "Rol",
         secondary="rol_permiso",

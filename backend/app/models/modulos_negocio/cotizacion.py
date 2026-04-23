@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Text, ForeignKey, DateTime, Date, Index
+from sqlalchemy import BigInteger, Text, ForeignKey, DateTime, Date, Index, func
 from app.db.base import Base
-from datetime import datetime, timezone, date
-from typing import TYPE_CHECKING
+from datetime import datetime, date
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.usuarios_clientes.cliente import Cliente
@@ -28,20 +28,22 @@ class Cotizacion(Base):
         nullable=False
     )
 
-    prospecto_id: Mapped[int] = mapped_column(
+    prospecto_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("prospecto.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    aseguradora_id: Mapped[int] = mapped_column(
+    aseguradora_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("aseguradora.id", ondelete="RESTRICT") # Validar
+        ForeignKey("aseguradora.id", ondelete="RESTRICT"), # Validar
+        nullable=True
     )
 
-    producto_id: Mapped[int] = mapped_column(
+    producto_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("producto.id", ondelete="RESTRICT")
+        ForeignKey("producto.id", ondelete="RESTRICT"),
+        nullable=True
     )
 
     estado_id: Mapped[int] = mapped_column(
@@ -50,17 +52,19 @@ class Cotizacion(Base):
         nullable=False
     )
 
-    responsable_id: Mapped[int] = mapped_column(
+    responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
-        ForeignKey("usuario.id", ondelete="SET NULL") # Validar
+        ForeignKey("usuario.id", ondelete="SET NULL"), # Validar
+        nullable=True
     )
 
-    fecha_cotizacion: Mapped[date] = mapped_column(
+    fecha_cotizacion: Mapped[Optional[date]] = mapped_column(
         Date,
-        server_default=lambda: datetime.now(timezone.utc).date()
+        server_default=func.current_date(),
+        nullable=True
     )
 
-    observacion: Mapped[str] = mapped_column(
+    observacion: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True
     )
@@ -68,7 +72,7 @@ class Cotizacion(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        server_default=func.now()
     )
 
     # Índices
