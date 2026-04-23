@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.poliza import Poliza
+    from app.models.historial_responsable import HistorialResponsable
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -84,4 +85,23 @@ class Usuario(Base):
     polizas: Mapped[list["Poliza"]] = relationship(
         "Poliza",
         back_populates="responsable"
+    )
+
+    # Relaciones con HistorialResponsable
+    traspasos_entregados: Mapped[list["HistorialResponsable"]] = relationship(
+        "HistorialResponsable",
+        foreign_keys="[HistorialResponsable.usuario_anterior_id]",
+        back_populates="usuario_anterior"
+    )
+
+    traspasos_recibidos: Mapped[list["HistorialResponsable"]] = relationship(
+        "HistorialResponsable",
+        foreign_keys="[HistorialResponsable.usuario_nuevo_id]",
+        back_populates="usuario_nuevo"
+    )
+
+    traspasos_ejecutados: Mapped[list["HistorialResponsable"]] = relationship(
+        "HistorialResponsable",
+        foreign_keys="[HistorialResponsable.realizado_por_id]",
+        back_populates="realizado_por"
     )
