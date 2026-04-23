@@ -1,6 +1,10 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import BigInteger, String
 from app.db.base import Base
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.models.plantillas_conocimiento.plantilla_mensaje import PlantillaMensaje
 
 class CategoriaMensaje(Base):
     __tablename__ = "categoria_mensaje"
@@ -15,4 +19,11 @@ class CategoriaMensaje(Base):
         String(50),
         nullable=False,
         unique=True
+    )
+
+    # Relaciones
+
+    plantilla_mensaje: Mapped[list["PlantillaMensaje"]] = relationship(
+        "PlantillaMensaje",
+        back_populates="categoria"
     )
