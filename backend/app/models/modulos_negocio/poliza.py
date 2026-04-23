@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.historial_responsable import HistorialResponsable
+    from app.models.operaciones.cancelacion import Cancelacion
 
 class Poliza(Base):
     __tablename__ = "poliza"
@@ -176,4 +177,10 @@ class Poliza(Base):
     historial_responsables: Mapped[list["HistorialResponsable"]] = relationship(
         "HistorialResponsable",
         back_populates="poliza"
+    )
+
+    cancelacion: Mapped[Optional["Cancelacion"]] = relationship(
+        "Cancelacion",
+        back_populates="poliza",
+        uselist=False
     )
