@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.historial_responsable import HistorialResponsable
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
+    from app.models.operaciones.cambio_intermediario import CambioIntermediario
 
 class Poliza(Base):
     __tablename__ = "poliza"
@@ -190,4 +191,9 @@ class Poliza(Base):
         "EndosoBanco",
         back_populates="poliza",
         order_by="desc(EndosoBanco.created_at)"
+    )
+
+    cambio_intermediario: Mapped[list["CambioIntermediario"]] = relationship(
+        "CambioIntermediario",
+        back_populates="poliza"
     )
