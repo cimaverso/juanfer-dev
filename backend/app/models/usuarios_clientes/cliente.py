@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.catalogos.tipo_documento import TipoDocumento
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.prospecto import Prospecto
+    from app.models.modulos_negocio.cotizacion import Cotizacion
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -73,5 +74,10 @@ class Cliente(Base):
 
     prospectos: Mapped[list["Prospecto"]] = relationship(
         "Prospecto",
+        back_populates="cliente"
+    )
+
+    cotizaciones: Mapped[list["Cotizacion"]] = relationship(
+        "Cotizacion",
         back_populates="cliente"
     )

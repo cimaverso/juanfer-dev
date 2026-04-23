@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, BigInteger
 from app.db.base import Base
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.modulos_negocio.cotizacion import Cotizacion
 
 class Aseguradora(Base):
     __tablename__ = "aseguradora"
@@ -15,4 +19,11 @@ class Aseguradora(Base):
         String(100),
         nullable=False,
         unique=True
+    )
+
+    # Relaciones
+
+    cotizaciones: Mapped[list["Cotizacion"]] = relationship(
+        "Cotizacion",
+        back_populates="aseguradora"
     )

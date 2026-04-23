@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.modulos_negocio.prospecto import Prospecto
+    from app.models.modulos_negocio.cotizacion import Cotizacion
 
 class Producto(Base):
     __tablename__ = "producto"
@@ -23,8 +24,12 @@ class Producto(Base):
 
     # Relaciones
 
-    # Provisionalmente se deja relación 1:N con producto, posible M:N
     prospectos: Mapped[list["Prospecto"]] = relationship(
         "Prospecto",
+        back_populates="producto"
+    )
+
+    cotizaciones: Mapped[list["Cotizacion"]] = relationship(
+        "Cotizacion",
         back_populates="producto"
     )

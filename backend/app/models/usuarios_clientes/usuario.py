@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from app.models.roles_permisos.rol import Rol
     from app.models.usuarios_clientes.cliente import Cliente
     from app.models.modulos_negocio.prospecto import Prospecto
+    from app.models.modulos_negocio.nota_prospecto import NotaProspecto
+    from app.models.modulos_negocio.cotizacion import Cotizacion
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -65,5 +67,15 @@ class Usuario(Base):
 
     prospectos: Mapped[list["Prospecto"]] = relationship(
         "Prospecto",
+        back_populates="responsable"
+    )
+
+    notas_prospecto: Mapped[list["NotaProspecto"]] = relationship(
+        "NotasProspecto",
+        back_populates="usuario"
+    )
+
+    cotizaciones: Mapped[list["Cotizacion"]] = relationship(
+        "Cotizacion",
         back_populates="responsable"
     )
