@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.poliza import Poliza
+    from app.models.historial_responsable_cliente import HistorialResponsableCliente
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -85,6 +86,11 @@ class Cliente(Base):
 
     polizas: Mapped[list["Poliza"]] = relationship(
         "Poliza",
+        back_populates="cliente"
+    )
+
+    historial_responsables: Mapped[list["HistorialResponsableCliente"]] = relationship(
+        "HistorialResponsableCliente",
         back_populates="cliente"
     )
 
