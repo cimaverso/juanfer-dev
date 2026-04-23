@@ -1,14 +1,15 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, DateTime, ForeignKey
+from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func
 from app.db.base import Base
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.catalogos.tipo_documento import TipoDocumento
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
+    from app.models.modulos_negocio.poliza import Poliza
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -41,7 +42,7 @@ class Cliente(Base):
         nullable=False
     )
 
-    responsable_id: Mapped[int] = mapped_column(
+    responsable_id: Mapped[Optional[int | None]] = mapped_column(
         BigInteger,
         ForeignKey("usuario.id", ondelete="SET NULL"),
         nullable=True
@@ -50,14 +51,14 @@ class Cliente(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        server_default=func.now()
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False, 
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc)
+        server_default=func.now(),
+        onupdate=func.now()
     )
 
     # Relaciones
@@ -81,3 +82,10 @@ class Cliente(Base):
         "Cotizacion",
         back_populates="cliente"
     )
+
+    polizas: Mapped[list["Poliza"]] = relationship(
+        "Poliza",
+        back_populates="cliente"
+    )
+
+    

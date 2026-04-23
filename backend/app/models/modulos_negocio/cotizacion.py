@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.catalogos.producto import Producto
     from app.models.catalogos.estado_cotizacion import EstadoCotizacion
     from app.models.usuarios_clientes.usuario import Usuario
+    from app.models.modulos_negocio.poliza import Poliza
 
 class Cotizacion(Base):
     __tablename__ = "cotizacion"
@@ -100,4 +101,11 @@ class Cotizacion(Base):
     responsable: Mapped["Usuario"] = relationship(
         "Usuario",
         back_populates="cotizaciones"
+    )
+
+    # Relación 1:1
+    poliza: Mapped["Poliza"] = relationship(
+        "Poliza",
+        back_populates="cotizacion",
+        uselist=False
     )
