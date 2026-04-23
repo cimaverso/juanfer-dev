@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func
+from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func, Index
 from app.db.base import Base
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.poliza import Poliza
-    from app.models.historial_responsable_cliente import HistorialResponsableCliente
+    from app.models.historial.historial_responsable_cliente import HistorialResponsableCliente
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.operaciones.cambio_intermediario import CambioIntermediario
 
@@ -62,6 +62,12 @@ class Cliente(Base):
         nullable=False, 
         server_default=func.now(),
         onupdate=func.now()
+    )
+
+    # Índices
+
+    __table_args__ = (
+        Index("idx_cliente_documento", "numero_documento"),
     )
 
     # Relaciones

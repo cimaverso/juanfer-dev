@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, ForeignKey, String, Text, Date, DateTime, Numeric, Integer, func, CheckConstraint
-from decimal import Decimal
+from sqlalchemy import BigInteger, ForeignKey, String, Text, DateTime, func
 from app.db.base import Base
-from datetime import datetime, date
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:

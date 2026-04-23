@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Text, ForeignKey, DateTime, Date
+from sqlalchemy import BigInteger, Text, ForeignKey, DateTime, Date, Index
 from app.db.base import Base
 from datetime import datetime, timezone, date
 from typing import TYPE_CHECKING
@@ -69,6 +69,11 @@ class Cotizacion(Base):
         DateTime, 
         nullable=False,
         default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Índices
+    __table_args__ = (
+        Index("idx_cotizacion_estado_responsable", "estado_id", "responsable_id"),
     )
 
     # Relaciones

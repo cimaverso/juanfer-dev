@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.poliza import Poliza
-    from app.models.historial_responsable import HistorialResponsable
-    from app.models.historial_responsable_cliente import HistorialResponsableCliente
+    from app.models.historial.historial_responsable import HistorialResponsable
+    from app.models.historial.historial_responsable_cliente import HistorialResponsableCliente
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.auditoria.auditoria import Auditoria

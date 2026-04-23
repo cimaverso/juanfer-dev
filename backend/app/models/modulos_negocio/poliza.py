@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, ForeignKey, String, Text, Date, DateTime, Numeric, Integer, func, CheckConstraint
+from sqlalchemy import BigInteger, ForeignKey, String, Text, Date, DateTime, Numeric, Integer, func, CheckConstraint, Index, text
 from decimal import Decimal
 from app.db.base import Base
 from datetime import datetime, date
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from app.models.catalogos.estado_poliza import EstadoPoliza
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.cotizacion import Cotizacion
-    from app.models.historial_responsable import HistorialResponsable
+    from app.models.historial.historial_responsable import HistorialResponsable
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.operaciones.cambio_intermediario import CambioIntermediario
@@ -136,7 +136,19 @@ class Poliza(Base):
         # Validar que prima sea null o valor positivo
         CheckConstraint(
             'prima > 0', name='check_prima_positiva'
-        )
+        ),
+
+        # Índices
+        Index("idx_poliza_estado", "estado_id"),
+        Index("idx_poliza_responsable", "responsable_id"),
+        Index("idx_poliza_created_at", "created_at"),
+        Index("idx_poliza_fecha_solicitud", "fecha_solicitud"),
+        # Índice PARCIAL para alertas (pólizas pendientes de expedición)
+        Index(
+            "idx_poliza_fechas", 
+            "fecha_solicitud", "fecha_expedicion",
+            postgresql_where=text("fecha_expedicion IS NULL")
+        ),
     )
 
     # Relaciones
