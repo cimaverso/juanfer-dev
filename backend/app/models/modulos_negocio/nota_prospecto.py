@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Text, ForeignKey, DateTime
+from sqlalchemy import BigInteger, Text, ForeignKey, DateTime, func
 from app.db.base import Base
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
@@ -36,7 +36,7 @@ class NotaProspecto(Base):
 
     fecha: Mapped[Optional[datetime]] = mapped_column(
         DateTime,
-        server_default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
         nullable=True
     )
 

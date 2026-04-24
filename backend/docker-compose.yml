@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16
+    container_name: juanfer_postgres
+    restart: always
+
+    environment:
+      POSTGRES_USER: juanferseg
+      POSTGRES_PASSWORD: juanfer2026
+      POSTGRES_DB: juanfer_db
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U juanferseg"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - juanfer_network
+
+# 🔥 listo para futuro backend
+# backend:
+#   build: .
+#   container_name: juanfer_backend
+#   depends_on:
+#     db:
+#       condition: service_healthy
+#   environment:
+#     DATABASE_URL: postgresql+psycopg://juanferseg:juanfer2026@db:5432/juanfer_db
+#   ports:
+#     - "8000:8000"
+#   networks:
+#     - juanfer_network
+
+# 🔥 listo para futuro frontend
+# frontend:
+#   build: ./frontend
+#   container_name: juanfer_frontend
+#   ports:
+#     - "3000:3000"
+#   networks:
+#     - juanfer_network
+
+networks:
+  juanfer_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
