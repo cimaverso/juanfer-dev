@@ -139,6 +139,14 @@ def seed():
                 SELECT :admin_id, id FROM permiso
                 ON CONFLICT DO NOTHING;
             """), {"admin_id": admin_id})
+            
+            db.execute(text("""
+                INSERT INTO rol_permiso (rol_id, permiso_id)
+                SELECT :asesor_id, id FROM permiso
+                WHERE accion IN ('ver_propias', 'crear', 'editar', 'exportar')
+                OR accion = 'ver_propio'
+                ON CONFLICT DO NOTHING;
+            """), {"asesor_id": asesor_id})
 
             # ─────────────────────────────
             # USUARIOS

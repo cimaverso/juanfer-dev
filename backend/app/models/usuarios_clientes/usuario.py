@@ -77,7 +77,7 @@ class Usuario(Base):
     )
 
     notas_prospecto: Mapped[list["NotaProspecto"]] = relationship(
-        "NotasProspecto",
+        "NotaProspecto",
         back_populates="usuario"
     )
 
@@ -143,3 +143,16 @@ class Usuario(Base):
         "Auditoria",
         back_populates="usuario"
     )
+
+    @property
+    def rol_name(self) -> str:
+        """Devuelve el nombre del rol como string para Pydantic"""
+        return self.rol.nombre
+
+    @property
+    def iniciales(self) -> str:
+        """Calcula las iniciales del nombre automáticamente"""
+        if not self.nombre:
+            return "??"
+        partes = self.nombre.split()
+        return "".join([p[0].upper() for p in partes[:2]])

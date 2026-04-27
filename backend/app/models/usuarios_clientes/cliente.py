@@ -111,3 +111,7 @@ class Cliente(Base):
         "CambioIntermediario",
         back_populates="cliente"
     )
+
+    @property
+    def tipo_de_documento(self) -> str:
+        return self.tipo_documento.nombre
