@@ -112,6 +112,7 @@ class Cliente(Base):
         back_populates="cliente"
     )
 
+    # Para devolver el nombre ('CC', 'TI' ...)
     @property
     def tipo_de_documento(self) -> str:
         return self.tipo_documento.nombre
