@@ -13,7 +13,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.core.config import settings
 from app.schemas.auth import Token
-from app.schemas.usuario import UsuarioBase
+from app.schemas.usuario import UsuarioBase, UsuarioRead
 import secrets
 from app.core.db import SessionLocal
 from app.models.usuarios_clientes.usuario import Usuario
@@ -55,18 +55,26 @@ def get_current_user_data(token: str = Depends(oauth2_scheme)) -> Token:
         if email is None or user_id is None:
             raise credentials_exception
 
-        return UsuarioBase(nombre=nombre, email=email, id=user_id, rol=rol)
+        return UsuarioBase(nombre=nombre, email=email, id=user_id, rol_name=rol)
     except JWTError:
         raise credentials_exception
 
 
-# def require_admin(token_data: TokenData = Depends(get_current_user_data)):
-#     if token_data.rol not in (RoleEnum.ADMINISTRADOR, RoleEnum.GERENTE):
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="No tienes permisos para realizar esta acción",
-#         )
-#     return token_data
+def require_admin(user_data: UsuarioRead = Depends(get_current_user_data)):
+    if user_data.rol != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para realizar esta acción",
+        )
+    return user_data
+
+def validate_id_asesor( id_responsable: int ,user_data: UsuarioRead = Depends(get_current_user_data)):
+    if user_data.id != id_responsable:
+        raise HTTPException(
+            status_code=403,
+            detail="Asesor intentando editar póliza de otro responsable"
+        )
+    return user_data
 
 def require_auth(user_data: UsuarioBase = Depends(get_current_user_data)):
     if not user_data:

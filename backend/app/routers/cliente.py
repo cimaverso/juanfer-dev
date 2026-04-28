@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["Clientes"]
 )
 
-@router.get("/buscar/{documento}", response_model=ClienteRead | None)
+@router.get("/buscar", response_model=ClienteRead | None)
 def buscar_por_documento(documento:str, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     cliente = ClienteService.buscar_por_documento(db, documento)
     if not cliente:

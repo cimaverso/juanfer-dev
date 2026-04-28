@@ -34,3 +34,8 @@ class CatalogoService:
     def get_tipos_documento(db: Session):
         stmt = select(TipoDocumento).order_by(TipoDocumento.id)
         return db.execute(stmt).scalars().all()
+    
+    @staticmethod
+    def get_id_tipo_doc(tipo_doc: str, db: Session) -> int | None:
+        stmt = select(TipoDocumento.id).where(TipoDocumento.nombre == tipo_doc)
+        return db.execute(stmt).scalar_one_or_none()

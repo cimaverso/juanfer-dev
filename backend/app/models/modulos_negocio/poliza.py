@@ -109,8 +109,7 @@ class Poliza(Base):
     )
 
     __mapper_args__ = {
-        "version_id_col": version,
-        "version_id_generator": True
+        "version_id_col": version
     }
 
     created_at: Mapped[datetime] = mapped_column(
@@ -210,3 +209,48 @@ class Poliza(Base):
         "CambioIntermediario",
         back_populates="poliza"
     )
+
+    @property
+    def ramo_name(self) -> str:
+        """Devuelve el nombre del ramo como string para Pydantic"""
+        return self.ramo.nombre
+    
+    @property
+    def aseguradora_name(self) -> str:
+        return self.aseguradora.nombre
+    
+    @property
+    def producto_name(self) -> str:
+        return self.producto.nombre
+    
+    @property
+    def estado_name(self) -> str:
+        return self.estado.nombre
+    
+    @property
+    def responsable_nombre(self) -> str:
+        return self.responsable.nombre
+    
+    @property
+    def cliente_nombre_completo(self): return self.cliente.nombre_completo
+
+    @property
+    def cliente_documento(self): return self.cliente.numero_documento
+
+    @property
+    def cliente_celular(self): return self.cliente.celular
+
+    @property
+    def responsable_nombre(self): 
+        return self.responsable.nombre if self.responsable else "Sin asignar"
+
+    @property
+    def estado_color(self):
+        # Esto ayuda a que el badge del front cambie de color automáticamente
+        mapping = {
+            "Expedido": "expedido",
+            "Pendiente": "pendiente",
+            "Anulado": "anulado",
+            "En trámite": "tramite"
+        }
+        return mapping.get(self.estado_name, "default")
