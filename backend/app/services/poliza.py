@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, or_, func, desc, asc
+from sqlalchemy import select, or_, func, desc, asc, case, extract
 from app.models.modulos_negocio.poliza import Poliza
 from app.models.usuarios_clientes.cliente import Cliente
+from app.models.catalogos.estado_poliza import EstadoPoliza
+from app.models.usuarios_clientes.usuario import Usuario
 from app.services.cliente import ClienteService
 from app.services.catalogo import CatalogoService
 from app.models.catalogos.ramo import Ramo
 from app.models.historial.historial_responsable import HistorialResponsable
 from datetime import date
+from decimal import Decimal
 from app.schemas.poliza import PolizaFiltro, PolizaCreate, PolizaRead, PolizaUpdate, PolizaTraspaso
 from app.schemas.cliente import ClienteCreate
 from app.services.usuario import UsuarioService
@@ -160,7 +163,6 @@ class PolizaService:
 
         u_id= getattr(current_user, "id", None) or current_user.get("id")
         u_rol= getattr(current_user, "rol", None) or current_user.get("rol")
-        print(u_id, u_rol)
 
         if u_rol == "ASESOR" and poliza.responsable_id != u_id:
             return "FORBIDDEN"
@@ -249,4 +251,269 @@ class PolizaService:
         return{
             "ok": True,
             "message": "Póliza eliminada correctamente"
+        }
+    
+    # METRICAS PARA DASHBOARD
+
+    @staticmethod
+    def get_metricas_dashboard(responsable_id: int, db: Session, current_user):
+        u_rol= getattr(current_user, "rol", None) or current_user.get("rol")
+        today = date.today()
+        year = today.year
+        month = today.month
+
+        if u_rol == "ASESOR":
+            return PolizaService.get_metricas_dashboard_asesor(responsable_id, db)
+
+        stmt = select(
+            # Totales
+            func.count(Poliza.id).label("total_polizas"),
+
+            # Por estado
+            func.count(case((Poliza.estado.has(nombre="Expedido"), 1))).label("expedidas"),
+            func.count(case((Poliza.estado.has(nombre="En proceso"), 1))).label("en_proceso"),
+            func.count(case((Poliza.estado.has(nombre="Pospuesta"), 1))).label("pospuestas"),
+            func.count(case((Poliza.estado.has(nombre="Declinada"), 1))).label("declinadas"),
+            func.count(case((Poliza.estado.has(nombre="Cancelada"), 1))).label("canceladas"),
+
+            # Primas
+            func.coalesce(func.sum(Poliza.prima), 0).label("prima_total"),
+
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            (extract("year", Poliza.fecha_solicitud) == year) &
+                            (extract("month", Poliza.fecha_solicitud) == month),
+                            Poliza.prima
+                        ),
+                        else_=0
+                    )
+                ),
+                0
+            ).label("prima_mes"),
+
+            # Conteo mes
+            func.count(
+                case((Poliza.fecha_expedicion.is_(None), 1))
+            ).label("sin_expedicion"),
+
+            # Alertas críticas
+            func.count(
+                case(
+                    (
+                        (Poliza.fecha_expedicion.is_(None)) & 
+                        (func.current_date() - Poliza.fecha_solicitud > 5),
+                        1
+                    )
+                )
+            ).label("alertas_criticas"),
+        )
+
+        result = db.execute(stmt).mappings().one()
+
+        expedidas = result["expedidas"]
+        total = result["total_polizas"]
+
+        tasa_exito = (expedidas / total * 100) if total > 0 else 0
+
+        return {
+            "total_polizas": result.get("total_polizas", 0),
+            "expedidas": result.get("expedidas", 0),
+            "en_proceso": result.get("en_proceso", 0),
+            "pospuestas": result.get("pospuestas", 0),
+            "declinadas": result.get("declinadas", 0),
+            "canceladas": result.get("canceladas", 0),
+            "prima_total": result.get("prima_total", 0),
+            "prima_mes": result.get("prima_mes", 0),
+            "polizas_mes": result.get("polizas_mes", 0),  # 👈 clave
+            "sin_expedicion": result.get("sin_expedicion", 0),
+            "alertas_criticas": result.get("alertas_criticas", 0),
+            "tasa_exito": round(tasa_exito, 2),
+            "meta_prima_mes": Decimal("5000000"),
+            "meta_polizas_mes": 20
+        }
+    
+    @staticmethod
+    def obtener_alertas(db: Session):
+        dias_sin_exp = func.current_date() - Poliza.fecha_solicitud
+
+        nivel_case = case(
+            (dias_sin_exp > 30, "critico"),
+            (dias_sin_exp > 15, "atencion"),
+            (dias_sin_exp >= 7, "info"),
+            else_=None
+        )
+
+        stmt = (
+            select(
+                Poliza.id.label("poliza_id"),
+                Cliente.nombre_completo.label("cliente_nombre"),
+                EstadoPoliza.nombre.label("estado"),
+                func.coalesce(Usuario.nombre, "Sin asignar").label("responsable"),
+                dias_sin_exp.label("dias_sin_exp"),
+                nivel_case.label("nivel"),
+            )
+            .join(Cliente, Poliza.cliente_id == Cliente.id)
+            .join(EstadoPoliza, Poliza.estado_id == EstadoPoliza.id)
+            .outerjoin(Usuario, Poliza.responsable_id == Usuario.id)
+            .where(
+                Poliza.fecha_expedicion.is_(None),
+                dias_sin_exp >= 7
+            )
+            .order_by(desc(dias_sin_exp))
+        )
+
+        result = db.execute(stmt).mappings().all()
+
+        return result
+    
+
+    @staticmethod
+    def obtener_produccion_mensual(db: Session):
+
+        mes_expr = func.to_char(Poliza.fecha_expedicion, "YYYY-MM")
+
+        stmt = (
+            select(
+                mes_expr.label("mes"),
+                func.count(Poliza.id).label("total_polizas"),
+                func.coalesce(func.sum(Poliza.prima), 0).label("prima_total"),
+            )
+            .where(
+                Poliza.fecha_expedicion.is_not(None)
+            )
+            .group_by(mes_expr)
+            .order_by(mes_expr.asc())
+        )
+
+        result = db.execute(stmt).mappings().all()
+
+        return result
+    
+    @staticmethod
+    def obtener_distribucion_estados(db: Session):
+
+        # Mapeo de colores (alineado con el front)
+        COLOR_MAP = {
+            "Expedido": "expedido",
+            "En proceso de firma": "proceso",
+            "Evaluación médica": "evaluacion",
+            "Declinado": "declinado",
+            "Pospuesto": "pospuesto",
+            "Cancelado": "cancelado",
+            "Pendiente de complemento": "pendiente",
+        }
+
+        stmt = (
+            select(
+                EstadoPoliza.id,
+                EstadoPoliza.nombre,
+                func.count(Poliza.id).label("total")
+            )
+            .join(Poliza, Poliza.estado_id == EstadoPoliza.id)
+            .group_by(EstadoPoliza.id, EstadoPoliza.nombre)
+            .order_by(EstadoPoliza.id.asc())
+        )
+
+        result = db.execute(stmt).mappings().all()
+
+        # 🔥 Enriquecemos con color
+        return [
+            {
+                "id": row["id"],
+                "nombre": row["nombre"],
+                "color": COLOR_MAP.get(row["nombre"], "default"),
+                "total": row["total"]
+            }
+            for row in result
+        ]
+    
+
+    @staticmethod
+    def get_metricas_dashboard_asesor(responsable_id: int, db: Session):
+        today = date.today()
+        year = today.year
+        month = today.month
+
+        stmt = select(
+            # Totales
+            func.count(Poliza.id).label("total_polizas"),
+
+            # Por estado
+            func.count(case((Poliza.estado.has(nombre="Expedido"), 1))).label("expedidas"),
+            func.count(case((Poliza.estado.has(nombre="En proceso"), 1))).label("en_proceso"),
+            func.count(case((Poliza.estado.has(nombre="Pospuesta"), 1))).label("pospuestas"),
+            func.count(case((Poliza.estado.has(nombre="Declinada"), 1))).label("declinadas"),
+            func.count(case((Poliza.estado.has(nombre="Cancelada"), 1))).label("canceladas"),
+
+            # Primas
+            func.coalesce(func.sum(Poliza.prima), 0).label("prima_total"),
+
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            (extract("year", Poliza.fecha_solicitud) == year) &
+                            (extract("month", Poliza.fecha_solicitud) == month),
+                            Poliza.prima
+                        ),
+                        else_=0
+                    )
+                ),
+                0
+            ).label("prima_mes"),
+
+            # 🔥 polizas del mes (te faltaba esto en el otro también)
+            func.count(
+                case(
+                    (
+                        (extract("year", Poliza.fecha_solicitud) == year) &
+                        (extract("month", Poliza.fecha_solicitud) == month),
+                        1
+                    )
+                )
+            ).label("polizas_mes"),
+
+            # Sin expedición
+            func.count(
+                case((Poliza.fecha_expedicion.is_(None), 1))
+            ).label("sin_expedicion"),
+
+            # Alertas críticas
+            func.count(
+                case(
+                    (
+                        (Poliza.fecha_expedicion.is_(None)) &
+                        (func.current_date() - Poliza.fecha_solicitud > 5),
+                        1
+                    )
+                )
+            ).label("alertas_criticas"),
+        ).where(
+            Poliza.responsable_id == responsable_id  # 🔥 clave
+        )
+
+        result = db.execute(stmt).mappings().one()
+
+        expedidas = result["expedidas"]
+        total = result["total_polizas"]
+
+        tasa_exito = (expedidas / total * 100) if total > 0 else 0
+
+        return {
+            "total_polizas": result.get("total_polizas", 0),
+            "expedidas": result.get("expedidas", 0),
+            "en_proceso": result.get("en_proceso", 0),
+            "pospuestas": result.get("pospuestas", 0),
+            "declinadas": result.get("declinadas", 0),
+            "canceladas": result.get("canceladas", 0),
+            "prima_total": result.get("prima_total", 0),
+            "prima_mes": result.get("prima_mes", 0),
+            "polizas_mes": result.get("polizas_mes", 0),
+            "sin_expedicion": result.get("sin_expedicion", 0),
+            "alertas_criticas": result.get("alertas_criticas", 0),
+            "tasa_exito": round(tasa_exito, 2),
+            "meta_prima_mes": Decimal("5000000"),
+            "meta_polizas_mes": 20
         }

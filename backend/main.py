@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, catalogo, usuario, cliente, poliza
+from app.routers import auth, catalogo, usuario, cliente, poliza, dashboard
 
 app = FastAPI(
     title="JuanFer Seguros API V1",
@@ -21,6 +21,7 @@ app.include_router(catalogo.router, prefix="/api/v1")
 app.include_router(usuario.router, prefix="/api/v1")
 app.include_router(cliente.router, prefix="/api/v1")
 app.include_router(poliza.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
 
 # Ruta de prueba
 @app.get("/")
