@@ -3,6 +3,7 @@ from datetime import date
 from typing import Optional
 from decimal import Decimal
 from app.schemas.cliente import ClienteRead
+from app.schemas.traspaso import TraspasoDetalleRead
 
 class PolizaBase(BaseModel):
     # Relaciones obligatorias
@@ -162,6 +163,15 @@ class PolizaUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PolizaTraspaso(BaseModel):
+    usuario_nuevo_id: int
+    tipo: Optional[str] = None # TRASPASO o REASIGNACION
+    motivo: str = Field(..., min_length=10)
+    realizado_por_id: int
+
+class PolizaTraspasoRead(BaseModel):
+    poliza: PolizaRead
+    traspaso: TraspasoDetalleRead
 class PolizaDelete(BaseModel):
     ok: bool
     message: str

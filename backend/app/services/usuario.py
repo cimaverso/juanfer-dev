@@ -6,6 +6,11 @@ from app.models.usuarios_clientes.usuario import Usuario
 class UsuarioService: 
 
     @staticmethod
+    def buscar_uduario_id(id_usuario: int, db: Session) -> Optional[Usuario]:
+        stmt = select(Usuario).where((Usuario.id == id_usuario) & (Usuario.activo.is_(True)))
+        return db.execute(stmt).scalar_one_or_none()
+
+    @staticmethod
     def buscar_por_email(db: Session, usuario_id: int) -> Optional[Usuario]:
         stmt = select(Usuario).where(Usuario.id == usuario_id)
         return db.execute(stmt).scalar_one_or_none()

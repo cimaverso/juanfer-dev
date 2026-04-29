@@ -101,3 +101,15 @@ class HistorialResponsable(Base):
         "Usuario",
         foreign_keys=[realizado_por_id]
     )
+
+    @property
+    def nombre_usuario_anterior(self) -> str:
+        return self.usuario_anterior.nombre
+    
+    @property
+    def nombre_usuario_nuevo(self) -> str:
+        return self.usuario_nuevo.nombre
+    
+    @property
+    def nombre_admin(self) -> str:
+        return self.realizado_por.nombre

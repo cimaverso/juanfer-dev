@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.poliza import PolizaListResponse, PolizaFiltro, PolizaRead, PolizaCreate, PolizaUpdate, PolizaDelete
+from app.schemas.poliza import PolizaListResponse, PolizaFiltro, PolizaRead, PolizaCreate, PolizaUpdate, PolizaDelete, PolizaTraspasoRead, PolizaTraspaso
+from app.schemas.traspaso import TraspasoDetalleRead
 from app.services.poliza import PolizaService
+from app.services.historial_responsable import HistorialResponsableService
 from typing import Optional
 from app.core.security import get_current_user_data, require_admin
 
@@ -67,6 +69,21 @@ def editar_poliza(
         )
 
     return resultado
+
+@router.post("/{id}/traspaso", response_model=PolizaTraspasoRead)
+def traspaso_poliza(id_poliza: int, traspaso_data: PolizaTraspaso, db: Session = Depends(get_db), user = Depends(get_current_user_data), admin = Depends(require_admin)):
+    response = PolizaService.traspasar_poliza(id_poliza, traspaso_data, db)
+
+    if not response:
+        raise HTTPException(
+            status_code=404,
+            detail="Póliza no encontrada"
+        )
+    return response
+
+@router.get("/{id}/historial-responsable", response_model=list[TraspasoDetalleRead])
+def get_historial_responsable(id: int, db: Session = Depends(get_db)):
+    return HistorialResponsableService.get_historial_id(id, db)
 
 @router.delete("/", response_model=PolizaDelete)
 def eliminar_poliza(id_poliza: int, db: Session = Depends(get_db), user = Depends(get_current_user_data), admin = Depends(require_admin)):

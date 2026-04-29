@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select, or_, func, desc, asc
 from app.models.modulos_negocio.poliza import Poliza
 from app.models.usuarios_clientes.cliente import Cliente
 from app.services.cliente import ClienteService
 from app.services.catalogo import CatalogoService
 from app.models.catalogos.ramo import Ramo
+from app.models.historial.historial_responsable import HistorialResponsable
 from datetime import date
-from app.schemas.poliza import PolizaFiltro, PolizaCreate, PolizaRead, PolizaUpdate
+from app.schemas.poliza import PolizaFiltro, PolizaCreate, PolizaRead, PolizaUpdate, PolizaTraspaso
 from app.schemas.cliente import ClienteCreate
+from app.services.usuario import UsuarioService
 from typing import Optional
 
 class PolizaService:
@@ -151,30 +154,25 @@ class PolizaService:
     
     @staticmethod
     def actualizar_poliza(db: Session, poliza_id: int, poliza_in: PolizaUpdate, current_user):
-        # 1. Buscar la póliza
-        poliza = db.query(Poliza).filter(Poliza.id == poliza_id).first()
+        poliza = PolizaService.buscar_poliza_id(poliza_id, db)
         if not poliza:
             return "NOT_FOUND"
 
         u_id= getattr(current_user, "id", None) or current_user.get("id")
         u_rol= getattr(current_user, "rol", None) or current_user.get("rol")
         print(u_id, u_rol)
-        # 2. Control de Acceso (RBAC)
-        # Si es ASESOR y el responsable_id no coincide -> 403
+
         if u_rol == "ASESOR" and poliza.responsable_id != u_id:
             return "FORBIDDEN"
 
-        # 3. Control de Concurrencia Optimista
         if poliza.version != poliza_in.version:
             return "CONFLICT"
 
-        # 4. Actualización dinámica
         update_data = poliza_in.model_dump(exclude_unset=True, exclude={"version"})
         
         for field, value in update_data.items():
             setattr(poliza, field, value)
 
-        # 5. Incrementar versión
         poliza.version += 1
 
         try:
@@ -185,6 +183,59 @@ class PolizaService:
             db.rollback()
             raise e
         
+
+    @staticmethod
+    def traspasar_poliza(id_poliza: int, traspaso_info: PolizaTraspaso, db: Session):
+        poliza = PolizaService.buscar_poliza_id(id_poliza, db)
+        
+        if not poliza:
+            return None
+
+        # Para Update en Poliza
+        nuevo_usuario = UsuarioService.buscar_uduario_id(traspaso_info.usuario_nuevo_id, db)
+
+        if not nuevo_usuario:
+            return "USUARIO_INVALIDO"
+        
+        usuario_anterior_id = poliza.responsable_id
+
+        try:
+            poliza.responsable_id = traspaso_info.usuario_nuevo_id
+
+            historial = HistorialResponsable(
+                poliza_id=id_poliza,
+                usuario_anterior_id=usuario_anterior_id,
+                usuario_nuevo_id=traspaso_info.usuario_nuevo_id,
+                realizado_por_id=traspaso_info.realizado_por_id,
+                tipo=traspaso_info.tipo or "TRASPASO",
+                motivo=traspaso_info.motivo
+            )
+            db.add(historial)
+            db.commit()
+            db.refresh(poliza)
+            db.refresh(historial)
+
+            return {
+                    "poliza": poliza,
+                    "traspaso": {
+                        "id": historial.id,
+                        "poliza_id": historial.poliza_id,
+                        "usuario_anterior_id": historial.usuario_anterior_id,
+                        "nombre_usuario_anterior": historial.usuario_anterior.nombre, 
+                        "usuario_nuevo_id": historial.usuario_nuevo_id,
+                        "nombre_usuario_nuevo": historial.usuario_nuevo.nombre,
+                        "realizado_por_id": historial.realizado_por_id,
+                        "nombre_admin": historial.realizado_por.nombre,
+                        "tipo": historial.tipo,
+                        "motivo": historial.motivo,
+                        "fecha": historial.fecha
+                    }
+                }
+        
+        except SQLAlchemyError:
+            db.rollback()
+            raise
+
     @staticmethod
     def borrar_poliza(id_poliza: int, db:Session):
         poliza = PolizaService.buscar_poliza_id(id_poliza, db)
