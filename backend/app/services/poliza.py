@@ -9,12 +9,15 @@ from app.services.cliente import ClienteService
 from app.services.catalogo import CatalogoService
 from app.models.catalogos.ramo import Ramo
 from app.models.historial.historial_responsable import HistorialResponsable
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from app.schemas.poliza import PolizaFiltro, PolizaCreate, PolizaRead, PolizaUpdate, PolizaTraspaso
 from app.schemas.cliente import ClienteCreate
 from app.services.usuario import UsuarioService
-from typing import Optional
+from app.services.catalogo import CatalogoService
+from typing import Optional, List, Dict, Any
+from io import BytesIO
+from openpyxl import Workbook
 
 class PolizaService:
 
@@ -194,7 +197,7 @@ class PolizaService:
             return None
 
         # Para Update en Poliza
-        nuevo_usuario = UsuarioService.buscar_uduario_id(traspaso_info.usuario_nuevo_id, db)
+        nuevo_usuario = UsuarioService.buscar_usuario_activo(traspaso_info.usuario_nuevo_id, db)
 
         if not nuevo_usuario:
             return "USUARIO_INVALIDO"
@@ -517,3 +520,418 @@ class PolizaService:
             "meta_prima_mes": Decimal("5000000"),
             "meta_polizas_mes": 20
         }
+    
+
+    def normalize(val):
+        return str(val or "").strip().upper()
+
+    @staticmethod
+    def importar_desde_rows(rows: List[Dict[str, Any]], current_user, db: Session):
+        """
+        Procesa filas ya parseadas (Excel/CSV) y realiza la importación masiva.
+        """
+
+        errores = []
+        valid_rows = []
+        # Consultas a la db
+        catalogos = PolizaService.consultar_catalogos(db)
+        usuarios = PolizaService.consultar_usuarios(db)
+
+        # -----------------------------
+        # 1. Validación y normalización
+        # -----------------------------
+        for i, row in enumerate(rows, start=2):
+            try:
+                raw_doc = row.get("CEDULA")
+
+                if raw_doc is None:
+                    raise ValueError("Cédula vacía")
+
+                numero_documento = str(raw_doc).strip()
+
+                if not numero_documento or numero_documento.upper() == "NONE":
+                    raise ValueError("Cédula inválida")
+
+                tipo_documento_name = PolizaService.normalize(row.get("TIPO DE DOCUMENTO"))
+                responsable = row.get("RESPONSABLE")
+                aseguradora_name = row.get("ASEGURADORA")
+                estado_name = row.get("ESTADO")
+
+                id_doc = catalogos["tipos_documento"].get(tipo_documento_name)
+                if not id_doc:
+                    raise ValueError(f"Tipo documento no encontrado: {tipo_documento_name}")
+
+                id_responsable = usuarios["usuarios"].get(responsable)
+                if not id_responsable:
+                    raise ValueError(f"Responsable no encontrado: {responsable}")
+
+                aseguradora_id = catalogos["aseguradoras"].get(aseguradora_name)
+                if not aseguradora_id:
+                    raise ValueError(f"Aseguradora no encontrada: {aseguradora_name}")
+
+                estado_id = catalogos["estados_poliza"].get(estado_name)
+                if not estado_id:
+                    raise ValueError(f"Estado no encontrado: {estado_name}")
+
+                # --- SOLUCIONES ---
+                solucion = str(row.get("SOLUCIONES", ""))
+                partes = [s.strip() for s in solucion.split("/")]
+
+                if len(partes) < 2:
+                    raise ValueError(f"Formato SOLUCIONES inválido: {solucion}")
+
+                producto_row = partes[0]
+                ramo_row = partes[1]
+
+                producto_id = catalogos["productos"].get(producto_row)
+                if not producto_id:
+                    raise ValueError(f"Producto no encontrado: {producto_row}")
+
+                ramo_id = catalogos["ramos"].get(ramo_row)
+                if not ramo_id:
+                    raise ValueError(f"Ramo no encontrado: {ramo_row}")
+
+                # --- NOMBRES ---
+                nombres = str(row.get("NOMBRE COMPLETO TOMADOR Y ASEGURADO", ""))
+                partes_nombres = [p.strip() for p in nombres.split("/")]
+
+                nombre_completo = partes_nombres[0] if partes_nombres else None
+                nombre_asegurado = partes_nombres[1] if len(partes_nombres) > 1 else None
+
+                if not nombre_completo:
+                    raise ValueError("Nombre completo vacío")
+
+                # --- POLIZA ---
+                numero_poliza = str(row.get("# DE POLIZA", "")).strip()
+                if not numero_poliza:
+                    raise ValueError("Número de póliza vacío")
+
+                # --- PRIMA ---
+                prima_raw = row.get("PRIMA")
+
+                prima = Decimal(prima_raw) if prima_raw not in (None, "", "0", 0) else None
+                if prima is not None and prima < 0:
+                    raise ValueError(f"Prima negativa: {prima}")
+
+                # --- FECHA ---
+                fecha_raw = row.get("FECHA EXPEDICIÓN")
+
+                if isinstance(fecha_raw, str):
+                    fecha_expedicion = datetime.strptime(fecha_raw, "%Y-%m-%d").date()
+                else:
+                    fecha_expedicion = fecha_raw
+
+                valid_rows.append({
+                    "fila": i,
+                    "numero_documento": numero_documento,
+                    "nombre_completo": nombre_completo,
+                    "asegurado_nombre": nombre_asegurado,
+                    "numero_poliza": numero_poliza,
+                    "celular": str(row.get("CELULAR", "")).strip(),
+                    "prima": prima,
+                    "tipo_documento_id": id_doc,
+                    "responsable_id": id_responsable,
+                    "producto_id": producto_id,
+                    "ramo_id": ramo_id,
+                    "aseguradora_id": aseguradora_id,
+                    "estado_id": estado_id,
+                    "fecha_expedicion": fecha_expedicion,
+                    "observacion": str(row.get("OBSERVACION", "")).strip()
+                })
+
+            except Exception as e:
+                errores.append({
+                    "fila": i,
+                    "documento": row.get("CEDULA"),
+                    "motivo": str(e)
+                })
+
+            if not valid_rows:
+                return {
+                    "importadas": 0,
+                    "omitidas": len(errores),
+                    "errores": errores
+                }
+
+        # -----------------------------
+        # 2. Preparar clientes únicos
+        # -----------------------------
+        clientes_dict = {}
+
+        for r in valid_rows:
+            doc = r["numero_documento"]
+
+            if doc not in clientes_dict:
+                clientes_dict[doc] = ClienteCreate(
+                    nombre_completo=r["nombre_completo"],
+                    numero_documento=doc,
+                    tipo_documento_id=r["tipo_documento_id"],
+                    celular=r["celular"] or "0",
+                    responsable_id=r["responsable_id"]
+                )
+
+        # -----------------------------
+        # 3. Bulk clientes
+        # -----------------------------
+        clientes_map = ClienteService.bulk_upsert_clientes(
+            db,
+            list(clientes_dict.values())
+        )
+
+        # -----------------------------
+        # 4. Preparar pólizas
+        # -----------------------------
+        polizas = []
+
+        numeros_poliza = [r["numero_poliza"] for r in valid_rows if r["numero_poliza"]]
+
+        stmt = select(Poliza.numero_poliza).where(
+            Poliza.numero_poliza.in_(numeros_poliza)
+        )
+
+        existentes = db.execute(stmt).scalars().all()
+        existentes_set = set(existentes)
+
+        for r in valid_rows:
+            # evitar duplicados en DB
+            if r["numero_poliza"] in existentes_set:
+                errores.append({
+                    "fila": r["fila"],
+                    "documento": r["numero_documento"],
+                    "motivo": f"Póliza ya existe: {r['numero_poliza']}"
+                })
+                continue
+
+            cliente = clientes_map.get(r["numero_documento"])
+
+            if not cliente:
+                errores.append({
+                    "fila": r["fila"],
+                    "documento": r["numero_documento"],
+                    "motivo": "Cliente no encontrado"
+                })
+                continue
+
+            polizas.append(
+                Poliza(
+                    numero_poliza=r["numero_poliza"],
+                    aseguradora_id=r["aseguradora_id"],
+                    cliente_id=cliente.id,
+                    asegurado_nombre=r["asegurado_nombre"],
+                    prima=r["prima"],
+                    producto_id=r["producto_id"],
+                    ramo_id=r["ramo_id"],
+                    responsable_id=r["responsable_id"],
+                    estado_id=r["estado_id"],
+                    fecha_expedicion=r["fecha_expedicion"],
+                    observacion=r["observacion"],
+                    # Falta fecha_solicitud "MES", quitar que sea campo NOW en el model
+                )
+            )
+
+        # -----------------------------
+        # 5. Bulk pólizas
+        # -----------------------------
+        insertadas = PolizaService.bulk_insert_polizas(db, polizas)
+
+        return {
+            "importadas": insertadas,
+            "omitidas": len(errores),
+            "errores": errores
+        }
+    
+    @staticmethod
+    def bulk_insert_polizas(
+        db: Session,
+        polizas: List[Poliza],
+        batch_size: int = 500
+    ) -> int:
+        """
+        Inserta pólizas en lotes (chunking) para evitar sobrecargar la DB.
+
+        Retorna número de pólizas insertadas exitosamente.
+        """
+
+        if not polizas:
+            return 0
+
+        total_insertadas = 0
+
+        # ---------------------------------------
+        # 1. Insertar en batches
+        # ---------------------------------------
+        for i in range(0, len(polizas), batch_size):
+            batch = polizas[i:i + batch_size]
+
+            try:
+                db.bulk_save_objects(batch)
+                db.commit()
+                total_insertadas += len(batch)
+
+            except Exception:
+                db.rollback()
+
+                # ---------------------------------------
+                # 2. Fallback: intentar fila por fila
+                # (permite capturar errores sin perder todo el batch)
+                # ---------------------------------------
+                for poliza in batch:
+                    try:
+                        db.add(poliza)
+                        db.commit()
+                        total_insertadas += 1
+                    except Exception as e:
+                        db.rollback()
+                        print("ERROR EN BATCH:", e)
+                        # opcional: loggear error aquí
+
+        return total_insertadas
+    
+    @staticmethod
+    def consultar_catalogos(db: Session) -> dict:
+        tipos_documento = CatalogoService.get_tipos_documento(db)
+        aseguradoras = CatalogoService.get_aseguradoras(db)
+        ramos = CatalogoService.get_ramos(db)
+        productos = CatalogoService.get_productos(db)
+        estados_poliza = CatalogoService.get_estados_poliza(db)
+
+        return {
+            "tipos_documento": {td.nombre: td.id for td in tipos_documento},
+            "aseguradoras": {a.nombre: a.id for a in aseguradoras},
+            "ramos": {r.nombre: r.id for r in ramos},
+            "productos": {p.nombre: p.id for p in productos},
+            "estados_poliza": {e.nombre: e.id for e in estados_poliza},
+        }
+    
+    @staticmethod
+    def consultar_usuarios(db: Session) -> dict:
+        usuarios = UsuarioService.listar_usuarios_activos(db)
+
+        return {
+            "usuarios": {u.nombre: u.id for u in usuarios}
+        }
+    
+
+    # Exportar EXCEL
+
+    @staticmethod
+    def exportar_polizas(db: Session, current_user, filtros: dict) -> BytesIO:
+
+        # ---------------------------------------
+        # 1. Catálogos (para filtros y nombres)
+        # ---------------------------------------
+        catalogos = PolizaService.consultar_catalogos(db)
+
+        estado_id = None
+        aseguradora_id = None
+        ramo_id = None
+
+        if filtros.get("estado"):
+            estado_id = catalogos["estados_poliza"].get(filtros["estado"])
+
+        if filtros.get("aseguradora"):
+            aseguradora_id = catalogos["aseguradoras"].get(filtros["aseguradora"])
+
+        if filtros.get("ramo"):
+            ramo_id = catalogos["ramos"].get(filtros["ramo"])
+
+        # ---------------------------------------
+        # 2. Query base
+        # ---------------------------------------
+        stmt = select(Poliza).join(Cliente)
+
+        # Control por rol
+        if current_user.rol == "ASESOR":
+            stmt = stmt.where(Poliza.responsable_id == current_user.id)
+
+        # Aplicar filtros
+        if estado_id:
+            stmt = stmt.where(Poliza.estado_id == estado_id)
+
+        if aseguradora_id:
+            stmt = stmt.where(Poliza.aseguradora_id == aseguradora_id)
+
+        if ramo_id:
+            stmt = stmt.where(Poliza.ramo_id == ramo_id)
+
+        if filtros.get("responsable_id"):
+            stmt = stmt.where(Poliza.responsable_id == filtros["responsable_id"])
+
+        polizas = db.execute(stmt).scalars().all()
+
+        # ---------------------------------------
+        # 3. Catálogos en memoria (para nombres)
+        # ---------------------------------------
+        usuarios = PolizaService.consultar_usuarios(db)
+
+        # invertir diccionarios: id -> nombre
+        tipos_doc_map = {v: k for k, v in catalogos["tipos_documento"].items()}
+        productos_map = {v: k for k, v in catalogos["productos"].items()}
+        ramos_map = {v: k for k, v in catalogos["ramos"].items()}
+        estados_map = {v: k for k, v in catalogos["estados_poliza"].items()}
+        usuarios_map = {v: k for k, v in usuarios["usuarios"].items()}
+
+        # ---------------------------------------
+        # 4. Crear Excel
+        # ---------------------------------------
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Polizas"
+
+        headers = [
+            "MES",
+            "CEDULA",
+            "TIPO DE DOCUMENTO",
+            "NOMBRE COMPLETO TOMADOR Y ASEGURADO",
+            "# DE POLIZA",
+            "CELULAR",
+            "FECHA EXPEDICIÓN",
+            "SOLUCIONES",
+            "ESTADO",
+            "PRIMA",
+            "RESPONSABLE",
+            "OBSERVACION"
+        ]
+
+        ws.append(headers)
+
+        # ---------------------------------------
+        # 5. Llenar filas
+        # ---------------------------------------
+        for p in polizas:
+            cliente = p.cliente
+
+            fecha = p.fecha_expedicion
+            mes = fecha.strftime("%Y-%m") if fecha else ""
+
+            soluciones = f"{productos_map.get(p.producto_id, '')} / {ramos_map.get(p.ramo_id, '')}"
+
+            nombre_completo = cliente.nombre_completo or ""
+            if p.asegurado_nombre:
+                nombre_completo = f"{nombre_completo} / {p.asegurado_nombre}"
+
+            row = [
+                mes,
+                cliente.numero_documento,
+                tipos_doc_map.get(cliente.tipo_documento_id, ""),
+                nombre_completo,
+                p.numero_poliza,
+                cliente.celular,
+                fecha.strftime("%Y-%m-%d") if fecha else "",
+                soluciones,
+                estados_map.get(p.estado_id, ""),
+                float(p.prima) if p.prima is not None else "",
+                usuarios_map.get(p.responsable_id, ""),
+                p.observacion or ""
+            ]
+
+            ws.append(row)
+
+        # ---------------------------------------
+        # 6. Guardar en memoria
+        # ---------------------------------------
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        return output

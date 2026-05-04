@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.schemas.poliza import PolizaListResponse, PolizaFiltro, PolizaRead, PolizaCreate, PolizaUpdate, PolizaDelete, PolizaTraspasoRead, PolizaTraspaso
@@ -7,6 +9,7 @@ from app.schemas.traspaso import TraspasoDetalleRead
 from app.services.poliza import PolizaService
 from app.services.historial_responsable import HistorialResponsableService
 from typing import Optional
+from app.utils.parse_file import parse_file
 from app.core.security import get_current_user_data, require_admin
 
 router = APIRouter(
@@ -34,6 +37,71 @@ def crear_poliza(poliza: PolizaCreate, db: Session = Depends(get_db), user = Dep
         
     return poliza
 
+# Importación y exportación Excel (PRIMERO antes de rutas dinámicas)
+
+@router.post("/importar")
+def importar_polizas(
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_data)
+):
+    if current_user.rol != "ADMIN":
+        raise HTTPException(status_code=403, detail="Sin permisos")
+
+    try:
+        rows = parse_file(archivo)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato no soportado")
+
+    if not rows:
+        raise HTTPException(status_code=422, detail="Archivo vacío")
+
+    try:
+        result = PolizaService.importar_desde_rows(
+            rows,
+            current_user,
+            db
+        )
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/exportar")
+def exportar_polizas(
+    estado: str = None,
+    aseguradora: str = None,
+    ramo: str = None,
+    mes: str = None,
+    responsable_id: int = None,
+    search: str = None,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_data)
+):
+    filtros = {
+        "estado": estado,
+        "aseguradora": aseguradora,
+        "ramo": ramo,
+        "mes": mes,
+        "responsable_id": responsable_id,
+        "search": search
+    }
+
+    file = PolizaService.exportar_polizas(db, current_user, filtros)
+
+    filename = f"polizas_{datetime.now().date()}.xlsx"
+
+    return StreamingResponse(
+        file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+# Rutas específicas
+
 @router.get("/meses-disponibles", response_model=list[str])
 def obtener_meses(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return PolizaService.obtener_meses(db)
@@ -41,6 +109,8 @@ def obtener_meses(db: Session = Depends(get_db), user = Depends(get_current_user
 @router.get("/ramos-usados", response_model=list[str])
 def obtener_ramos_usados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return PolizaService.obtener_ramos_usados(db)
+
+# Rutas dinámicas (AL FINAL)
 
 @router.get("/{id}", response_model=PolizaRead)
 def get_poliza_id(id: int, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
@@ -52,7 +122,6 @@ def editar_poliza(
     poliza_in: PolizaUpdate, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user_data),
-    #asesor = Depends(validate_id_asesor)
 ):
     resultado = PolizaService.actualizar_poliza(db, poliza_id, poliza_in, current_user)
 

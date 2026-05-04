@@ -13,7 +13,7 @@ class auth_service:
         if "@" in email_or_username:
             user = UsuarioService.buscar_por_email(db, email_or_username)
         else:
-            user = UsuarioService.buscar_por_usuario(db, email_or_username)
+            user = UsuarioService.buscar_por_nombre(db, email_or_username)
 
         if not user or not verify_password(password, user.password_hash):
             return None
