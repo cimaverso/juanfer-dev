@@ -40,7 +40,7 @@ class ProduccionMensual(BaseModel):
     prima_total: Decimal
 
 class DistribucionEstado(BaseModel):
-    id: int
-    nombre: str
+    estado: str
+    cantidad: int
     color: str
-    total: int
+    #total: int

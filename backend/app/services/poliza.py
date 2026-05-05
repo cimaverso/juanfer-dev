@@ -412,22 +412,21 @@ class PolizaService:
             select(
                 EstadoPoliza.id,
                 EstadoPoliza.nombre,
+                EstadoPoliza.color,
                 func.count(Poliza.id).label("total")
             )
-            .join(Poliza, Poliza.estado_id == EstadoPoliza.id)
-            .group_by(EstadoPoliza.id, EstadoPoliza.nombre)
+            .outerjoin(Poliza, Poliza.estado_id == EstadoPoliza.id)
+            .group_by(EstadoPoliza.id, EstadoPoliza.nombre, EstadoPoliza.color)
             .order_by(EstadoPoliza.id.asc())
         )
 
         result = db.execute(stmt).mappings().all()
 
-        # 🔥 Enriquecemos con color
         return [
             {
-                "id": row["id"],
-                "nombre": row["nombre"],
-                "color": COLOR_MAP.get(row["nombre"], "default"),
-                "total": row["total"]
+                "estado": row["nombre"],
+                "cantidad": row["total"],
+                "color": row["color"]
             }
             for row in result
         ]
@@ -467,7 +466,6 @@ class PolizaService:
                 0
             ).label("prima_mes"),
 
-            # 🔥 polizas del mes (te faltaba esto en el otro también)
             func.count(
                 case(
                     (
@@ -494,7 +492,7 @@ class PolizaService:
                 )
             ).label("alertas_criticas"),
         ).where(
-            Poliza.responsable_id == responsable_id  # 🔥 clave
+            Poliza.responsable_id == responsable_id  
         )
 
         result = db.execute(stmt).mappings().one()
