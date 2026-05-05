@@ -23,9 +23,9 @@ def get_metricas(db: Session = Depends(get_db), user = Depends(get_current_user_
     return PolizaService.obtener_alertas(db)
 
 @router.get("/produccion-mensual", response_model=list[ProduccionMensual])
-def get_produccion_mensual(db: Session = Depends(get_db)):
+def get_produccion_mensual(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return PolizaService.obtener_produccion_mensual(db)
 
 @router.get("/distribucion-estados", response_model=list[DistribucionEstado])
-def get_distribucion_estados(db: Session = Depends(get_db)):
+def get_distribucion_estados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return PolizaService.obtener_distribucion_estados(db)
