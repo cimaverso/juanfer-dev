@@ -884,6 +884,7 @@ class PolizaService:
             "CEDULA",
             "TIPO DE DOCUMENTO",
             "NOMBRE COMPLETO TOMADOR Y ASEGURADO",
+            "ASEGURADORA",
             "# DE POLIZA",
             "CELULAR",
             "FECHA EXPEDICIÓN",
@@ -904,6 +905,7 @@ class PolizaService:
 
             fecha = p.fecha_expedicion
             mes = fecha.strftime("%Y-%m-%d") if fecha else ""
+            aseguradora = p.aseguradora.nombre
 
             soluciones = f"{productos_map.get(p.producto_id, '')} / {ramos_map.get(p.ramo_id, '')}"
 
@@ -916,6 +918,7 @@ class PolizaService:
                 cliente.numero_documento,
                 tipos_doc_map.get(cliente.tipo_documento_id, ""),
                 nombre_completo,
+                aseguradora,
                 p.numero_poliza,
                 cliente.celular,
                 fecha.strftime("%Y-%m-%d") if fecha else "",
