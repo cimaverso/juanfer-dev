@@ -274,7 +274,9 @@ class PolizaService:
 
             # Por estado
             func.count(case((Poliza.estado.has(nombre="Expedido"), 1))).label("expedidas"),
-            func.count(case((Poliza.estado.has(nombre="En proceso"), 1))).label("en_proceso"),
+            func.count(case((Poliza.estado.has(nombre="En proceso de firma"), 1))).label("en_proceso"),
+            func.count(case((Poliza.estado.has(nombre="Evaluación médica"), 1))).label("en_proceso"),
+            func.count(case((Poliza.estado.has(nombre="Pendiente de complemento"), 1))).label("en_proceso"),
             func.count(case((Poliza.estado.has(nombre="Pospuesta"), 1))).label("pospuestas"),
             func.count(case((Poliza.estado.has(nombre="Declinada"), 1))).label("declinadas"),
             func.count(case((Poliza.estado.has(nombre="Cancelada"), 1))).label("canceladas"),
@@ -329,7 +331,7 @@ class PolizaService:
             "canceladas": result.get("canceladas", 0),
             "prima_total": result.get("prima_total", 0),
             "prima_mes": result.get("prima_mes", 0),
-            "polizas_mes": result.get("polizas_mes", 0),  # 👈 clave
+            "polizas_mes": result.get("expedidas", 0),
             "sin_expedicion": result.get("sin_expedicion", 0),
             "alertas_criticas": result.get("alertas_criticas", 0),
             "tasa_exito": round(tasa_exito, 2),
