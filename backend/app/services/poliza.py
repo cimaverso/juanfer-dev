@@ -636,7 +636,8 @@ class PolizaService:
                     "aseguradora_id": aseguradora_id,
                     "estado_id": estado_id,
                     "fecha_expedicion": fecha_expedicion,
-                    "observacion": str(row.get("OBSERVACION", "")).strip()
+                    "observacion": str(row.get("OBSERVACION", "")).strip(),
+                    "fecha_solicitud": str(row.get("MES", "")).strip(),
                 })
 
             except Exception as e:
@@ -725,7 +726,7 @@ class PolizaService:
                     estado_id=r["estado_id"],
                     fecha_expedicion=r["fecha_expedicion"],
                     observacion=r["observacion"],
-                    # Falta fecha_solicitud "MES", quitar que sea campo NOW en el model
+                    fecha_solicitud=r["fecha_solicitud"],
                 )
             )
 
@@ -902,7 +903,7 @@ class PolizaService:
             cliente = p.cliente
 
             fecha = p.fecha_expedicion
-            mes = fecha.strftime("%Y-%m") if fecha else ""
+            mes = fecha.strftime("%Y-%m-%d") if fecha else ""
 
             soluciones = f"{productos_map.get(p.producto_id, '')} / {ramos_map.get(p.ramo_id, '')}"
 
