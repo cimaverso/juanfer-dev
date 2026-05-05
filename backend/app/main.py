@@ -23,11 +23,6 @@ app.include_router(cliente.router, prefix="/api/v1")
 app.include_router(poliza.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 
-# Ruta de prueba
-@app.get("/")
-def read_root():
-    return {"message": "API funcionando correctamente 🚀"}
-
 # Health check (útil para monitoreo)
 @app.get("/health")
 def health_check():

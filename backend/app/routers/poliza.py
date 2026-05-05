@@ -151,7 +151,7 @@ def traspaso_poliza(id_poliza: int, traspaso_data: PolizaTraspaso, db: Session =
     return response
 
 @router.get("/{id}/historial-responsable", response_model=list[TraspasoDetalleRead])
-def get_historial_responsable(id: int, db: Session = Depends(get_db)):
+def get_historial_responsable(id: int, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return HistorialResponsableService.get_historial_id(id, db)
 
 @router.delete("/", response_model=PolizaDelete)
