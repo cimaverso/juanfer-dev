@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -8,7 +7,6 @@ from app.schemas.poliza import PolizaListResponse, PolizaFiltro, PolizaRead, Pol
 from app.schemas.traspaso import TraspasoDetalleRead
 from app.services.poliza import PolizaService
 from app.services.historial_responsable import HistorialResponsableService
-from typing import Optional
 from app.utils.parse_file import parse_file
 from app.core.security import get_current_user_data, require_admin
 
@@ -140,8 +138,8 @@ def editar_poliza(
     return resultado
 
 @router.post("/{id}/traspaso", response_model=PolizaTraspasoRead)
-def traspaso_poliza(id_poliza: int, traspaso_data: PolizaTraspaso, db: Session = Depends(get_db), user = Depends(get_current_user_data), admin = Depends(require_admin)):
-    response = PolizaService.traspasar_poliza(id_poliza, traspaso_data, db)
+def traspaso_poliza(id: int, traspaso_data: PolizaTraspaso, db: Session = Depends(get_db), user = Depends(get_current_user_data), admin = Depends(require_admin)):
+    response = PolizaService.traspasar_poliza(id, traspaso_data, db)
 
     if not response:
         raise HTTPException(

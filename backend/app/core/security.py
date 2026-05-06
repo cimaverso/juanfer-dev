@@ -1,11 +1,4 @@
-# Función para el seed de datos en migracion de db inicial
-# from passlib.context import CryptContext
-
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# def get_password_hash(password: str) -> str:
-#     return pwd_context.hash(password) 
-
+from passlib.context import CryptContext
 from datetime import datetime, timedelta, UTC
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -83,3 +76,6 @@ def require_auth(user_data: UsuarioBase = Depends(get_current_user_data)):
             detail="No autenticado",
         )
     return user_data
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password) 
