@@ -1,17 +1,16 @@
 // ============================================================
-// pages/produccion/PolizaForm.jsx  v2
-// Migrado a api/catalogos.js — cero imports de mocks
-// Catálogos dinámicos cargados con obtenerTodosCatalogos()
-// REQ-01: campos obligatorios y diferidos
-// REQ-02: número y prima opcionales al crear
-// REQ-04: dos fechas independientes
-// REQ-05: cliente separado de póliza
+// pages/produccion/PolizaForm.jsx  v4
+// FIX: traspaso detectado por traspasoNuevoId, no por diff de responsable_id
+// Payload completo: usuario_nuevo_id, tipo, motivo, realizado_por_id
 // ============================================================
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { obtenerPoliza, crearPoliza, editarPoliza, buscarClientePorDocumento } from '../../api/polizas.js'
+import {
+  obtenerPoliza, crearPoliza, editarPoliza,
+  buscarClientePorDocumento, traspasarPoliza
+} from '../../api/polizas.js'
 import { obtenerTodosCatalogos } from '../../api/catalogos.js'
 import './PolizaForm.css'
 
@@ -81,8 +80,8 @@ export default function PolizaForm() {
   const navigate  = useNavigate()
   const { usuario, esAdmin } = useAuth()
 
-  const [form, setForm]       = useState(FORM_INICIAL)
-  const [errores, setErrores] = useState({})
+  const [form, setForm]           = useState(FORM_INICIAL)
+  const [errores, setErrores]     = useState({})
   const [guardando, setGuardando] = useState(false)
   const [cargando, setCargando]   = useState(true)
   const [errorCarga, setErrorCarga] = useState(null)
@@ -97,10 +96,13 @@ export default function PolizaForm() {
   const [clienteEncontrado, setClienteEncontrado] = useState(null)
   const [buscandoCliente, setBuscandoCliente]     = useState(false)
 
-  // Traspaso
+  // ── Traspaso ──────────────────────────────────────────
   const [mostrarTraspaso, setMostrarTraspaso] = useState(false)
   const [motivoTraspaso, setMotivoTraspaso]   = useState('')
   const [errorMotivo, setErrorMotivo]         = useState('')
+  // ID del asesor elegido en el panel de traspaso (fuente de verdad del destino)
+  // null = no se ha iniciado ningún traspaso en esta sesión de edición
+  const [traspasoNuevoId, setTraspasoNuevoId] = useState(null)
 
   // ── Carga inicial: catálogos + póliza si es edición ───
   useEffect(() => {
@@ -111,7 +113,6 @@ export default function PolizaForm() {
         setCargando(true)
         setErrorCarga(null)
 
-        // Catálogos y póliza en paralelo si es edición
         const [cats, polizaData] = await Promise.all([
           obtenerTodosCatalogos(),
           esEdicion ? obtenerPoliza(id) : Promise.resolve(null),
@@ -122,8 +123,6 @@ export default function PolizaForm() {
         setCatalogos(cats)
 
         if (esEdicion && polizaData) {
-          // Resolver IDs desde los catálogos recién cargados
-          // En backend real los IDs vendrán directos en polizaData
           const ramoId        = cats.ramos.find(r => r.nombre === polizaData.ramo)?.id        || ''
           const aseguradoraId = cats.aseguradoras.find(a => a.nombre === polizaData.aseguradora)?.id || ''
           const productoId    = cats.productos.find(p => p.nombre === polizaData.producto)?.id     || ''
@@ -148,7 +147,6 @@ export default function PolizaForm() {
             version:          polizaData.version,
           })
         } else if (!esEdicion && !esAdmin) {
-          // Asesor: asignar responsable automáticamente
           setForm(prev => ({ ...prev, responsable_id: String(usuario.id) }))
         }
       } catch (err) {
@@ -197,15 +195,16 @@ export default function PolizaForm() {
     }
   }
 
-  // ── Traspaso ──────────────────────────────────────────
-  const aplicarTraspaso = (nuevoResponsableId) => {
+  // ── Traspaso: registra el asesor destino elegido en el panel ──
+  // El select de "Asesor responsable" NO se toca.
+  // traspasoNuevoId es la única señal de que hay traspaso pendiente.
+  const aplicarTraspaso = (nuevoId) => {
     if (!motivoTraspaso.trim()) {
       setErrorMotivo('El motivo del traspaso es obligatorio')
       return
     }
-    setForm(prev => ({ ...prev, responsable_id: nuevoResponsableId }))
+    setTraspasoNuevoId(nuevoId)    // guarda destino, no modifica form
     setMostrarTraspaso(false)
-    setMotivoTraspaso('')
     setErrorMotivo('')
   }
 
@@ -220,13 +219,35 @@ export default function PolizaForm() {
       return
     }
 
+    // ── Traspaso pendiente sin motivo: bloquear y abrir panel ──
+    // (caso: seleccionaron asesor en el select del panel pero borraron el motivo)
+    if (esEdicion && esAdmin && traspasoNuevoId && !motivoTraspaso.trim()) {
+      setMostrarTraspaso(true)
+      setErrorMotivo('El motivo del traspaso es obligatorio para guardar')
+      const panel = document.querySelector('.poliza-form__traspaso-panel')
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+
+    // ── Hay traspaso si el panel produjo un destinatario válido ──
+    const hayTraspaso = esEdicion && esAdmin && traspasoNuevoId !== null
+
     setGuardando(true)
     try {
-      if (esEdicion) {
-        await editarPoliza(id, form)
-      } else {
-        await crearPoliza(form)
+      // 1️⃣ Editar campos de la póliza — siempre
+      await editarPoliza(id, form)
+
+      // 2️⃣ Traspaso — solo si el panel fue usado y hay motivo
+      if (hayTraspaso) {
+        console.log("TRASPASO SETTT")
+        await traspasarPoliza(id, {
+          usuario_nuevo_id: parseInt(traspasoNuevoId),
+          tipo:             'TRASPASO',
+          motivo:           motivoTraspaso.trim(),
+          realizado_por_id: usuario.id,
+        })
       }
+
       navigate('/produccion')
     } catch (err) {
       if (err?.response?.status === 409) {
@@ -236,9 +257,15 @@ export default function PolizaForm() {
     }
   }
 
+  // ── Asesor actualmente responsable (para mostrarlo en el panel) ──
   const responsableActual = catalogos.asesores.find(
     a => a.id === parseInt(form.responsable_id)
   )
+
+  // ── Asesor destino elegido en el panel (para el pill de feedback) ──
+  const asesorDestino = traspasoNuevoId
+    ? catalogos.asesores.find(a => a.id === parseInt(traspasoNuevoId))
+    : null
 
   // ── Error de carga ────────────────────────────────────
   if (errorCarga) {
@@ -518,12 +545,22 @@ export default function PolizaForm() {
             <div className="poliza-form__seccion-header">
               <i className="bi bi-person-badge" />
               <h2>Responsable</h2>
+              {/* Pill: traspaso configurado y listo para guardarse */}
+              {asesorDestino && (
+                <span className="poliza-form__traspaso-pendiente-badge">
+                  <i className="bi bi-arrow-left-right" />
+                  {' '}Traspaso a <strong>{asesorDestino.nombre}</strong> — se aplicará al guardar
+                </span>
+              )}
             </div>
 
             <div className="poliza-form__grid">
               <div className="poliza-form__fila poliza-form__fila--responsable">
 
                 <Campo label="Asesor responsable" error={errores.responsable_id} requerido>
+                  {/* Este select es READ-ONLY en el contexto del traspaso:
+                      muestra quién es el responsable actual y no cambia.
+                      El destino se gestiona exclusivamente en el panel de abajo. */}
                   <select
                     name="responsable_id"
                     value={form.responsable_id}
@@ -546,11 +583,16 @@ export default function PolizaForm() {
                   <div className="poliza-form__traspaso-wrap">
                     <button
                       type="button"
-                      className="poliza-form__btn-traspaso"
+                      className={`poliza-form__btn-traspaso ${asesorDestino ? 'poliza-form__btn-traspaso--activo' : ''}`}
                       onClick={() => setMostrarTraspaso(!mostrarTraspaso)}
                     >
                       <i className="bi bi-arrow-left-right" />
-                      <span>Traspasar a otro asesor</span>
+                      <span>
+                        {asesorDestino
+                          ? `Traspaso: ${asesorDestino.nombre}`
+                          : 'Traspasar a otro asesor'
+                        }
+                      </span>
                     </button>
                   </div>
                 )}
@@ -570,10 +612,15 @@ export default function PolizaForm() {
                   )}
 
                   <div className="poliza-form__traspaso-campos">
+                    {/* defaultValue vacío: el select del panel NO controla form.responsable_id */}
                     <select
                       className="poliza-form__traspaso-select"
-                      defaultValue=""
-                      onChange={(e) => { if (e.target.value) aplicarTraspaso(e.target.value) }}
+                      value={traspasoNuevoId ?? ''}
+                      onChange={(e) => {
+                        // Solo guarda el ID destino en traspasoNuevoId, no en form
+                        setTraspasoNuevoId(e.target.value || null)
+                        if (errorMotivo) setErrorMotivo('')
+                      }}
                     >
                       <option value="">Seleccionar nuevo asesor...</option>
                       {catalogos.asesores
@@ -603,6 +650,33 @@ export default function PolizaForm() {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="poliza-form__traspaso-acciones">
+                    <button
+                      type="button"
+                      className="btn-secundario btn-secundario--sm"
+                      onClick={() => {
+                        // Cancelar traspaso: limpiar estado del panel
+                        setTraspasoNuevoId(null)
+                        setMotivoTraspaso('')
+                        setErrorMotivo('')
+                        setMostrarTraspaso(false)
+                      }}
+                    >
+                      <i className="bi bi-x" /> Cancelar traspaso
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primario btn-primario--sm"
+                      onClick={() => {
+                        if (!traspasoNuevoId) return
+                        aplicarTraspaso(traspasoNuevoId)
+                      }}
+                      disabled={!traspasoNuevoId}
+                    >
+                      <i className="bi bi-check" /> Confirmar selección
+                    </button>
                   </div>
 
                   <p className="poliza-form__traspaso-aviso">

@@ -12,12 +12,15 @@
 // SheetJS se carga vía CDN en el componente que lo usa.
 // Esta función asume que window.XLSX está disponible.
 
+import api from "./axios"
+
 // ── Mapeo de columnas Excel → campos del sistema ──────────
 const COLUMNAS = {
   'MES':                                  'fecha_solicitud',
   'CEDULA':                               'cliente_documento',
   'TIPO DE DOCUMENTO':                    'tipo_documento',
   'NOMBRE COMPLETO TOMADOR Y ASEGURADO':  'nombre_completo',
+  'ASEGURADORA':                          'aseguradora',
   '# DE POLIZA':                          'numero_poliza',
   'CELULAR':                              'celular',
   'FECHA EXPEDICIÓN':                     'fecha_expedicion',
@@ -229,8 +232,9 @@ export function exportarAExcel(polizas, nombreArchivo = 'polizas_juanfer') {
   const filas = polizas.map(p => ({
     'MES':                                  p.fecha_solicitud || '',
     'CEDULA':                               p.cliente_documento || '',
-    'TIPO DE DOCUMENTO':                    p.tipo_documento || 'CC',
+    'TIPO DE DOCUMENTO':                    p.tipo_documento || '',
     'NOMBRE COMPLETO TOMADOR Y ASEGURADO':  p.cliente_nombre || '',
+    'ASEGURADORA':                          p.aseguradora || '',
     '# DE POLIZA':                          p.numero_poliza || '',
     'CELULAR':                              p.cliente_celular || '',
     'FECHA EXPEDICIÓN':                     p.fecha_expedicion || '',
@@ -252,6 +256,7 @@ export function exportarAExcel(polizas, nombreArchivo = 'polizas_juanfer') {
     { wch: 15 }, // CEDULA
     { wch: 18 }, // TIPO DE DOCUMENTO
     { wch: 35 }, // NOMBRE
+    { wch: 30 }, // ASEGURADORA
     { wch: 20 }, // # DE POLIZA
     { wch: 14 }, // CELULAR
     { wch: 16 }, // FECHA EXPEDICIÓN
@@ -284,6 +289,7 @@ export function descargarPlantilla() {
     'CEDULA':                               '1098234567',
     'TIPO DE DOCUMENTO':                    'CC',
     'NOMBRE COMPLETO TOMADOR Y ASEGURADO':  'María Fernanda Gómez',
+    'ASEGURADORA':                          'Aria',
     '# DE POLIZA':                          'SUV-2025-001234',
     'CELULAR':                              '3012345678',
     'FECHA EXPEDICIÓN':                     '2025-03-08',
@@ -305,4 +311,21 @@ export function descargarPlantilla() {
 
   window.XLSX.utils.book_append_sheet(wb, ws, 'Plantilla')
   window.XLSX.writeFile(wb, 'plantilla_importacion_juanfer.xlsx')
+}
+
+export async function importarPolizasExcel(file) {
+  const formData = new FormData()
+  formData.append('archivo', file)
+
+  const { data } = await api.post(
+    '/polizas/importar',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
+
+  return data
 }

@@ -112,6 +112,15 @@ export default function Produccion() {
     }).catch(console.error)
   }, [])
 
+  useEffect(() => {
+    if (!window.XLSX) {
+      const script = document.createElement('script')
+      script.src = 'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js'
+      script.async = true
+      document.body.appendChild(script)
+    }
+  }, [])
+
   // ── Cargar pólizas reactivo a filtros ─────────────────
   const cargarPolizas = useCallback(async () => {
     try {

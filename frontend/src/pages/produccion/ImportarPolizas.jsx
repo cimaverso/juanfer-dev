@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react'
 import { parsearArchivoImportacion, descargarPlantilla } from '../../api/importExport.js'
 import { crearPoliza } from '../../api/polizas.js'
 import './ImportarPolizas.css'
+import { importarPolizasExcel } from '../../api/importExport.js'
 
 // ── Cargar SheetJS desde CDN ──────────────────────────────
 function cargarSheetJS() {
@@ -76,25 +77,26 @@ export default function ImportarPolizas({ onCerrar, onImportado }) {
   }
 
   // ── Confirmar importación ─────────────────────────────
-  const confirmarImportacion = async () => {
-    if (validas.length === 0) return
+    const confirmarImportacion = async () => {
+    if (!archivo) return
+
     setPaso(PASO.IMPORTANDO)
-    setProgreso(0)
+    setProgreso(30) // feedback inicial
 
-    let importadasCount = 0
+    try {
+      const resultado = await importarPolizasExcel(archivo)
 
-    for (let i = 0; i < validas.length; i++) {
-      try {
-        await crearPoliza(validas[i])
-        importadasCount++
-      } catch {
-        // Fila fallida — continuar con las demás
-      }
-      setProgreso(Math.round(((i + 1) / validas.length) * 100))
+      setProgreso(100)
+
+      // Ajusta según lo que devuelva tu backend
+      setImportadas(resultado.importadas || 0)
+      setConErrores(resultado.errores || [])
+
+      setPaso(PASO.RESULTADO)
+    } catch (err) {
+      setErrorGlobal(err.message)
+      setPaso(PASO.PREVIEW)
     }
-
-    setImportadas(importadasCount)
-    setPaso(PASO.RESULTADO)
   }
 
   // ── Reiniciar ─────────────────────────────────────────
