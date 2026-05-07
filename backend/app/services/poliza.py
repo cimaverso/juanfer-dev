@@ -839,7 +839,7 @@ class PolizaService:
         # ---------------------------------------
         # 2. Query base
         # ---------------------------------------
-        stmt = select(Poliza).join(Cliente)
+        stmt = select(Poliza).join(Cliente).order_by(Poliza.fecha_solicitud.asc())
 
         # Control por rol
         if current_user.rol == "ASESOR":
@@ -903,7 +903,8 @@ class PolizaService:
         for p in polizas:
             cliente = p.cliente
 
-            fecha = p.fecha_expedicion
+            fecha = p.fecha_solicitud
+            fecha_expedicion = p.fecha_expedicion
             mes = fecha.strftime("%Y-%m-%d") if fecha else ""
             aseguradora = p.aseguradora.nombre
 
@@ -921,7 +922,7 @@ class PolizaService:
                 aseguradora,
                 p.numero_poliza,
                 cliente.celular,
-                fecha.strftime("%Y-%m-%d") if fecha else "",
+                fecha_expedicion.strftime("%Y-%m-%d") if fecha_expedicion else "",
                 soluciones,
                 estados_map.get(p.estado_id, ""),
                 float(p.prima) if p.prima is not None else "",
