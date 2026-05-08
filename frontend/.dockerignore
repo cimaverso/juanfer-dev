@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Desarrollo
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+Dockerfile*
+nginx.conf
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+coverage/
+.nyc_output/

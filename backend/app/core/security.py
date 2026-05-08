@@ -3,13 +3,10 @@ from datetime import datetime, timedelta, UTC
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from passlib.context import CryptContext
 from app.core.config import settings
 from app.schemas.auth import Token
 from app.schemas.usuario import UsuarioBase, UsuarioRead
-import secrets
-from app.core.db import SessionLocal
-from app.models.usuarios_clientes.usuario import Usuario
+
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"

@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# uv cache
+.uv/
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Desarrollo
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
