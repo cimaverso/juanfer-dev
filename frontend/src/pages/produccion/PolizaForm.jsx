@@ -1,7 +1,7 @@
 // ============================================================
-// pages/produccion/PolizaForm.jsx  v4
-// FIX: traspaso detectado por traspasoNuevoId, no por diff de responsable_id
-// Payload completo: usuario_nuevo_id, tipo, motivo, realizado_por_id
+// pages/produccion/PolizaForm.jsx  v4 — FIXED
+// FIX: restaurado crearPoliza() en el submit para modo creación
+// FIX: traspaso encapsulado dentro del bloque esEdicion
 // ============================================================
 
 import { useState, useEffect } from 'react'
@@ -147,6 +147,7 @@ export default function PolizaForm() {
             version:          polizaData.version,
           })
         } else if (!esEdicion && !esAdmin) {
+          // Asesor creando: asignar responsable automáticamente
           setForm(prev => ({ ...prev, responsable_id: String(usuario.id) }))
         }
       } catch (err) {
@@ -220,7 +221,6 @@ export default function PolizaForm() {
     }
 
     // ── Traspaso pendiente sin motivo: bloquear y abrir panel ──
-    // (caso: seleccionaron asesor en el select del panel pero borraron el motivo)
     if (esEdicion && esAdmin && traspasoNuevoId && !motivoTraspaso.trim()) {
       setMostrarTraspaso(true)
       setErrorMotivo('El motivo del traspaso es obligatorio para guardar')
@@ -229,23 +229,24 @@ export default function PolizaForm() {
       return
     }
 
-    // ── Hay traspaso si el panel produjo un destinatario válido ──
-    const hayTraspaso = esEdicion && esAdmin && traspasoNuevoId !== null
-
     setGuardando(true)
     try {
-      // 1️⃣ Editar campos de la póliza — siempre
-      await editarPoliza(id, form)
+      if (esEdicion) {
+        // 1️⃣ Guardar cambios de la póliza
+        await editarPoliza(id, form)
 
-      // 2️⃣ Traspaso — solo si el panel fue usado y hay motivo
-      if (hayTraspaso) {
-        console.log("TRASPASO SETTT")
-        await traspasarPoliza(id, {
-          usuario_nuevo_id: parseInt(traspasoNuevoId),
-          tipo:             'TRASPASO',
-          motivo:           motivoTraspaso.trim(),
-          realizado_por_id: usuario.id,
-        })
+        // 2️⃣ Traspaso — solo si el panel fue confirmado con un destinatario
+        if (esAdmin && traspasoNuevoId !== null) {
+          await traspasarPoliza(id, {
+            usuario_nuevo_id: parseInt(traspasoNuevoId),
+            tipo:             'TRASPASO',
+            motivo:           motivoTraspaso.trim(),
+            realizado_por_id: usuario.id,
+          })
+        }
+      } else {
+        // Modo creación: llamada original, sin traspaso posible
+        await crearPoliza(form)
       }
 
       navigate('/produccion')
@@ -558,9 +559,8 @@ export default function PolizaForm() {
               <div className="poliza-form__fila poliza-form__fila--responsable">
 
                 <Campo label="Asesor responsable" error={errores.responsable_id} requerido>
-                  {/* Este select es READ-ONLY en el contexto del traspaso:
-                      muestra quién es el responsable actual y no cambia.
-                      El destino se gestiona exclusivamente en el panel de abajo. */}
+                  {/* Este select muestra quién es el responsable actual.
+                      El destino del traspaso se gestiona exclusivamente en el panel de abajo. */}
                   <select
                     name="responsable_id"
                     value={form.responsable_id}
@@ -612,12 +612,10 @@ export default function PolizaForm() {
                   )}
 
                   <div className="poliza-form__traspaso-campos">
-                    {/* defaultValue vacío: el select del panel NO controla form.responsable_id */}
                     <select
                       className="poliza-form__traspaso-select"
                       value={traspasoNuevoId ?? ''}
                       onChange={(e) => {
-                        // Solo guarda el ID destino en traspasoNuevoId, no en form
                         setTraspasoNuevoId(e.target.value || null)
                         if (errorMotivo) setErrorMotivo('')
                       }}
@@ -657,7 +655,6 @@ export default function PolizaForm() {
                       type="button"
                       className="btn-secundario btn-secundario--sm"
                       onClick={() => {
-                        // Cancelar traspaso: limpiar estado del panel
                         setTraspasoNuevoId(null)
                         setMotivoTraspaso('')
                         setErrorMotivo('')
