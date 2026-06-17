@@ -1,4 +1,4 @@
-from sqlalchemy import text
+cd from sqlalchemy import text
 from app.core.db import SessionLocal
 from app.core.security import get_password_hash
 
