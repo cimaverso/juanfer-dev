@@ -1,0 +1,281 @@
+/* ============================================================
+   src/pages/prospectos/ProspectoForm.css
+   M3 — Crear / Editar prospecto
+   Compatible con modo claro y oscuro
+   ============================================================ */
+
+/* ── Layout ───────────────────────────────────────────────── */
+.pform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 860px;
+}
+
+/* ── Encabezado ───────────────────────────────────────────── */
+.pform-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.pform-header__back {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-superficie, var(--color-blanco));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-texto-sub);
+  flex-shrink: 0;
+  margin-top: 4px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.pform-header__back:hover {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+.pform-header__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-texto);
+  line-height: 1.2;
+}
+
+.pform-header__sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin-top: var(--space-1);
+}
+
+/* ── Banner error global ──────────────────────────────────── */
+.pform-banner-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--alerta-critico-bg, #FCEBEB);
+  border: 1px solid var(--alerta-critico, #A32D2D);
+  border-radius: var(--radius-md);
+  color: var(--alerta-critico, #A32D2D);
+  font-size: var(--text-sm);
+}
+
+/* ── Formulario ───────────────────────────────────────────── */
+.pform-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ── Sección ──────────────────────────────────────────────── */
+.pform-seccion {
+  background-color: var(--color-superficie, var(--color-blanco));
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pform-seccion__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-texto);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.pform-seccion__titulo i {
+  color: var(--color-azul);
+  font-size: 1rem;
+}
+
+.pform-seccion__hint {
+  font-size: var(--text-sm);
+  color: var(--color-texto-light);
+  margin-top: calc(var(--space-4) * -0.5);
+}
+
+/* ── Grids de campos ──────────────────────────────────────── */
+.pform-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pform-grid--2 { grid-template-columns: 1fr 1fr; }
+.pform-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ── Campo individual ─────────────────────────────────────── */
+.pform-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pform-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-texto-sub);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pform-requerido {
+  color: var(--alerta-critico, #A32D2D);
+  font-size: 0.9rem;
+}
+
+/* Inputs y selects — hereda estilos globales, solo ajustes */
+.pform-campo input,
+.pform-campo select,
+.pform-campo textarea {
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+  background-color: var(--color-superficie, var(--color-blanco));
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: inherit;
+}
+
+.pform-campo input { height: 38px; }
+.pform-campo select { height: 38px; cursor: pointer; }
+.pform-campo textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+.pform-campo input:focus,
+.pform-campo select:focus,
+.pform-campo textarea:focus {
+  outline: none;
+  border-color: var(--color-azul);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-azul) 15%, transparent);
+}
+
+/* Estado error */
+.pform-campo--error input,
+.pform-campo--error select,
+.pform-campo--error textarea {
+  border-color: var(--alerta-critico, #A32D2D);
+}
+
+.pform-campo--error input:focus,
+.pform-campo--error select:focus,
+.pform-campo--error textarea:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--alerta-critico, #A32D2D) 15%, transparent);
+}
+
+.pform-error-msg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--alerta-critico, #A32D2D);
+}
+
+.pform-error-msg i { font-size: 0.8rem; }
+
+/* ── Info canal (solo ADMIN) ──────────────────────────────── */
+.pform-info-canal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pform-info-canal__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-texto-sub);
+}
+
+.pform-canal {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+}
+
+.pform-canal--whatsapp   { background-color: #E1F5EE; color: #085041; }
+.pform-canal--formulario { background-color: #EEEDFE; color: #3C3489; }
+.pform-canal--csv        { background-color: #FAEEDA; color: #633806; }
+.pform-canal--manual     { background-color: var(--color-azul-light, #E6F1FB); color: #0C447C; }
+
+.pform-info-canal__hint {
+  font-size: var(--text-xs);
+  color: var(--color-texto-light);
+  line-height: 1.4;
+}
+
+/* ── Footer acciones ──────────────────────────────────────── */
+.pform-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+/* ── Spinner botón ────────────────────────────────────────── */
+.pform-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  margin-right: var(--space-1);
+}
+
+/* ── Loading y error de página ────────────────────────────── */
+.pform-loading,
+.pform-error-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16);
+  color: var(--color-texto-sub);
+  text-align: center;
+}
+
+.pform-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-borde);
+  border-top-color: var(--color-azul);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.pform-error-page i {
+  font-size: 2.5rem;
+  color: var(--alerta-critico, #A32D2D);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .pform-grid--3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px) {
+  .pform-grid--2,
+  .pform-grid--3 { grid-template-columns: 1fr; }
+
+  .pform-footer { flex-direction: column-reverse; }
+  .pform-footer button { width: 100%; justify-content: center; }
+}

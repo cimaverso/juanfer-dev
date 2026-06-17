@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
   obtenerPoliza, crearPoliza, editarPoliza,
@@ -77,6 +77,8 @@ function SeccionSkeleton() {
 export default function PolizaForm() {
   const { id } = useParams()
   const esEdicion = Boolean(id)
+  const [searchParams] = useSearchParams()
+const desdeProspectoId = searchParams.get('desde_prospecto')
   const navigate  = useNavigate()
   const { usuario, esAdmin } = useAuth()
 
@@ -146,10 +148,37 @@ export default function PolizaForm() {
             observacion:      polizaData.observacion || '',
             version:          polizaData.version,
           })
-        } else if (!esEdicion && !esAdmin) {
-          // Asesor creando: asignar responsable automáticamente
-          setForm(prev => ({ ...prev, responsable_id: String(usuario.id) }))
-        }
+        } else if (!esEdicion) {
+  if (!esAdmin) {
+    setForm(prev => ({ ...prev, responsable_id: String(usuario.id) }))
+  }
+
+  if (desdeProspectoId) {
+    try {
+      const { obtenerProspecto } = await import('../../api/prospectos.js')
+      const prospecto = await obtenerProspecto(desdeProspectoId)
+      setForm(prev => ({
+        ...prev,
+        tipo_documento:   'CC',
+        numero_documento: prospecto.numero_documento || '',
+        nombre_completo:  prospecto.nombre           || '',
+        celular:          prospecto.telefono         || '',
+        aseguradora_id:   prospecto.aseguradora_interes_id
+          ? String(prospecto.aseguradora_interes_id) : prev.aseguradora_id,
+        ramo_id:          prospecto.ramo_interes_id
+          ? String(prospecto.ramo_interes_id) : prev.ramo_id,
+        responsable_id:   prospecto.responsable_id
+          ? String(prospecto.responsable_id) : prev.responsable_id,
+        observacion:      prospecto.observaciones
+          ? `[Desde prospecto] ${prospecto.observaciones}`
+          : prev.observacion,
+      }))
+      setClienteEncontrado(true)
+    } catch (e) {
+      console.warn('[PolizaForm] No se pudo cargar el prospecto:', e)
+    }
+  }
+}
       } catch (err) {
         if (!cancelado) {
           if (err?.response?.status === 404) {

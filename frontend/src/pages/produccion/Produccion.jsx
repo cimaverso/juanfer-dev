@@ -1,9 +1,11 @@
 // ============================================================
-// pages/produccion/Produccion.jsx  v3
-// Migrado a api/polizas.js — cero imports de mocks
-// Filtros: estado, aseguradora, ramo, asesor, mes, búsqueda
-// Importar Excel (solo ADMIN) + Exportar (respeta filtros)
-// Skeletons de carga, manejo de error, paginación 15 items
+// src/pages/produccion/Produccion.jsx  v4
+// CORRECCIONES respecto a v3:
+//   - Bug #3: SheetJS se carga via cargarSheetJS() de importExport.js
+//     en lugar del useEffect manual. Garantiza que XLSX esté listo
+//     antes de que el usuario pueda hacer clic en Exportar.
+//   - El botón Exportar queda disabled mientras SheetJS no carga.
+//   - Sin más cambios estructurales.
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react'
@@ -19,13 +21,15 @@ import {
   obtenerAseguradoras,
   obtenerAsesores,
 } from '../../api/catalogos.js'
-import { exportarAExcel } from '../../api/importExport.js'
+import {
+  exportarAExcel,
+  cargarSheetJS,          // ← nuevo import
+} from '../../api/importExport.js'
 import ImportarPolizas from './ImportarPolizas.jsx'
 import './Produccion.css'
 
 const PAGE_SIZE = 15
 
-// ── Helpers ───────────────────────────────────────────────
 function formatPrima(valor) {
   if (!valor) return <span className="prod-tabla__vacio">—</span>
   return new Intl.NumberFormat('es-CO', {
@@ -54,7 +58,6 @@ function formatMesLabel(claveYYYYMM) {
   return `${nombres[parseInt(mes) - 1]} ${anio}`
 }
 
-// ── Skeleton de fila ──────────────────────────────────────
 function FilaSkeleton() {
   return (
     <tr className="prod-tabla__fila-skeleton">
@@ -65,28 +68,25 @@ function FilaSkeleton() {
   )
 }
 
-// ── Componente principal ──────────────────────────────────
 export default function Produccion() {
   const { usuario, esAdmin } = useAuth()
   const navigate = useNavigate()
 
-  // Datos
   const [polizas, setPolizas]   = useState([])
   const [total, setTotal]       = useState(0)
   const [cargando, setCargando] = useState(true)
   const [error, setError]       = useState(null)
-
-  // Modal importar
   const [mostrarImportar, setMostrarImportar] = useState(false)
 
-  // Catálogos para filtros
+  // ── CORRECCIÓN BUG #3: estado para saber si SheetJS está listo ──
+  const [xlsxListo, setXlsxListo] = useState(Boolean(window.XLSX))
+
   const [catEstados, setCatEstados]           = useState([])
   const [catAseguradoras, setCatAseguradoras] = useState([])
   const [catAsesores, setCatAsesores]         = useState([])
   const [catRamos, setCatRamos]               = useState([])
   const [catMeses, setCatMeses]               = useState([])
 
-  // Filtros
   const [busqueda, setBusqueda]                   = useState('')
   const [filtroEstado, setFiltroEstado]           = useState('')
   const [filtroAseguradora, setFiltroAseguradora] = useState('')
@@ -95,7 +95,7 @@ export default function Produccion() {
   const [filtroMes, setFiltroMes]                 = useState('')
   const [pagina, setPagina]                       = useState(1)
 
-  // ── Cargar catálogos una sola vez al montar ───────────
+  // ── Catálogos ─────────────────────────────────────────
   useEffect(() => {
     Promise.all([
       obtenerEstadosPoliza(),
@@ -112,32 +112,31 @@ export default function Produccion() {
     }).catch(console.error)
   }, [])
 
+  // ── CORRECCIÓN BUG #3: carga SheetJS al montar y marca listo ──
+  // cargarSheetJS() devuelve Promise — no crea scripts duplicados
+  // si ya existe uno en el DOM. El botón Exportar queda habilitado
+  // solo cuando esta promesa resuelve.
   useEffect(() => {
-    if (!window.XLSX) {
-      const script = document.createElement('script')
-      script.src = 'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js'
-      script.async = true
-      document.body.appendChild(script)
-    }
+    if (window.XLSX) { setXlsxListo(true); return }
+    cargarSheetJS()
+      .then(() => setXlsxListo(true))
+      .catch((err) => console.error('[SheetJS]', err))
   }, [])
 
-  // ── Cargar pólizas reactivo a filtros ─────────────────
+  // ── Pólizas ───────────────────────────────────────────
   const cargarPolizas = useCallback(async () => {
     try {
       setCargando(true)
       setError(null)
-
       const params = {
         ...(filtroEstado      && { estado:         filtroEstado }),
         ...(filtroAseguradora && { aseguradora:    filtroAseguradora }),
         ...(filtroRamo        && { ramo:           filtroRamo }),
         ...(filtroMes         && { mes:            filtroMes }),
         ...(busqueda.trim()   && { search:         busqueda.trim() }),
-        // Asesor solo ve sus pólizas (REQ-20)
         ...(!esAdmin          && { responsable_id: usuario.id }),
         ...(esAdmin && filtroResponsable && { responsable_id: filtroResponsable }),
       }
-
       const resultado = await listarPolizas(params)
       setPolizas(resultado.data)
       setTotal(resultado.total)
@@ -155,11 +154,7 @@ export default function Produccion() {
     cargarPolizas()
   }, [cargarPolizas])
 
-  // ── Helpers de filtros ────────────────────────────────
-  const cambiarFiltro = (setter) => (e) => {
-    setter(e.target.value)
-    setPagina(1)
-  }
+  const cambiarFiltro = (setter) => (e) => { setter(e.target.value); setPagina(1) }
 
   const limpiarFiltros = () => {
     setBusqueda('')
@@ -174,7 +169,6 @@ export default function Produccion() {
   const hayFiltros = busqueda || filtroEstado || filtroAseguradora ||
                      filtroRamo || filtroResponsable || filtroMes
 
-  // ── Paginación ────────────────────────────────────────
   const totalPaginas  = Math.max(1, Math.ceil(polizas.length / PAGE_SIZE))
   const paginaSegura  = Math.min(pagina, totalPaginas)
   const polizasPagina = polizas.slice(
@@ -185,7 +179,6 @@ export default function Produccion() {
   return (
     <div className="produccion">
 
-      {/* ── Cabecera ─────────────────────────────────── */}
       <div className="produccion__header">
         <p className="produccion__total">
           {cargando
@@ -195,18 +188,17 @@ export default function Produccion() {
         </p>
 
         <div className="produccion__header-acciones">
-          {/* Exportar — respeta filtros activos */}
+          {/* Exportar — disabled hasta que SheetJS esté listo */}
           <button
             className="btn-secundario"
             onClick={() => exportarAExcel(polizas)}
-            disabled={cargando || polizas.length === 0}
-            title="Exportar pólizas filtradas a Excel"
+            disabled={cargando || polizas.length === 0 || !xlsxListo}
+            title={!xlsxListo ? 'Cargando herramienta de exportación…' : 'Exportar pólizas filtradas a Excel'}
           >
             <i className="bi bi-file-earmark-arrow-down" />
-            <span>Exportar</span>
+            <span>{xlsxListo ? 'Exportar' : 'Cargando…'}</span>
           </button>
 
-          {/* Importar — solo ADMIN */}
           {esAdmin && (
             <button
               className="btn-secundario"
@@ -228,9 +220,8 @@ export default function Produccion() {
         </div>
       </div>
 
-      {/* ── Filtros ───────────────────────────────────── */}
+      {/* ── Filtros ── */}
       <div className="produccion__filtros">
-
         <div className="produccion__busqueda">
           <i className="bi bi-search produccion__busqueda-icono" />
           <input
@@ -251,45 +242,28 @@ export default function Produccion() {
         </div>
 
         <div className="produccion__selectores">
-
-          <select
-            value={filtroEstado}
-            onChange={cambiarFiltro(setFiltroEstado)}
-            className="produccion__select"
-          >
+          <select value={filtroEstado} onChange={cambiarFiltro(setFiltroEstado)} className="produccion__select">
             <option value="">Todos los estados</option>
             {catEstados.map((e) => (
               <option key={e.id} value={e.nombre}>{e.nombre}</option>
             ))}
           </select>
 
-          <select
-            value={filtroAseguradora}
-            onChange={cambiarFiltro(setFiltroAseguradora)}
-            className="produccion__select"
-          >
+          <select value={filtroAseguradora} onChange={cambiarFiltro(setFiltroAseguradora)} className="produccion__select">
             <option value="">Todas las aseguradoras</option>
             {catAseguradoras.map((a) => (
               <option key={a.id} value={a.nombre}>{a.nombre}</option>
             ))}
           </select>
 
-          <select
-            value={filtroRamo}
-            onChange={cambiarFiltro(setFiltroRamo)}
-            className="produccion__select"
-          >
+          <select value={filtroRamo} onChange={cambiarFiltro(setFiltroRamo)} className="produccion__select">
             <option value="">Todos los ramos</option>
             {catRamos.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>
 
-          <select
-            value={filtroMes}
-            onChange={cambiarFiltro(setFiltroMes)}
-            className="produccion__select"
-          >
+          <select value={filtroMes} onChange={cambiarFiltro(setFiltroMes)} className="produccion__select">
             <option value="">Todos los meses</option>
             {catMeses.map((m) => (
               <option key={m} value={m}>{formatMesLabel(m)}</option>
@@ -297,11 +271,7 @@ export default function Produccion() {
           </select>
 
           {esAdmin && (
-            <select
-              value={filtroResponsable}
-              onChange={cambiarFiltro(setFiltroResponsable)}
-              className="produccion__select"
-            >
+            <select value={filtroResponsable} onChange={cambiarFiltro(setFiltroResponsable)} className="produccion__select">
               <option value="">Todos los asesores</option>
               {catAsesores.map((a) => (
                 <option key={a.id} value={a.id}>{a.nombre}</option>
@@ -318,7 +288,7 @@ export default function Produccion() {
         </div>
       </div>
 
-      {/* ── Error ─────────────────────────────────────── */}
+      {/* ── Error ── */}
       {error && (
         <div className="prod-error">
           <i className="bi bi-wifi-off" />
@@ -329,7 +299,7 @@ export default function Produccion() {
         </div>
       )}
 
-      {/* ── Tabla ─────────────────────────────────────── */}
+      {/* ── Tabla ── */}
       {!error && (
         <div className="prod-tabla__wrap">
           {!cargando && polizas.length === 0 ? (
@@ -375,32 +345,20 @@ export default function Produccion() {
                 </tbody>
               </table>
 
-              {/* ── Paginación ──────────────────────── */}
               {!cargando && totalPaginas > 1 && (
                 <div className="prod-paginacion">
                   <span className="prod-paginacion__info">
                     {(paginaSegura - 1) * PAGE_SIZE + 1}–{Math.min(paginaSegura * PAGE_SIZE, polizas.length)} de {polizas.length}
                   </span>
                   <div className="prod-paginacion__controles">
-                    <button
-                      className="prod-paginacion__btn"
-                      onClick={() => setPagina(1)}
-                      disabled={paginaSegura === 1}
-                      title="Primera"
-                    >
+                    <button className="prod-paginacion__btn" onClick={() => setPagina(1)} disabled={paginaSegura === 1} title="Primera">
                       <i className="bi bi-chevron-double-left" />
                     </button>
-                    <button
-                      className="prod-paginacion__btn"
-                      onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                      disabled={paginaSegura === 1}
-                      title="Anterior"
-                    >
+                    <button className="prod-paginacion__btn" onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={paginaSegura === 1} title="Anterior">
                       <i className="bi bi-chevron-left" />
                     </button>
-
                     {Array.from({ length: totalPaginas }, (_, i) => i + 1)
-                      .filter((n) => {
+                      .filter(n => {
                         if (totalPaginas <= 5) return true
                         if (n === 1 || n === totalPaginas) return true
                         return Math.abs(n - paginaSegura) <= 1
@@ -424,21 +382,10 @@ export default function Produccion() {
                         )
                       )
                     }
-
-                    <button
-                      className="prod-paginacion__btn"
-                      onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                      disabled={paginaSegura === totalPaginas}
-                      title="Siguiente"
-                    >
+                    <button className="prod-paginacion__btn" onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={paginaSegura === totalPaginas} title="Siguiente">
                       <i className="bi bi-chevron-right" />
                     </button>
-                    <button
-                      className="prod-paginacion__btn"
-                      onClick={() => setPagina(totalPaginas)}
-                      disabled={paginaSegura === totalPaginas}
-                      title="Última"
-                    >
+                    <button className="prod-paginacion__btn" onClick={() => setPagina(totalPaginas)} disabled={paginaSegura === totalPaginas} title="Última">
                       <i className="bi bi-chevron-double-right" />
                     </button>
                   </div>
@@ -449,23 +396,20 @@ export default function Produccion() {
         </div>
       )}
 
-      {/* ── Modal importar ────────────────────────────── */}
       {mostrarImportar && (
         <ImportarPolizas
           onCerrar={() => setMostrarImportar(false)}
           onImportado={() => {
-            cargarPolizas()       // recarga tabla tras importar
-            setCatMeses([])       // fuerza refrescar meses disponibles
+            cargarPolizas()
+            setCatMeses([])
             obtenerMesesDisponibles().then(setCatMeses)
           }}
         />
       )}
-
     </div>
   )
 }
 
-// ── Fila de póliza ────────────────────────────────────────
 function FilaPoliza({ poliza, esAdmin, onVer, onEditar }) {
   const dias         = diasTranscurridos(poliza.fecha_solicitud, poliza.fecha_expedicion)
   const diasCritico  = dias !== null && dias > 15
@@ -493,9 +437,7 @@ function FilaPoliza({ poliza, esAdmin, onVer, onEditar }) {
           <span className="prod-tabla__ramo">{poliza.ramo}</span>
         </div>
       </td>
-      <td>
-        <span className="prod-tabla__aseguradora">{poliza.aseguradora}</span>
-      </td>
+      <td><span className="prod-tabla__aseguradora">{poliza.aseguradora}</span></td>
       <td>
         {poliza.numero_poliza
           ? <span className="prod-tabla__numero">{poliza.numero_poliza}</span>
@@ -518,24 +460,14 @@ function FilaPoliza({ poliza, esAdmin, onVer, onEditar }) {
         </div>
       </td>
       {esAdmin && (
-        <td>
-          <span className="prod-tabla__asesor">{poliza.responsable_nombre}</span>
-        </td>
+        <td><span className="prod-tabla__asesor">{poliza.responsable_nombre}</span></td>
       )}
       <td onClick={(e) => e.stopPropagation()}>
         <div className="prod-tabla__acciones">
-          <button
-            className="prod-tabla__btn-accion"
-            onClick={onVer}
-            title="Ver detalle"
-          >
+          <button className="prod-tabla__btn-accion" onClick={onVer} title="Ver detalle">
             <i className="bi bi-eye" />
           </button>
-          <button
-            className="prod-tabla__btn-accion"
-            onClick={onEditar}
-            title="Editar"
-          >
+          <button className="prod-tabla__btn-accion" onClick={onEditar} title="Editar">
             <i className="bi bi-pencil" />
           </button>
         </div>

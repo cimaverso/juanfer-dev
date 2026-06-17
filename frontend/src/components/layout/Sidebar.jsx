@@ -1,7 +1,9 @@
 // ============================================================
-// components/layout/Sidebar.jsx
-// Sidebar colapsable con iconos Bootstrap Icons
-// Expandido: icono + texto | Colapsado: solo icono + tooltip
+// src/components/layout/Sidebar.jsx
+// CAMBIOS respecto al original:
+//   1. Prospectos: quitado proximamente:true → ya es NavLink real
+//   2. Admin: ruta cambiada a /admin/catalogos, quitado proximamente:true
+//   3. Sin más cambios — estructura, CSS y lógica idénticos
 // ============================================================
 
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -11,54 +13,54 @@ import './Sidebar.css'
 // ── Ítems de navegación ───────────────────────────────────
 const NAV_ITEMS = [
   {
-    ruta: '/dashboard',
+    ruta:  '/dashboard',
     icono: 'bi-speedometer2',
     label: 'Dashboard',
     roles: ['ADMIN', 'ASESOR'],
   },
   {
-    ruta: '/produccion',
+    ruta:  '/produccion',
     icono: 'bi-file-earmark-check',
     label: 'Producción',
     roles: ['ADMIN', 'ASESOR'],
   },
   {
-    ruta: '/cotizaciones',
-    icono: 'bi-calculator',
-    label: 'Cotizaciones',
-    roles: ['ADMIN', 'ASESOR'],
-    proximamente: true,
-  },
-  {
-    ruta: '/prospectos',
+    ruta:  '/prospectos',
     icono: 'bi-person-lines-fill',
     label: 'Prospectos',
     roles: ['ADMIN', 'ASESOR'],
+    // proximamente: true  ← REMOVIDO — M3 ya está listo
+  },
+  {
+    ruta:        '/cotizaciones',
+    icono:       'bi-calculator',
+    label:       'Cotizaciones',
+    roles:       ['ADMIN', 'ASESOR'],
     proximamente: true,
   },
   {
-    ruta: '/cancelaciones',
-    icono: 'bi-x-circle',
-    label: 'Cancelaciones',
-    roles: ['ADMIN', 'ASESOR'],
+    ruta:        '/cancelaciones',
+    icono:       'bi-x-circle',
+    label:       'Cancelaciones',
+    roles:       ['ADMIN', 'ASESOR'],
     proximamente: true,
   },
   {
-    ruta: '/plantillas',
-    icono: 'bi-chat-left-text',
-    label: 'Plantillas',
-    roles: ['ADMIN', 'ASESOR'],
+    ruta:        '/plantillas',
+    icono:       'bi-chat-left-text',
+    label:       'Plantillas',
+    roles:       ['ADMIN', 'ASESOR'],
     proximamente: true,
   },
 ]
 
 const NAV_ADMIN = [
   {
-    ruta: '/admin',
-    icono: 'bi-gear',
-    label: 'Administración',
+    ruta:  '/admin/catalogos',   // ← antes era /admin (sin ruta real)
+    icono: 'bi-sliders',
+    label: 'Catálogos',
     roles: ['ADMIN'],
-    proximamente: true,
+    // proximamente: true  ← REMOVIDO — AdminCatalogos ya existe
   },
 ]
 
@@ -82,7 +84,7 @@ export default function Sidebar({ colapsado, onToggle }) {
   return (
     <aside className={`sidebar ${colapsado ? 'sidebar--colapsado' : ''}`}>
 
-      {/* ── Logo ────────────────────────────────────── */}
+      {/* ── Logo ── */}
       <div className="sidebar__logo">
         {colapsado ? (
           <span className="sidebar__logo-sigla">JF</span>
@@ -97,7 +99,7 @@ export default function Sidebar({ colapsado, onToggle }) {
         )}
       </div>
 
-      {/* ── Botón colapsar ──────────────────────────── */}
+      {/* ── Botón colapsar ── */}
       <button
         className="sidebar__toggle"
         onClick={onToggle}
@@ -106,21 +108,17 @@ export default function Sidebar({ colapsado, onToggle }) {
         <i className={`bi ${colapsado ? 'bi-chevron-right' : 'bi-chevron-left'}`} />
       </button>
 
-      {/* ── Navegación principal ────────────────────── */}
+      {/* ── Navegación principal ── */}
       <nav className="sidebar__nav">
         {!colapsado && (
           <span className="sidebar__seccion-label">MENÚ</span>
         )}
 
         {itemsVisibles.map((item) => (
-          <NavItem
-            key={item.ruta}
-            item={item}
-            colapsado={colapsado}
-          />
+          <NavItem key={item.ruta} item={item} colapsado={colapsado} />
         ))}
 
-        {/* Separador admin */}
+        {/* Separador + sección admin */}
         {esAdmin && adminVisible.length > 0 && (
           <>
             <div className="sidebar__divider" />
@@ -128,17 +126,13 @@ export default function Sidebar({ colapsado, onToggle }) {
               <span className="sidebar__seccion-label">CONFIGURACIÓN</span>
             )}
             {adminVisible.map((item) => (
-              <NavItem
-                key={item.ruta}
-                item={item}
-                colapsado={colapsado}
-              />
+              <NavItem key={item.ruta} item={item} colapsado={colapsado} />
             ))}
           </>
         )}
       </nav>
 
-      {/* ── Usuario + logout ────────────────────────── */}
+      {/* ── Usuario + logout ── */}
       <div className="sidebar__footer">
         <div className="sidebar__divider" />
         <div className="sidebar__usuario">
@@ -147,9 +141,7 @@ export default function Sidebar({ colapsado, onToggle }) {
           </div>
           {!colapsado && (
             <div className="sidebar__usuario-info">
-              <span className="sidebar__usuario-nombre">
-                {usuario?.nombre}
-              </span>
+              <span className="sidebar__usuario-nombre">{usuario?.nombre}</span>
               <span className="sidebar__usuario-rol">
                 {usuario?.rol === 'ADMIN' ? 'Administrador' : 'Asesor'}
               </span>
@@ -170,7 +162,7 @@ export default function Sidebar({ colapsado, onToggle }) {
   )
 }
 
-// ── Componente NavItem ────────────────────────────────────
+// ── NavItem ───────────────────────────────────────────────
 function NavItem({ item, colapsado }) {
   if (item.proximamente) {
     return (
