@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from app.models.usuarios_clientes.cliente import Cliente
     from app.models.modulos_negocio.prospecto import Prospecto
+    from app.models.operaciones.mensaje import Mensaje
 
 class Conversacion(Base):
     __tablename__ = "conversacion"
@@ -70,6 +71,11 @@ class Conversacion(Base):
     cliente: Mapped[Optional["Cliente"]] = relationship(
         "Cliente",
         back_populates="conversaciones"
+    )
+
+    mensajes: Mapped[list["Mensaje"]] = relationship(
+        "Mensaje",
+        back_populates="conversacion"
     )
 
     # Validaciones
