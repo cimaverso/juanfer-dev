@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
+    from app.models.modulos_negocio.tarea import Tarea
 
 class Prospecto(Base):
     __tablename__ = "prospecto"
@@ -87,5 +88,10 @@ class Prospecto(Base):
 
     cotizaciones: Mapped[list["Cotizacion"]] = relationship(
         "Cotizacion",
+        back_populates="prospecto"
+    )
+
+    tareas: Mapped[list["Tarea"]] = relationship(
+        "Tarea",
         back_populates="prospecto"
     )

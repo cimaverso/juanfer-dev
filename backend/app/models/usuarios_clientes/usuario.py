@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.auditoria.auditoria import Auditoria
+    from app.models.modulos_negocio.tarea import Tarea
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -89,6 +90,11 @@ class Usuario(Base):
     polizas: Mapped[list["Poliza"]] = relationship(
         "Poliza",
         back_populates="responsable"
+    )
+
+    tareas: Mapped[list[Tarea]] = relationship(
+        "Tarea",
+        back_populates="usuario"
     )
 
     # Relaciones con HistorialResponsable
