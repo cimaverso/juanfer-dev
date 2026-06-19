@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
     from app.models.modulos_negocio.tarea import Tarea
+    from app.models.operaciones.conversacion import Conversacion
 
 class Prospecto(Base):
     __tablename__ = "prospecto"
@@ -93,5 +94,10 @@ class Prospecto(Base):
 
     tareas: Mapped[list["Tarea"]] = relationship(
         "Tarea",
+        back_populates="prospecto"
+    )
+
+    conversaciones: Mapped[list["Conversacion"]] = relationship(
+        "Conversacion",
         back_populates="prospecto"
     )

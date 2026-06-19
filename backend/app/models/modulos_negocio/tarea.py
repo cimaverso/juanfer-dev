@@ -5,11 +5,7 @@ from datetime import datetime, date
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from app.models.usuarios_clientes.cliente import Cliente
-    from app.models.catalogos.producto import Producto
-    from app.models.catalogos.estado_prospecto import EstadoProspecto
     from app.models.usuarios_clientes.usuario import Usuario
-    from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.prospecto import Prospecto
 
 class Tarea(Base):
@@ -63,9 +59,10 @@ class Tarea(Base):
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
+        DateTime,
         nullable=False,
-        server_default=func.now()
+        server_default=func.now(),
+        onupdate=func.now()
     )
 
     # Relaciones
