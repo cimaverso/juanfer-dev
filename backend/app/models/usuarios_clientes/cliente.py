@@ -46,6 +46,21 @@ class Cliente(Base):
         nullable=False
     )
 
+    correo: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    ocupacion: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    ciudad: Mapped[Optional[str]] = mapped_column(
+        String(80),
+        nullable=True
+    )
+
     responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("usuario.id", ondelete="SET NULL"),
