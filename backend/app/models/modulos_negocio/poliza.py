@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.usuarios_clientes.cliente import Cliente
+    from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.catalogos.ramo import Ramo
     from app.models.catalogos.aseguradora import Aseguradora
     from app.models.catalogos.producto import Producto
@@ -209,6 +210,13 @@ class Poliza(Base):
         "CambioIntermediario",
         back_populates="poliza"
     )
+
+    prospecto: Mapped[Optional["Prospecto"]] = relationship(
+        "Prospecto",
+        back_populates="poliza"
+    )
+
+    # Properties
 
     @property
     def ramo_name(self) -> str:
