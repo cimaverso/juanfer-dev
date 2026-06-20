@@ -93,7 +93,7 @@ class Usuario(Base):
         back_populates="responsable"
     )
 
-    tareas: Mapped[list[Tarea]] = relationship(
+    tareas: Mapped[list["Tarea"]] = relationship(
         "Tarea",
         back_populates="usuario"
     )
