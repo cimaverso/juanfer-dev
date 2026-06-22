@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import BigInteger, String, ForeignKey, Boolean, DateTime, text, func
 from app.db.base import Base
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from app.models.roles_permisos.rol import Rol
@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.auditoria.auditoria import Auditoria
+    from app.models.modulos_negocio.tarea import Tarea
+    from app.models.operaciones.mensaje import Mensaje
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -89,6 +91,16 @@ class Usuario(Base):
     polizas: Mapped[list["Poliza"]] = relationship(
         "Poliza",
         back_populates="responsable"
+    )
+
+    tareas: Mapped[list["Tarea"]] = relationship(
+        "Tarea",
+        back_populates="usuario"
+    )
+
+    mensajes: Mapped[Optional[list["Mensaje"]]] = relationship(
+        "Mensaje",
+        back_populates="usuario"
     )
 
     # Relaciones con HistorialResponsable

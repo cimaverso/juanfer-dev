@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Date, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Date, func, SmallInteger, CheckConstraint, Text, String, text
 from app.db.base import Base
 from datetime import datetime, date
 from typing import TYPE_CHECKING, Optional
@@ -11,6 +11,11 @@ if TYPE_CHECKING:
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
+    from app.models.modulos_negocio.tarea import Tarea
+    from app.models.operaciones.conversacion import Conversacion
+    from app.models.catalogos.aseguradora import Aseguradora
+    from app.models.catalogos.ramo import Ramo
+    from app.models.modulos_negocio.poliza import Poliza
 
 class Prospecto(Base):
     __tablename__ = "prospecto"
@@ -21,12 +26,30 @@ class Prospecto(Base):
         autoincrement=True
     )
 
+    canal_origen: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="manual"
+    )
+
     cliente_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("cliente.id", ondelete="CASCADE"),
         nullable=False
     )
+
+    aseguradora_interes_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("aseguradora.id", ondelete="SET NULL"),
+        nullable=True
+    )
     
+    ramo_interes_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("ramo.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
     producto_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("producto.id", ondelete="RESTRICT"),
@@ -39,15 +62,41 @@ class Prospecto(Base):
         nullable=False
     )
 
+    poliza_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("poliza.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
     responsable_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("usuario.id", ondelete="SET NULL"),
         nullable=True
     )
-
-    fecha_contacto: Mapped[Optional[date]] = mapped_column(
+    
+    fecha_primer_contacto: Mapped[Optional[date]] = mapped_column(
         Date,
-        server_default=func.current_date(),
+        nullable=True
+    )
+
+    fecha_ultimo_contacto: Mapped[Optional[date]] = mapped_column(
+        Date,
+        nullable=True
+    ) 
+    
+    proximo_contacto: Mapped[Optional[date]] = mapped_column(
+        Date,
+        nullable=True
+    ) 
+
+    intentos_contacto: Mapped[int] = mapped_column(
+        SmallInteger,
+        nullable=False,
+        server_default=text("0")
+    )
+
+    observaciones: Mapped[Optional[str]] = mapped_column(
+        Text,
         nullable=True
     )
 
@@ -64,7 +113,6 @@ class Prospecto(Base):
         back_populates="prospectos"
     )
 
-    
     producto: Mapped["Producto"] = relationship(
         "Producto",
         back_populates="prospectos"
@@ -88,4 +136,42 @@ class Prospecto(Base):
     cotizaciones: Mapped[list["Cotizacion"]] = relationship(
         "Cotizacion",
         back_populates="prospecto"
+    )
+
+    tareas: Mapped[list["Tarea"]] = relationship(
+        "Tarea",
+        back_populates="prospecto"
+    )
+
+    conversaciones: Mapped[list["Conversacion"]] = relationship(
+        "Conversacion",
+        back_populates="prospecto"
+    )
+
+    aseguradora_interes: Mapped["Aseguradora"] = relationship(
+        "Aseguradora",
+        back_populates="prospectos"
+    )
+
+    ramo_interes: Mapped["Ramo"] = relationship(
+        "Ramo",
+        back_populates="prospectos"
+    )
+
+    poliza: Mapped[Optional["Poliza"]] = relationship(
+        "Poliza",
+        back_populates="prospecto"
+    )
+
+    # Validaciones
+
+    __table_args__ = (
+        CheckConstraint(
+            "intentos_contacto >= 0 AND intentos_contacto <= 7",
+            name="ck_intentos_contacto"
+        ),
+        CheckConstraint(
+            "canal_origen IN ('manual', 'whatsapp', 'formulario', 'csv')",
+            name="ck_canal_origen"
+        ),
     )

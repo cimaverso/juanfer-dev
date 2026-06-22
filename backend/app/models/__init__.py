@@ -17,10 +17,10 @@ from app.models.dashboard_alertas import config_alerta
 from app.models.historial import historial_responsable_cliente, historial_responsable
 
 # 5. Modulos de Negocio
-from app.models.modulos_negocio import cotizacion, nota_prospecto, poliza, prospecto
+from app.models.modulos_negocio import cotizacion, nota_prospecto, poliza, prospecto, tarea
 
 # 6. Operaciones
-from app.models.operaciones import cambio_intermediario, cancelacion, endoso_banco
+from app.models.operaciones import cambio_intermediario, cancelacion, endoso_banco, conversacion, mensaje
 
 # 7. Plantillas de Conocimiento
 from app.models.plantillas_conocimiento import link_proceso, plantilla_mensaje

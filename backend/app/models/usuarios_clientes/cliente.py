@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.historial.historial_responsable_cliente import HistorialResponsableCliente
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.operaciones.cambio_intermediario import CambioIntermediario
+    from app.models.operaciones.conversacion import Conversacion
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -43,6 +44,21 @@ class Cliente(Base):
     celular: Mapped[str] = mapped_column(
         String(20),
         nullable=False
+    )
+
+    correo: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    ocupacion: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    ciudad: Mapped[Optional[str]] = mapped_column(
+        String(80),
+        nullable=True
     )
 
     responsable_id: Mapped[Optional[int]] = mapped_column(
@@ -109,6 +125,11 @@ class Cliente(Base):
 
     cambio_intermediario_cliente: Mapped[list["CambioIntermediario"]] = relationship(
         "CambioIntermediario",
+        back_populates="cliente"
+    )
+
+    conversaciones: Mapped[list["Conversacion"]] = relationship(
+        "Conversacion",
         back_populates="cliente"
     )
 

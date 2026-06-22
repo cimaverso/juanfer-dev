@@ -48,9 +48,23 @@ def seed():
             """))
 
             db.execute(text("""
-                INSERT INTO estado_prospecto (nombre)
-                VALUES ('Primer contacto'), ('Cotización enviada'), ('Negociación'), ('Ganado'), ('Perdido')
-                ON CONFLICT (nombre) DO NOTHING;
+                INSERT INTO estado_prospecto (id, nombre, color, orden) VALUES
+                    (1,  'Primer contacto',    'contacto-1',  1),
+                    (2,  'Segundo contacto',   'contacto-2',  2),
+                    (3,  'Tercer contacto',    'contacto-3',  3),
+                    (4,  'Cuarto contacto',    'contacto-4',  4),
+                    (5,  'Quinto contacto',    'contacto-5',  5),
+                    (6,  'Sexto contacto',     'contacto-6',  6),
+                    (7,  'Séptimo contacto',   'contacto-7',  7),
+                    (8,  'Cotización enviada', 'cotizacion',  8),
+                    (9,  'En firma',           'firma',       9),
+                    (10, 'En evaluación',      'evaluacion', 10),
+                    (11, 'Convertido',         'convertido', 11),
+                    (12, 'Descartado',         'descartado', 12)
+                ON CONFLICT (id) DO UPDATE SET
+                    nombre = EXCLUDED.nombre,
+                    color  = EXCLUDED.color,
+                    orden  = EXCLUDED.orden;
             """))
 
             db.execute(text("""
