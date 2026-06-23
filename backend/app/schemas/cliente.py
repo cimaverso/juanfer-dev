@@ -10,6 +10,9 @@ class ClienteBase(BaseModel):
 class ClienteCreate(ClienteBase):
     tipo_documento_id: int
     celular: str = Field(..., max_length=20)
+    correo: str = Field(..., max_length=100)
+    ocupacion: str = Field(..., max_length=100)
+    ciudad: str = Field(..., max_length=80)
     responsable_id: int  
 
 class ClienteRead(ClienteBase):
@@ -19,3 +22,8 @@ class ClienteRead(ClienteBase):
 
     class Config:
         from_attributes = True
+
+class ClienteProspectoRead(ClienteRead):
+    correo: str
+    ocupacion: str
+    ciudad: str

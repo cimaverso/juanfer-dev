@@ -6,6 +6,7 @@ from app.models.usuarios_clientes.cliente import Cliente
 from app.models.catalogos.estado_poliza import EstadoPoliza
 from app.models.usuarios_clientes.usuario import Usuario
 from app.services.cliente import ClienteService
+from app.services.prospecto import ProspectoService
 from app.services.catalogo import CatalogoService
 from app.models.catalogos.ramo import Ramo
 from app.models.historial.historial_responsable import HistorialResponsable
@@ -119,6 +120,8 @@ class PolizaService:
         for campo in campos_cliente:
             datos_dict.pop(campo, None)
 
+        datos_dict.pop("prospecto_id", None)
+
         nueva_poliza = Poliza(
             **datos_dict,
             cliente_id=cliente.id
@@ -126,6 +129,12 @@ class PolizaService:
 
         try:
             db.add(nueva_poliza)
+
+            db.flush()
+
+            if poliza_data.prospecto_id:
+                ProspectoService.actualizar_prospecto_poliza(poliza_data.prospecto_id, nueva_poliza.id, db)
+
             db.commit()
             db.refresh(nueva_poliza)
             return nueva_poliza

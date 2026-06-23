@@ -7,6 +7,7 @@ from app.models.catalogos.aseguradora import Aseguradora
 from app.models.catalogos.producto import Producto
 from app.models.catalogos.ramo import Ramo
 from app.models.catalogos.tipo_documento import TipoDocumento
+from app.models.catalogos.estado_prospecto import EstadoProspecto
 from app.schemas.catalogo import ActualizarEstadoPoliza, CrearEstadoPoliza, ActualizarAseguradora, CrearAseguradora, ActualizarProducto, CrearProducto, ActualizarRamo, CrearRamo, ActualizarTipoDocumento, CrearTipoDocumento
 from typing import Optional
 
@@ -304,3 +305,11 @@ class CatalogoService:
         db.commit()
 
         return True
+    
+
+    # Estados Prospectos -----------------------------------------------------------------
+
+    @staticmethod
+    def listar_estados_prospecto(db: Session):
+        stmt = select(EstadoProspecto)
+        return db.execute(stmt).scalars().all()

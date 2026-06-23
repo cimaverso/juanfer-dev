@@ -71,6 +71,7 @@ class PolizaCreate(BaseModel):
     numero_poliza: Optional[str] = Field(None, max_length=50)
     prima: Optional[Decimal] = Field(None, gt=0)
     observacion: Optional[str] = Field(None)
+    prospecto_id: Optional[int] = Field(None)
 
     # ─── VALIDADOR PARA STRINGS VACÍOS ──────────────────
     # Este validador intercepta los campos antes de que Pydantic intente convertirlos.
