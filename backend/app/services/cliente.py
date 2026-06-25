@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from app.models.usuarios_clientes.cliente import Cliente
-from app.schemas.cliente import ClienteCreate
+from app.schemas.cliente import ClienteCreate, ClienteUpdate
 from typing import Optional, List, Dict
+from fastapi import HTTPException
 
 
 class ClienteService:
@@ -141,3 +142,27 @@ class ClienteService:
         return {
             c.numero_documento: c for c in todos
         }
+
+
+    @staticmethod
+    def buscar_cliente_id(id_cliente: int, db: Session):
+        stmt = select(Cliente).where(Cliente.id == id_cliente)
+        return db.execute(stmt).scalar_one_or_none()
+
+    # Solo actualiza y devuelve el objeto, se llama desde ProspectoService
+    @staticmethod
+    def actualizar_cliente(db: Session, data: ClienteUpdate, id_cliente: int):
+        cliente = ClienteService.buscar_cliente_id(id_cliente, db)
+
+        if not cliente:
+            raise HTTPException(
+                status_code=400,
+                detail="Cliente no encontrado"
+            )
+        
+        updates = data.model_dump(exclude_unset=True)
+
+        for field, value in updates.items():
+            setattr(cliente, field, value)
+
+        return cliente

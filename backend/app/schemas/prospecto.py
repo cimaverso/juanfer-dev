@@ -50,7 +50,7 @@ class ProspectoCreate(BaseModel):
     aseguradora_interes_id: int
     ramo_interes_id: int
     responsable_id: int
-    observaciones: str
+    observaciones: Optional[str]
 
 class ProspectoListResponse(BaseModel):
     items: list[ProspectoRead]
@@ -70,3 +70,28 @@ class ProspectoTareaRead(BaseModel):
 
 class CambiarEstado(BaseModel):
     estado_id: int
+
+
+class ProspectoUpdate(BaseModel):
+    # cliente
+    nombre: Optional[str]
+    tipo_documento_id: Optional[int]
+    numero_documento: Optional[str]
+    telefono: Optional[str]
+    correo: Optional[str]
+    ocupacion: Optional[str]
+    ciudad: Optional[str]
+
+    canal_origen: Optional[str]
+    aseguradora_interes_id: Optional[int]
+    ramo_interes_id: Optional[int]
+    responsable_id: Optional[int]
+    observaciones: Optional[str]
+
+
+class ProspectoFiltro(BaseModel):
+    busqueda: str | None = None
+    estado_id: int | None = None
+    canal_origen: str | None = None
+    responsable_id: int | None = None
+    proximo_contacto: str | None = None

@@ -3,10 +3,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from math import ceil
 from sqlalchemy import select, or_, func, desc, asc, case, extract
 from app.models.modulos_negocio.prospecto import Prospecto
+from app.models.usuarios_clientes.cliente import Cliente
 from app.services.cliente import ClienteService
 from app.services.catalogo import CatalogoService
-from app.schemas.prospecto import ProspectoCreate, CambiarEstado
-from app.schemas.cliente import ClienteCreate
+from app.schemas.prospecto import ProspectoCreate, CambiarEstado, ProspectoUpdate, ProspectoFiltro
+from app.schemas.cliente import ClienteCreate, ClienteUpdate
 from app.models.catalogos.estado_prospecto import EstadoProspecto
 from datetime import timedelta, date
 from fastapi import HTTPException
@@ -14,12 +15,55 @@ from fastapi import HTTPException
 class ProspectoService:
 
     @staticmethod
-    def obtener_prospectos(db: Session, page, limit, user):
+    def obtener_prospectos(db: Session, page, limit, user, filtros: ProspectoFiltro):
         
         if user.rol == 'ADMIN':
             stmt = select(Prospecto)
         else:
             stmt = select(Prospecto).where(Prospecto.responsable_id == user.id)
+
+        if filtros.busqueda:
+            stmt = stmt.join(Cliente).where(
+                or_(
+                    Cliente.nombre_completo.ilike(f"%{filtros.busqueda}%"),
+                    Cliente.numero_documento.ilike(f"%{filtros.busqueda}%")
+                )
+            )
+
+        if filtros.estado_id:
+            stmt = stmt.where(
+                Prospecto.estado_id == filtros.estado_id
+            )
+
+        if filtros.canal_origen:
+            stmt = stmt.where(
+                Prospecto.canal_origen == filtros.canal_origen
+            )
+
+        if user.rol == "ADMIN" and filtros.responsable_id:
+            stmt = stmt.where(
+                Prospecto.responsable_id == filtros.responsable_id
+            )
+
+        hoy = date.today()
+
+        if filtros.proximo_contacto == "hoy":
+            stmt = stmt.where(
+                Prospecto.proximo_contacto == hoy
+            )
+
+        if filtros.proximo_contacto == "vencido":
+            stmt = stmt.where(
+                Prospecto.proximo_contacto < hoy
+            )
+
+        if filtros.proximo_contacto == "semana":
+            stmt = stmt.where(
+                Prospecto.proximo_contacto.between(
+                    hoy,
+                    hoy + timedelta(days=7)
+                )
+            )
 
         total = db.scalar(
             select(func.count()).select_from(stmt.subquery())
@@ -105,7 +149,10 @@ class ProspectoService:
         prospecto = db.execute(stmt).scalar_one_or_none()
 
         if not prospecto:
-            return None
+            raise HTTPException(
+                status_code=400,
+                detail="Prospecto no encontrado"
+            )
         
         return prospecto
     
@@ -218,3 +265,74 @@ class ProspectoService:
         prospecto.poliza_id = poliza_id
 
         return prospecto
+
+
+    @staticmethod
+    def editar_prospecto(db: Session, id_prospecto: int, data: ProspectoUpdate, user):
+        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db)
+        id_cliente = prospecto.cliente_id
+
+        if prospecto.responsable_id != user.id and user.rol != "ADMIN":
+            raise HTTPException(
+                status_code=403,
+                detail="El prospecto está asignado a otro asesor"
+            )
+
+        prospecto_data = data.model_dump(exclude_unset=True)
+
+        campos_cliente = {
+            "nombre",
+            "tipo_documento_id",
+            "numero_documento",
+            "telefono",
+            "correo",
+            "ocupacion",
+            "ciudad"
+        }
+
+        cliente_payload = {
+            k: v
+            for k, v in prospecto_data.items()
+            if k in campos_cliente
+        }
+
+        prospecto_payload = {
+            k: v
+            for k, v in prospecto_data.items()
+            if k not in campos_cliente
+        }
+
+        if cliente_payload:
+            cliente_data = ClienteUpdate(
+                nombre_completo=cliente_payload.get("nombre"),
+                tipo_documento_id=cliente_payload.get("tipo_documento_id"),
+                numero_documento=cliente_payload.get("numero_documento"),
+                celular=cliente_payload.get("telefono"),
+                correo=cliente_payload.get("correo"),
+                ocupacion=cliente_payload.get("ocupacion"),
+                ciudad=cliente_payload.get("ciudad"),
+            )
+
+            ClienteService.actualizar_cliente(
+                db,
+                cliente_data,
+                id_cliente
+            )
+
+        for field, value in prospecto_payload.items():
+            setattr(prospecto, field, value)
+
+        db.commit()
+        db.refresh(prospecto)
+
+        return prospecto
+
+
+# class ClienteUpdate(BaseModel):
+#     nombre_completo: Optional[str]
+#     tipo_documento_id: Optional[int]
+#     numero_documento: Optional[str]
+#     celular: Optional[str]
+#     correo: Optional[str]
+#     ocupacion: Optional[str]
+#     ciudad: Optional[str]

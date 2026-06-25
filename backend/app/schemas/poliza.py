@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from datetime import date
 from typing import Optional
 from decimal import Decimal
@@ -41,10 +41,7 @@ class PolizaFiltro(BaseModel):
     responsable_id: int | None = None
     search: str | None = None # Búsqueda libre (nombre cliente, documento o número póliza)
 
-from pydantic import BaseModel, Field, field_validator
-from datetime import date
-from typing import Optional
-from decimal import Decimal
+
 
 class PolizaCreate(BaseModel):
     # --- Datos del Tomador (Cliente) ---

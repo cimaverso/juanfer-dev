@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class ClienteBase(BaseModel):
     nombre_completo: str = Field(..., max_length=150)
@@ -27,3 +28,13 @@ class ClienteProspectoRead(ClienteRead):
     correo: str
     ocupacion: str
     ciudad: str
+
+# Actualizar desde Prospecto
+class ClienteUpdate(BaseModel):
+    nombre_completo: Optional[str]
+    tipo_documento_id: Optional[int]
+    numero_documento: Optional[str]
+    celular: Optional[str]
+    correo: Optional[str]
+    ocupacion: Optional[str]
+    ciudad: Optional[str]
