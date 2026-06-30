@@ -19,6 +19,8 @@ import {
   CANALES_ORIGEN,
 } from '../../api/prospectos.js'
 import './Prospectos.css'
+import { obtenerAsesores } from '../../api/catalogos.js'
+
 
 // ── Constantes ────────────────────────────────────────────
 const LIMITE_PAGINA = 15
@@ -40,6 +42,21 @@ const COLOR_PIPELINE = {
 }
 
 // ── Helpers ───────────────────────────────────────────────
+
+// ── Cargar SheetJS desde CDN ──────────────────────────────
+function cargarSheetJS() {
+  return new Promise((resolve, reject) => {
+    if (window.XLSX) { resolve(); return }
+    const script = document.createElement('script')
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+    script.onload  = resolve
+    script.onerror = () => reject(new Error('No se pudo cargar SheetJS'))
+    document.head.appendChild(script)
+  })
+}
+
+
+
 function clasificarFecha(fechaStr) {
   if (!fechaStr) return null
   const hoy  = new Date().toISOString().split('T')[0]
@@ -297,6 +314,7 @@ export default function Prospectos() {
   const [filtroCanal, setFiltroCanal]     = useState('')
   const [filtroAsesor, setFiltroAsesor]   = useState('')
   const [filtroFecha, setFiltroFecha]     = useState('')
+  const [asesores, setAsesores] = useState([])
 
   // Búsqueda con debounce de 350ms
   const busquedaRef = useRef()
@@ -307,6 +325,14 @@ export default function Prospectos() {
     return () => clearTimeout(busquedaRef.current)
   }, [busqueda])
 
+
+  useEffect(() => {
+    if (!esAdmin) return // solo admin ve/usa este filtro
+    obtenerAsesores()
+      .then(setAsesores)
+      .catch(() => {})
+  }, [esAdmin])
+
   // ── Carga del pipeline (solo al montar) ───────────────
   useEffect(() => {
     obtenerResumenPipeline()
@@ -314,7 +340,10 @@ export default function Prospectos() {
       .catch(() => {})
       .finally(() => setCargandoPipeline(false))
   }, [])
-
+  // Cargar SheetJS al montar
+  useEffect(() => {
+    cargarSheetJS().catch(err => setErrorGlobal(err.message))
+  }, [])
   // ── Carga de la tabla (reacciona a filtros y página) ──
   const cargarProspectos = useCallback(async () => {
     try {
@@ -554,12 +583,9 @@ export default function Prospectos() {
         {esAdmin && (
           <select value={filtroAsesor} onChange={(e) => setFiltroAsesor(e.target.value)}>
             <option value="">Todos los asesores</option>
-            {/* Sammy: poblar desde GET /api/v1/usuarios?rol=ASESOR */}
-            <option value="2">Gina López</option>
-            <option value="3">Diego Martínez</option>
-            <option value="4">Dilma Suárez</option>
-            <option value="5">Julieta Mora</option>
-            <option value="6">Lina Castro</option>
+            {asesores.map((a) => (
+              <option key={a.id} value={a.id}>{a.nombre}</option>
+            ))}
           </select>
         )}
 

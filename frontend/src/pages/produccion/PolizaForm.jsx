@@ -172,6 +172,7 @@ const desdeProspectoId = searchParams.get('desde_prospecto')
         observacion:      prospecto.observaciones
           ? `[Desde prospecto] ${prospecto.observaciones}`
           : prev.observacion,
+        prospecto_id:     prospecto.id,
       }))
       setClienteEncontrado(true)
     } catch (e) {

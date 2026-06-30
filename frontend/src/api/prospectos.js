@@ -310,7 +310,7 @@ export async function listarProspectos(filtros = {}, page = 1, limit = 15) {
     }
   }
   const params = { ...filtros, page, limit }
-  const { data } = await axiosInstance.get('/api/v1/prospectos', { params })
+  const { data } = await axiosInstance.get('/prospectos', { params })
   return data
 }
 
@@ -324,7 +324,7 @@ export async function obtenerResumenPipeline() {
     await new Promise((r) => setTimeout(r, 200))
     return MOCK_RESUMEN_PIPELINE
   }
-  const { data } = await axiosInstance.get('/api/v1/prospectos/resumen-pipeline')
+  const { data } = await axiosInstance.get('/prospectos/resumen-pipeline')
   return data
 }
 
@@ -339,7 +339,7 @@ export async function obtenerProspecto(id) {
     if (!p) throw new Error('Prospecto no encontrado')
     return p
   }
-  const { data } = await axiosInstance.get(`/api/v1/prospectos/${id}`)
+  const { data } = await axiosInstance.get(`/prospectos/${id}`)
   return data
 }
 
@@ -371,7 +371,7 @@ export async function crearProspecto(datos) {
     MOCK_PROSPECTOS.push(nuevo)
     return nuevo
   }
-  const { data } = await axiosInstance.post('/api/v1/prospectos', datos)
+  const { data } = await axiosInstance.post('/prospectos', datos)
   return data
 }
 
@@ -387,7 +387,7 @@ export async function editarProspecto(id, datos) {
     MOCK_PROSPECTOS[idx] = { ...MOCK_PROSPECTOS[idx], ...datos, updated_at: new Date().toISOString() }
     return MOCK_PROSPECTOS[idx]
   }
-  const { data } = await axiosInstance.put(`/api/v1/prospectos/${id}`, datos)
+  const { data } = await axiosInstance.put(`/prospectos/${id}`, datos)
   return data
 }
 
@@ -424,7 +424,7 @@ export async function avanzarContacto(id) {
     }
     return MOCK_PROSPECTOS[idx]
   }
-  const { data } = await axiosInstance.patch(`/api/v1/prospectos/${id}/avanzar-contacto`)
+  const { data } = await axiosInstance.patch(`/prospectos/${id}/avanzar-contacto`)
   return data
 }
 
@@ -448,7 +448,7 @@ export async function cambiarEstadoProspecto(id, estado_id) {
     }
     return MOCK_PROSPECTOS[idx]
   }
-  const { data } = await axiosInstance.patch(`/api/v1/prospectos/${id}/estado`, { estado_id })
+  const { data } = await axiosInstance.patch(`/prospectos/${id}/estado`, { estado_id })
   return data
 }
 
@@ -481,7 +481,7 @@ export async function convertirProspecto(id) {
     }
     return { poliza_id: polizaIdMock, prospecto_id: Number(id) }
   }
-  const { data } = await axiosInstance.post(`/api/v1/prospectos/${id}/convertir`)
+  const { data } = await axiosInstance.post(`/prospectos/${id}/convertir`)
   return data
 }
 
@@ -525,7 +525,7 @@ export async function importarProspectos(filas) {
     })
     return { importados, omitidos: errores.length, errores }
   }
-  const { data } = await axiosInstance.post('/api/v1/prospectos/importar', { filas })
+  const { data } = await axiosInstance.post('/prospectos/importar', { filas })
   return data
 }
 
@@ -540,10 +540,22 @@ export async function descargarPlantillaImportacion() {
   if (USE_MOCK) {
     return _generarPlantillaMock()
   }
-  const resp = await axiosInstance.get('/api/v1/prospectos/plantilla-importacion', {
+
+  const resp = await axiosInstance.get('/prospectos/plantilla-importacion', {
     responseType: 'blob',
   })
-  return resp.data
+
+  const url = window.URL.createObjectURL(new Blob([resp.data]))
+
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', 'plantilla_prospectos.xlsx')
+
+  document.body.appendChild(link)
+  link.click()
+
+  link.remove()
+  window.URL.revokeObjectURL(url)
 }
 
 // Genera el xlsx de plantilla usando SheetJS (debe estar cargado en window.XLSX)
@@ -610,6 +622,7 @@ function _generarPlantillaMock() {
  */
 export function parsearArchivoProspectos(archivo) {
   return new Promise((resolve, reject) => {
+    console.log(window.XLSX)
     if (!window.XLSX) {
       reject(new Error('SheetJS no está disponible. Recarga la página e intenta de nuevo.'))
       return

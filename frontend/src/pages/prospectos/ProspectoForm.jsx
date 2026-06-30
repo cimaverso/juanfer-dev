@@ -102,18 +102,19 @@ export default function ProspectoForm() {
         // Catálogos — reutiliza obtenerTodosCatalogos de api/catalogos.js
         const cats = await obtenerTodosCatalogos()
         setCatalogos({
-          tipos_documento: cats.tipos_documento ?? [],
+          tipos_documento: cats.tiposDoc ?? [],
           aseguradoras:    cats.aseguradoras    ?? [],
           ramos:           cats.ramos           ?? [],
+          asesores:        cats.asesores        ?? [],
           // Sammy: agregar asesores al endpoint obtenerTodosCatalogos
           // o hacer un fetch separado a /api/v1/usuarios?rol=ASESOR
-          asesores: [
-            { id: 2, nombre: 'Gina López' },
-            { id: 3, nombre: 'Diego Martínez' },
-            { id: 4, nombre: 'Dilma Suárez' },
-            { id: 5, nombre: 'Julieta Mora' },
-            { id: 6, nombre: 'Lina Castro' },
-          ],
+          // asesores: [
+          //   { id: 2, nombre: 'Gina López' },
+          //   { id: 3, nombre: 'Diego Martínez' },
+          //   { id: 4, nombre: 'Dilma Suárez' },
+          //   { id: 5, nombre: 'Julieta Mora' },
+          //   { id: 6, nombre: 'Lina Castro' },
+          // ],
         })
 
         // Si es edición, carga los datos del prospecto
