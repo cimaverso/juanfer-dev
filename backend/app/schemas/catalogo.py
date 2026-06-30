@@ -54,3 +54,9 @@ class ActualizarTipoDocumento(BaseModel):
 
 class CrearTipoDocumento(BaseModel):
     nombre: str
+
+class EstadoProspectoRead(BaseModel):
+    id: int
+    nombre: str
+    color: str
+    orden: int

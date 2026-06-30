@@ -5,11 +5,12 @@ from app.models.usuarios_clientes.cliente import Cliente
 from app.schemas.cliente import ClienteCreate, ClienteUpdate
 from typing import Optional, List, Dict
 from fastapi import HTTPException
-
+from app.enums import BulkUpsertMode
 
 class ClienteService:
 
     # Utils
+
     @staticmethod
     def _clean_str(val) -> str:
         if val is None:
@@ -59,7 +60,8 @@ class ClienteService:
     @staticmethod
     def bulk_upsert_clientes(
         db: Session,
-        clientes_data: List[ClienteCreate]
+        clientes_data: List[ClienteCreate],
+        mode: BulkUpsertMode = BulkUpsertMode.COMMIT
     ) -> Dict[str, Cliente]:
 
         if not clientes_data:
@@ -118,7 +120,10 @@ class ClienteService:
         if nuevos:
             try:
                 db.bulk_save_objects(nuevos)
-                db.commit()
+                if mode == BulkUpsertMode.COMMIT:
+                    db.commit()
+                else:
+                    db.flush()
 
             except IntegrityError:
                 db.rollback()
@@ -126,7 +131,12 @@ class ClienteService:
                 for cliente in nuevos:
                     try:
                         db.add(cliente)
-                        db.commit()
+
+                        if mode == BulkUpsertMode.COMMIT:
+                            db.commit()
+                        else:
+                            db.flush()
+
                     except IntegrityError:
                         db.rollback()
                         # ya existe → ignorar
@@ -166,3 +176,8 @@ class ClienteService:
             setattr(cliente, field, value)
 
         return cliente
+    
+    @staticmethod
+    def listar_todos(db: Session):
+        stmt = select(Cliente)
+        return db.execute(stmt).scalars().all()

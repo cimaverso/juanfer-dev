@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento
+from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento, EstadoProspectoRead
 from app.services.catalogo import CatalogoService
 from app.core.security import get_current_user_data, require_admin
 
@@ -10,6 +10,10 @@ router = APIRouter(
     prefix="/catalogos",
     tags=["Catálogos Maestros"]
 )
+
+@router.get("/estados-prospecto", response_model=list[EstadoProspectoRead])
+def listar_estados(db: Session = Depends(get_db)):
+    return CatalogoService.listar_estados_prospecto(db)
 
 @router.get("/estados-poliza", response_model=list[EstadoPolizaRead])
 def get_estados_poliza(db: Session = Depends(get_db), user = Depends(get_current_user_data)):

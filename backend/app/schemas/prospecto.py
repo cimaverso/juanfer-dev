@@ -38,7 +38,7 @@ class ProspectoRead(ProspectoBase):
     updated_at: datetime
 
 class ProspectoCreate(BaseModel):
-    #cliente: ClienteCreate
+    #cliente
     nombre: str
     tipo_documento_id: int
     numero_documento: str
@@ -46,11 +46,37 @@ class ProspectoCreate(BaseModel):
     correo: str
     ocupacion: str
     ciudad: str
+
     canal_origen: str
     aseguradora_interes_id: int
     ramo_interes_id: int
     responsable_id: int
     observaciones: Optional[str]
+
+class ProspectoCreateOne(BaseModel):
+    #cliente
+    nombre: str
+    tipo_documento: str
+    numero_documento: str
+    telefono: str
+    correo: str
+    ocupacion: str
+    ciudad: str
+
+    ramo_interes: str
+    aseguradora: str
+    observaciones: Optional[str]
+
+class ProspectoCreateImport(BaseModel):
+    filas: list[ProspectoCreateOne]
+
+class ImportarError(BaseModel):
+    fila: int
+    motivo: str
+class ImportarResponse(BaseModel):
+    importados: Optional[int]
+    omitidos: Optional[int]
+    errores: Optional[list[ImportarError]]
 
 class ProspectoListResponse(BaseModel):
     items: list[ProspectoRead]

@@ -13,4 +13,4 @@ router = APIRouter(
 
 @router.get("/", response_model=list[UsuarioRead])
 def get_usuarios_activos(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
-    return UsuarioService.listar_usuarios_activos(db)
+    return UsuarioService.listar_usuarios_activos(db, user)

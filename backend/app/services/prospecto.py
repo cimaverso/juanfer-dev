@@ -6,11 +6,14 @@ from app.models.modulos_negocio.prospecto import Prospecto
 from app.models.usuarios_clientes.cliente import Cliente
 from app.services.cliente import ClienteService
 from app.services.catalogo import CatalogoService
-from app.schemas.prospecto import ProspectoCreate, CambiarEstado, ProspectoUpdate, ProspectoFiltro
+from app.schemas.prospecto import ProspectoCreate, CambiarEstado, ProspectoUpdate, ProspectoFiltro, ProspectoCreateImport
 from app.schemas.cliente import ClienteCreate, ClienteUpdate
 from app.models.catalogos.estado_prospecto import EstadoProspecto
 from datetime import timedelta, date
 from fastapi import HTTPException
+from io import BytesIO
+from openpyxl import Workbook
+from app.enums import BulkUpsertMode
 
 class ProspectoService:
 
@@ -326,13 +329,209 @@ class ProspectoService:
         db.refresh(prospecto)
 
         return prospecto
+    
 
+    @staticmethod
+    def obtener_plantilla(db: Session):
 
-# class ClienteUpdate(BaseModel):
-#     nombre_completo: Optional[str]
-#     tipo_documento_id: Optional[int]
-#     numero_documento: Optional[str]
-#     celular: Optional[str]
-#     correo: Optional[str]
-#     ocupacion: Optional[str]
-#     ciudad: Optional[str]
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Prospectos"
+
+        headers = [
+            "NOMBRE",
+            "TIPO_DOCUMENTO",
+            "NUMERO_DOCUMENTO",
+            "TELEFONO",
+            "CORREO",
+            "OCUPACION",
+            "CIUDAD",
+            "RAMO_INTERES",
+            "ASEGURADORA",
+            "OBSERVACIONES"
+        ]
+
+        ws.append(headers)
+
+        archivo = BytesIO()
+        wb.save(archivo)
+        archivo.seek(0)
+
+        return archivo
+
+    @staticmethod
+    def _prospecto_key(cliente_id, ramo_id, aseguradora_id):
+        return (cliente_id, ramo_id, aseguradora_id)
+
+    @staticmethod
+    def importar_prospectos_csv(data: ProspectoCreateImport, db: Session, user):
+
+        # ---------------------------------------
+        # 1. Precarga de catálogos
+        # ---------------------------------------
+        tipos_documentos = {
+            t.nombre.upper(): t
+            for t in CatalogoService.get_tipos_documento(db)
+        }
+
+        ramos = {
+            r.nombre.upper(): r
+            for r in CatalogoService.get_ramos(db)
+        }
+
+        aseguradoras = {
+            a.nombre.upper(): a
+            for a in CatalogoService.get_aseguradoras(db)
+        }
+
+        errores = []
+        clientes_create = []
+        filas_validas = []
+
+        # ---------------------------------------
+        # 2. Validación de filas
+        # ---------------------------------------
+        for idx, fila in enumerate(data.filas, start=2):
+
+            tipo = tipos_documentos.get(fila.tipo_documento.upper())
+            if not tipo:
+                errores.append({
+                    "fila": idx,
+                    "motivo": f"Tipo de documento '{fila.tipo_documento}' no existe."
+                })
+                continue
+
+            ramo = None
+            if fila.ramo_interes:
+                ramo = ramos.get(fila.ramo_interes.upper())
+                if not ramo:
+                    errores.append({
+                        "fila": idx,
+                        "motivo": f"Ramo '{fila.ramo_interes}' no existe."
+                    })
+                    continue
+
+            aseguradora = None
+            if fila.aseguradora:
+                aseguradora = aseguradoras.get(fila.aseguradora.upper())
+                if not aseguradora:
+                    errores.append({
+                        "fila": idx,
+                        "motivo": f"Aseguradora '{fila.aseguradora}' no existe."
+                    })
+                    continue
+
+            clientes_create.append(
+                ClienteCreate(
+                    nombre_completo=fila.nombre,
+                    tipo_documento_id=tipo.id,
+                    numero_documento=fila.numero_documento,
+                    celular=fila.telefono,
+                    correo=fila.correo,
+                    ocupacion=fila.ocupacion,
+                    ciudad=fila.ciudad,
+                    responsable_id=user.id
+                )
+            )
+
+            filas_validas.append({
+                "fila": fila,
+                "tipo": tipo,
+                "ramo": ramo,
+                "aseguradora": aseguradora,
+                "idx": idx
+            })
+
+        # ---------------------------------------
+        # 3. Upsert clientes (una sola vez)
+        # ---------------------------------------
+        clientes = ClienteService.bulk_upsert_clientes(
+            db,
+            clientes_create,
+            BulkUpsertMode.FLUSH
+        )
+
+        cliente_ids = [c.id for c in clientes.values()]
+
+        # ---------------------------------------
+        # 4. Obtener prospectos existentes activos
+        # ---------------------------------------
+        stmt = (
+            select(Prospecto)
+            .where(
+                Prospecto.cliente_id.in_(cliente_ids),
+                Prospecto.estado_id.notin_([11, 12])
+            )
+        )
+
+        existentes = {
+            ProspectoService._prospecto_key(
+                p.cliente_id,
+                p.ramo_interes_id,
+                p.aseguradora_interes_id
+            ): p
+            for p in db.execute(stmt).scalars()
+        }
+
+        # ---------------------------------------
+        # 5. Construcción de prospectos
+        # ---------------------------------------
+        prospectos = []
+        vistos_en_batch = set()  # <- nuevo: detecta duplicados dentro del mismo CSV
+
+        for item in filas_validas:
+
+            fila = item["fila"]
+            cliente = clientes[fila.numero_documento]
+
+            key = ProspectoService._prospecto_key(
+                cliente.id,
+                item["ramo"].id if item["ramo"] else None,
+                item["aseguradora"].id if item["aseguradora"] else None
+            )
+
+            # duplicado activo en BD → error
+            if key in existentes:
+                errores.append({
+                    "fila": item["idx"],
+                    "motivo": "Ya existe un prospecto activo para este cliente, ramo y aseguradora."
+                })
+                continue
+
+            # duplicado dentro del mismo archivo → error
+            if key in vistos_en_batch:
+                errores.append({
+                    "fila": item["idx"],
+                    "motivo": "Fila duplicada dentro del mismo archivo (mismo cliente, ramo y aseguradora)."
+                })
+                continue
+
+            vistos_en_batch.add(key)
+
+            prospectos.append(
+                Prospecto(
+                    cliente_id=cliente.id,
+                    canal_origen="csv",
+                    estado_id=1,
+                    responsable_id=user.id,
+                    aseguradora_interes_id=item["aseguradora"].id if item["aseguradora"] else None,
+                    ramo_interes_id=item["ramo"].id if item["ramo"] else None,
+                    observaciones=fila.observaciones
+                )
+            )
+
+        # ---------------------------------------
+        # 6. Persistencia en bulk
+        # ---------------------------------------
+        if prospectos:
+            db.bulk_save_objects(prospectos)
+            db.commit()
+
+        # ---------------------------------------
+        # 7. Resultado
+        # ---------------------------------------
+        return {
+            "importados": len(prospectos),
+            "omitidos": len(errores),
+            "errores": errores
+        }

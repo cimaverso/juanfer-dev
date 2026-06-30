@@ -311,5 +311,5 @@ class CatalogoService:
 
     @staticmethod
     def listar_estados_prospecto(db: Session):
-        stmt = select(EstadoProspecto)
+        stmt = select(EstadoProspecto).where(EstadoProspecto.activo.is_(True))
         return db.execute(stmt).scalars().all()
