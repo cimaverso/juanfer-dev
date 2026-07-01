@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 @router.get("/estados-prospecto", response_model=list[EstadoProspectoRead])
-def listar_estados(db: Session = Depends(get_db)):
+def listar_estados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return CatalogoService.listar_estados_prospecto(db)
 
 @router.get("/estados-poliza", response_model=list[EstadoPolizaRead])

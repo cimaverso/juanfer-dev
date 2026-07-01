@@ -19,6 +19,7 @@ from app.services.catalogo import CatalogoService
 from typing import Optional, List, Dict, Any
 from io import BytesIO
 from openpyxl import Workbook
+from app.enums import BulkUpsertMode
 
 class PolizaService:
 
@@ -685,7 +686,8 @@ class PolizaService:
         # -----------------------------
         clientes_map = ClienteService.bulk_upsert_clientes(
             db,
-            list(clientes_dict.values())
+            list(clientes_dict.values()),
+            BulkUpsertMode.COMMIT
         )
 
         # -----------------------------

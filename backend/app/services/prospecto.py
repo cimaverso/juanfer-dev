@@ -147,8 +147,12 @@ class ProspectoService:
         return result
     
     @staticmethod
-    def obtener_prospecto_id(id: int, db: Session):
-        stmt = select(Prospecto).where(Prospecto.id == id)
+    def obtener_prospecto_id(id: int, db: Session, user):
+        if user.rol == "ASESOR":
+            stmt = select(Prospecto).where(Prospecto.id == id and Prospecto.responsable_id == user.id)
+        else:
+            stmt = select(Prospecto).where(Prospecto.id == id)
+
         prospecto = db.execute(stmt).scalar_one_or_none()
 
         if not prospecto:
@@ -157,15 +161,21 @@ class ProspectoService:
                 detail="Prospecto no encontrado"
             )
         
+        if prospecto.responsable_id != user.id and user.rol != "ADMIN":
+            raise HTTPException(
+                status_code=403,
+                detail="El prospecto pertenece a otro asesor."
+            )
+        
         return prospecto
     
     @staticmethod
-    def avanzar_contacto(id: int, db: Session):
+    def avanzar_contacto(id: int, db: Session, user):
         # Índices del array:   0, 1, 4, 6, 8, 10, 12
         # Intentos reales:     1, 2, 3, 4, 5,  6,  7
         CADENCIA_DIAS = [0, 1, 4, 6, 8, 10, 12]
 
-        prospecto = ProspectoService.obtener_prospecto_id(id, db)
+        prospecto = ProspectoService.obtener_prospecto_id(id, db, user)
         
         # 1. Validación inicial (Paso 6.2)
         if prospecto.intentos_contacto >= 7:
@@ -173,7 +183,7 @@ class ProspectoService:
         
         # 2. Incrementar interacciones y guardar histórico de hoy
         prospecto.intentos_contacto += 1
-        prospecto.estado_id += 1
+        prospecto.estado_id += 1 # Validar para refactor, bug al cambiar de estado manualmente
         prospecto.fecha_ultimo_contacto = date.today()
         
         # Si por alguna razón es su primer contacto y no tiene fecha base, la inicializamos hoy
@@ -201,8 +211,8 @@ class ProspectoService:
             raise HTTPException(status_code=422, detail=f"Error al procesar la transacción: {str(e)}")
         
     @staticmethod
-    def cambiar_estado_prospecto(id_prospecto: int, nuevo_estado: CambiarEstado, db: Session):
-        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db)
+    def cambiar_estado_prospecto(id_prospecto: int, nuevo_estado: CambiarEstado, db: Session, user):
+        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db, user)
 
         if not prospecto:
             raise HTTPException(status_code=400, detail="Prospecto no encontrado")
@@ -231,7 +241,7 @@ class ProspectoService:
 
     @staticmethod
     def convertir_prospecto_poliza(id_prospecto: int, db: Session, user):
-        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db)
+        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db, user)
 
         if not prospecto:
             raise HTTPException(
@@ -255,8 +265,8 @@ class ProspectoService:
     
 
     @staticmethod
-    def actualizar_prospecto_poliza(prospecto_id: int, poliza_id: int, db: Session):
-        prospecto = ProspectoService.obtener_prospecto_id(prospecto_id, db)
+    def actualizar_prospecto_poliza(prospecto_id: int, poliza_id: int, db: Session, user):
+        prospecto = ProspectoService.obtener_prospecto_id(prospecto_id, db, user)
 
         if not prospecto:
             raise HTTPException(
@@ -272,7 +282,7 @@ class ProspectoService:
 
     @staticmethod
     def editar_prospecto(db: Session, id_prospecto: int, data: ProspectoUpdate, user):
-        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db)
+        prospecto = ProspectoService.obtener_prospecto_id(id_prospecto, db, user)
         id_cliente = prospecto.cliente_id
 
         if prospecto.responsable_id != user.id and user.rol != "ADMIN":
