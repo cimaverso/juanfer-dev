@@ -94,7 +94,7 @@ class PolizaService:
         }
     
     @staticmethod
-    def crear_poliza(poliza_data: PolizaCreate, db: Session):
+    def crear_poliza(poliza_data: PolizaCreate, db: Session, user):
         tipo_doc = CatalogoService.get_id_tipo_doc(poliza_data.tipo_documento, db)
 
         if not tipo_doc:
@@ -134,7 +134,7 @@ class PolizaService:
             db.flush()
 
             if poliza_data.prospecto_id:
-                ProspectoService.actualizar_prospecto_poliza(poliza_data.prospecto_id, nueva_poliza.id, db)
+                ProspectoService.actualizar_prospecto_poliza(poliza_data.prospecto_id, nueva_poliza.id, db, user)
 
             db.commit()
             db.refresh(nueva_poliza)

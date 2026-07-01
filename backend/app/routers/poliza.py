@@ -25,7 +25,7 @@ def listar_polizas(
 
 @router.post("/", response_model=PolizaRead)
 def crear_poliza(poliza: PolizaCreate, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
-    poliza = PolizaService.crear_poliza(poliza, db)
+    poliza = PolizaService.crear_poliza(poliza, db, user)
 
     if poliza is None:
         raise HTTPException(

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.cliente import ClienteRead, ClienteCreate
+from app.schemas.cliente import ClienteRead, ClienteCreate, ClienteProspectoRead
 from app.services.cliente import ClienteService
 from app.core.security import get_current_user_data
 
@@ -26,3 +26,7 @@ def registrar_cliente(data: ClienteCreate, db: Session = Depends(get_db), user =
         raise HTTPException(status_code=409, detail="El cliente ya se encuentra registrado")
     
     return cliente
+
+@router.get("/", response_model=list[ClienteProspectoRead])
+def get_all(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
+    return ClienteService.listar_todos(db)

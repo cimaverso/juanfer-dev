@@ -181,3 +181,8 @@ class ClienteService:
     def listar_todos(db: Session):
         stmt = select(Cliente)
         return db.execute(stmt).scalars().all()
+    
+    # @staticmethod
+    # def listar_clientes(db: Session, user):
+    #     if user.rol == "ADMIN":
+    #         stmt = select(Cliente)
