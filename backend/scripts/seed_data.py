@@ -1,6 +1,12 @@
-cd from sqlalchemy import text
+from sqlalchemy import text
 from app.core.db import SessionLocal
 from app.core.security import get_password_hash
+from app.models.formularios.constantes import (
+    CatalogoTipoCodigos,
+    FormularioEstadoCodigos,
+    PreguntaTipoCodigos,
+    RespuestaEstadoCodigos,
+)
 
 
 def seed():
@@ -83,6 +89,89 @@ def seed():
                 ('041', 'SOAT')
                 ON CONFLICT (codigo) DO NOTHING;
             """))
+
+            # ─────────────────────────────
+            # CATÁLOGOS DE FORMULARIOS DINÁMICOS
+            # (catalogo_tipo / catalogo_valor genéricos)
+            # ─────────────────────────────
+
+            # 1) catalogo_tipo: una fila por "familia" de catálogo.
+            #    Los codigo salen de CatalogoTipoCodigos para que nunca queden
+            #    desincronizados de lo que el código de negocio espera encontrar.
+            db.execute(
+                text("""
+                    INSERT INTO catalogo_tipo (codigo, nombre, descripcion)
+                    VALUES (:codigo, :nombre, :descripcion)
+                    ON CONFLICT (codigo) DO NOTHING;
+                """),
+                [
+                    {
+                        "codigo": CatalogoTipoCodigos.FORMULARIO_ESTADO,
+                        "nombre": "Estado de formulario",
+                        "descripcion": "Estados posibles de un formulario dinámico",
+                    },
+                    {
+                        "codigo": CatalogoTipoCodigos.FORMULARIO_PREGUNTA_TIPO,
+                        "nombre": "Tipo de pregunta",
+                        "descripcion": "Tipos de pregunta soportados por el motor de formularios",
+                    },
+                    {
+                        "codigo": CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO,
+                        "nombre": "Estado de respuesta",
+                        "descripcion": "Estados posibles de una respuesta de formulario",
+                    },
+                ]
+            )
+
+            # 2) Recuperamos los id recién insertados (o ya existentes, si el
+            #    seed corre más de una vez) para poder referenciarlos en
+            #    catalogo_valor.
+            formulario_estado_tipo_id = db.execute(
+                text("SELECT id FROM catalogo_tipo WHERE codigo = :codigo"),
+                {"codigo": CatalogoTipoCodigos.FORMULARIO_ESTADO}
+            ).scalar()
+
+            formulario_pregunta_tipo_id = db.execute(
+                text("SELECT id FROM catalogo_tipo WHERE codigo = :codigo"),
+                {"codigo": CatalogoTipoCodigos.FORMULARIO_PREGUNTA_TIPO}
+            ).scalar()
+
+            formulario_respuesta_estado_tipo_id = db.execute(
+                text("SELECT id FROM catalogo_tipo WHERE codigo = :codigo"),
+                {"codigo": CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO}
+            ).scalar()
+
+            # 3) catalogo_valor: los valores concretos. Estos SÍ son
+            #    editables por el admin desde la UI después (agregar,
+            #    renombrar, reordenar, desactivar) sin volver a correr este
+            #    seed ni hacer deploy.
+            db.execute(
+                text("""
+                    INSERT INTO catalogo_valor (catalogo_tipo_id, codigo, nombre, orden)
+                    VALUES (:tipo_id, :codigo, :nombre, :orden)
+                    ON CONFLICT (catalogo_tipo_id, codigo) DO NOTHING;
+                """),
+                [
+                    # --- formulario_estado ---
+                    {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.BORRADOR, "nombre": "Borrador", "orden": 1},
+                    {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.ACTIVO, "nombre": "Activo", "orden": 2},
+                    {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.ARCHIVADO, "nombre": "Archivado", "orden": 3},
+
+                    # --- formulario_pregunta_tipo ---
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.TEXTO, "nombre": "Texto", "orden": 1},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.NUMERO, "nombre": "Número", "orden": 2},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.EMAIL, "nombre": "Email", "orden": 3},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.TELEFONO, "nombre": "Teléfono", "orden": 4},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.FECHA, "nombre": "Fecha", "orden": 5},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.OPCION, "nombre": "Opción múltiple", "orden": 6},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.NPS, "nombre": "NPS", "orden": 7},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.SECCION, "nombre": "Sección", "orden": 8},
+
+                    # --- formulario_respuesta_estado ---
+                    {"tipo_id": formulario_respuesta_estado_tipo_id, "codigo": RespuestaEstadoCodigos.EN_PROGRESO, "nombre": "En progreso", "orden": 1},
+                    {"tipo_id": formulario_respuesta_estado_tipo_id, "codigo": RespuestaEstadoCodigos.COMPLETADA, "nombre": "Completada", "orden": 2},
+                ]
+            )
 
             # ─────────────────────────────
             # ROLES

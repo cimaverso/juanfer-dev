@@ -440,7 +440,7 @@ class ProspectoService:
                     correo=fila.correo,
                     ocupacion=fila.ocupacion,
                     ciudad=fila.ciudad,
-                    responsable_id=user.id
+                    responsable_id=user.id or fila.res
                 )
             )
 
