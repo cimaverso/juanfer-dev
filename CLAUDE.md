@@ -35,7 +35,7 @@
 
 ## Entorno
 - Windows. Shell de Claude Code: **Git Bash** (`C:\Program Files\Git\bin\bash.exe`), NO el `bash` de WSL. Usar `python`, no `python3`. Venv: `.venv/Scripts`.
-- Postgres corre en Docker Desktop (contenedor `juanfer_db`; pgAdmin aparte). No hay `psql` en Windows: usar `docker exec juanfer_db psql ...` o pgAdmin. Si Docker Desktop está apagado, los comandos de DB fallan.
+- Postgres corre en Docker Desktop: contenedor `juanfer_postgres` (puerto 5433, base `juanfer_db`, usuario `juanferseg`); pgAdmin aparte. No hay `psql` en Windows: usar `docker exec juanfer_postgres psql -U juanferseg -d juanfer_db` o pgAdmin. Los contenedores `juanfer_*` del compose están detenidos y no se usan en desarrollo. Si Docker Desktop está apagado, los comandos de DB fallan.
 - Fines de línea: `core.autocrlf=true`, sin `.gitattributes` (ver DEUDA).
 
 ## Stack
@@ -45,7 +45,7 @@ FastAPI (Python ≥3.12, `uv`) · SQLAlchemy 2 **síncrono** + `psycopg` 3 + Ale
 - Trabajo directo en `desarrollo` (único desarrollador). `main` existe; no se toca sin pedirlo.
 - Flujo actual: local con comandos nativos de cada stack. Despliegue (compose, nginx, Dokploy): [PENDIENTE], se aborda cuando todo esté listo y testeado. Nunca editar en el servidor.
 - Todo cambio de modelo SQLAlchemy va con su migración Alembic en el MISMO commit.
-- **Migraciones intocables:** las 4 anteriores a la de formularios (`1862ff089733`, `871cc6d526bd`, `07f706ae928e`, `0122a2ce8ea1`); solo se agregan nuevas. La de formularios (`98500168c7d6`, head) puede reescribirse con `downgrade` y edición solo bajo D-008: respaldar antes con `pg_dump` y confirmar que no está aplicada en otro entorno. Revisar a mano toda migración autogenerada y probar `upgrade head` y `downgrade -1` en una base descartable.
+- **Migraciones intocables:** las 4 anteriores a la de formularios (`1862ff089733`, `871cc6d526bd`, `07f706ae928e`, `0122a2ce8ea1`); solo se agregan nuevas. La de formularios (`98500168c7d6`, head) puede reescribirse con `downgrade` y edición solo bajo D-008: respaldar antes con `pg_dump` (hoy no existe otro entorno donde esté aplicada). Revisar a mano toda migración autogenerada y probar `upgrade head` y `downgrade -1` en una base descartable.
 - Commits: `Tipo(Módulo): descripción` (ej. `Feat(Formulario): ...`, `Fix(Poliza): ...`).
 - No mezclar gestores: backend `uv`, frontend `npm`.
 - Secretos: nunca en el repo; solo variables de entorno. Nunca imprimir valores de `.env`; comparar solo nombres.

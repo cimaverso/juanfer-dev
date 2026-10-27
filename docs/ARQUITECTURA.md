@@ -74,7 +74,7 @@ Dónde guarda el front el token, y si el JWT expira: [PENDIENTE].
 - **Rutas públicas hoy:** `/health` y `/api/v1/auth/login`.
 
 ## 7. Despliegue
-[PENDIENTE], diferido a propósito (D-005). El repo trae `docker-compose.yml` con `db`, `backend`, `frontend` y `nginx`, y despliegue con Dokploy. Los hallazgos están en DEUDA (DT-001 a DT-005 y DT-010).
+[PENDIENTE], diferido a propósito (D-005). El repo trae `docker-compose.yml` con `db`, `backend`, `frontend` y `nginx`, y se prevé desplegar con Dokploy (aún no conectado al repo; no se ha hecho ningún despliegue). Los hallazgos están en DEUDA (DT-001 a DT-005 y DT-010).
 
 ## 8. Convenciones
 - **Backend:** `app/{core,db,models,routers,schemas,services,utils}`. Todas las rutas bajo `/api/v1`. Los endpoints son `def` síncronos con `Session = Depends(get_db)`. Hay un solo `async def` en los routers (ver DT-009). Un archivo de servicio ya llega a 953 líneas (`services/poliza.py`).

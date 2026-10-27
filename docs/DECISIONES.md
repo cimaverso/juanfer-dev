@@ -34,7 +34,7 @@ Solo decisiones difíciles de revertir o no obvias. Formato corto.
 - **Estado:** vigente
 
 ## D-005 — Desarrollo local primero, despliegue después (2026-10-27)
-- **Contexto:** el repo tiene `docker-compose.yml`, nginx y despliegue con Dokploy, pero hay hallazgos pendientes (DT-001 a DT-005).
+- **Contexto:** el repo tiene `docker-compose.yml` y nginx; se prevé desplegar con Dokploy, aún no conectado y sin ningún despliegue hecho. Hay hallazgos pendientes (DT-001 a DT-005).
 - **Decisión:** desarrollar y probar en local con comandos nativos de cada stack (`uv`, `alembic`, `npm`). El despliegue con compose, nginx y Dokploy se aborda cuando todo esté listo y testeado.
 - **Alternativas descartadas:** validar todo desde ya dentro de Docker Compose: reproduce producción, pero obliga a arreglar antes esos hallazgos.
 - **Consecuencias / costo asumido:** el compose no se ejecuta durante el desarrollo, así que puede divergir del código sin que se note hasta el despliegue.
@@ -62,5 +62,5 @@ Solo decisiones difíciles de revertir o no obvias. Formato corto.
 - **Decisión:** en lugar de apilar una migración correctiva, hacer `downgrade` de esa migración, editarla y volver a aplicarla, para dejar una única migración de formularios. Las 4 anteriores siguen intocables. Antes: diagnosticar el error real (traceback), respaldar la DB con `pg_dump` y probar el ciclo en una base descartable.
 - **Alternativas descartadas:** migración nueva encima que repare el esquema: segura en cualquier entorno, pero deja una migración defectuosa y otra que la repara.
 - **Consecuencias / costo asumido:** el `downgrade` borra las tablas de formularios y sus datos; si el `downgrade()` nunca se probó, puede fallar. Que el commit ya esté en el repo no lo impide: el cambio entra como un commit normal, sin reescribir historia ni forzar push.
-- **Revisar si:** algún entorno distinto de la DB local (por ejemplo un Dokploy de `desarrollo`) tiene aplicada `98500168c7d6`; ahí habría que hacer también el `downgrade`, o pasar a la migración nueva. Verificación: [PENDIENTE].
-- **Estado:** vigente, condicionada a esa verificación
+- **Revisar si:** la migración llega a aplicarse fuera de la DB local (hoy no existe otro entorno ni se ha hecho un despliegue, confirmado por el usuario el 2026-10-27); desde ese momento, pasar a la migración nueva.
+- **Estado:** vigente

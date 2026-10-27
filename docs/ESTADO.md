@@ -7,14 +7,14 @@ Reproducir el error de runtime y pegar el traceback completo: encender Docker De
 ## Última sesión
 - Hecho: estructura de gobierno del proyecto. Entrevista completa (Fase 0), propuesta aprobada (Fase 1) y creados `CLAUDE.md`, `docs/PROPOSITO.md`, `docs/REQUISITOS.md`, `docs/ROADMAP.md`, `docs/DEUDA.md`, `docs/DECISIONES.md`, `docs/ARQUITECTURA.md`, `docs/GUIA.md`, `backend/.env.example`, `frontend/.env.example`, `.claude/commands/cierre.md` y este archivo. No se escribió código de producto.
 - Verificado con: lectura del output de los comandos que ejecutó el usuario; sin tests ni ejecución del sistema.
-- Commits: sin commit.
+- Commits: `Docs(Gobierno): Agregar contrato de trabajo, documentos vivos y comando /cierre` en `desarrollo`, ya con push (hash: [PENDIENTE]).
 
 ## Bloqueos / esperando mi respuesta
 - Traceback del error de runtime (siguiente paso).
-- Copiar al repo los archivos de la lista de abajo y hacer el primer commit: hoy no hay nada commiteado.
+- Segundo commit con las correcciones de despliegue (Dokploy aún no conectado) y de la condición de D-008.
 - Probar `/cierre` una vez en seco antes de confiar en él.
 - Abiertas, de `docs/REQUISITOS.md`: estructura real de los 17 formularios, si una respuesta se vincula a un prospecto o cliente o puede ser anónima, qué catálogos edita el panel, formato de importación Excel/JSON, texto de autorización de datos (habeas data), umbral del límite de envíos, dominio de correo para Resend, anchos de prueba para responsive.
-- Condición de D-008, sin verificar: ¿algún entorno distinto de la DB local (por ejemplo un Dokploy de `desarrollo`) tiene aplicada la migración `98500168c7d6`? Datos en la DB local: el usuario recuerda haber ejecutado el seed, que carga los catálogos de formularios (sin contar filas). Si además hay formularios o respuestas cargados, como los 17: [PENDIENTE]. Responder antes de hacer `downgrade`.
+- Condición de D-008 resuelta: no hay otro entorno ni despliegue hecho (confirmado por el usuario). Pendiente antes del `downgrade`: `pg_dump` y saber si hay formularios o respuestas cargados (los 17) en la DB local: [PENDIENTE]. El usuario recuerda haber ejecutado el seed, que carga los catálogos de formularios (sin contar filas).
 
 ## Contexto que se pierde si no se escribe
 - **Hipótesis sin confirmar:** que el error de runtime lo causa el modelo de datos. Solo se sabe que el server levanta y falla al ejecutar, tras la última migración. El usuario cree que rediseñar el modelo lo estabiliza; se verifica con el traceback.
@@ -27,11 +27,11 @@ Reproducir el error de runtime y pegar el traceback completo: encender Docker De
 - **Front en local:** `vite.config.js` no define proxy; el front llama al backend directo (`VITE_API_URL`, por defecto `http://localhost:8000`). Al restringir CORS (DT-011) hay que permitir el origen del servidor de desarrollo de Vite. Bootstrap Icons se carga por CDN (jsdelivr, v1.11.3) desde `index.html`; sin internet no hay iconos. Cómo se cargan DM Sans e IBM Plex Sans: [PENDIENTE].
 - **Front:** `frontend/src/pages/admin/` ya contiene `AdminCatalogos.jsx` (ruta `/admin/catalogos`, solo ADMIN; su alcance frente a RF-012 no se ha leído); `src/dashboard/` está vacía. `global.css` tiene los tokens. El mecanismo del modo oscuro (`ThemeContext.jsx`) no está confirmado. Bootstrap Icons no está en `package.json`; se carga por otra vía sin verificar.
 - **Despliegue:** diferido a propósito. nginx recorta el prefijo (`/api/x` llega al backend como `/x`). Los hallazgos están en `DEUDA.md` (DT-001 a DT-005).
-- **Migraciones:** 5 archivos en cadena lineal (head `98500168c7d6`, la de formularios). Las 4 anteriores son intocables; la de formularios se reescribe con `downgrade` bajo D-008, tras el traceback, un `pg_dump` y la verificación de otros entornos.
+- **Migraciones:** 5 archivos en cadena lineal (head `98500168c7d6`, la de formularios). Las 4 anteriores son intocables; la de formularios se reescribe con `downgrade` bajo D-008, tras el traceback y un `pg_dump`.
 - **Consola:** PowerShell 5.1 muestra mal los acentos de archivos UTF-8 (`Ã¡`); es de la consola, no de los archivos.
 
 ## Archivos tocados (no confirmados en commit)
-Creados en el workspace de Claude, aún por copiar a la raíz del repo y commitear:
+Subidos en el primer commit. Las correcciones de CLAUDE.md, ARQUITECTURA, DECISIONES, DEUDA y este archivo esperan el segundo commit:
 - `CLAUDE.md`
 - `docs/PROPOSITO.md`
 - `docs/REQUISITOS.md`

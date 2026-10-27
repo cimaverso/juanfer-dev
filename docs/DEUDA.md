@@ -3,7 +3,7 @@ Una deuda no es "algo feo": es un atajo con costo e interés conocidos.
 
 | ID | Tipo | Descripción | Impacto si se ignora | Costo de pagarla (S/M/L) | Disparador de pago | Estado |
 |---|---|---|---|---|---|---|
-| DT-001 | infra | `docker-compose.yml` fuerza `DATABASE_URL` con `postgresql+asyncpg://`, pero el código es síncrono y `asyncpg` no está en `pyproject.toml`. Debe ser `postgresql+psycopg://`. (Inferencia: Dokploy podría sobrescribir la variable.) | El backend en contenedor no arranca. | S | Hito "Despliegue a producción" | abierta |
+| DT-001 | infra | `docker-compose.yml` fuerza `DATABASE_URL` con `postgresql+asyncpg://`, pero el código es síncrono y `asyncpg` no está en `pyproject.toml`. Debe ser `postgresql+psycopg://`. | El backend en contenedor no arranca. | S | Hito "Despliegue a producción" | abierta |
 | DT-002 | seguridad | El servicio `db` del compose publica `5434:5432` al host. | En el VPS expone la base de datos. | S | Hito "Despliegue a producción" | abierta |
 | DT-003 | infra | Credenciales de DB en dos lugares: el compose interpola `${DB_USER}`, `${DB_PASSWORD}` y `${DB_NAME}` desde la raíz, y el backend lee `backend/.env`. No hay `.env` en la raíz. | Desincronización y arranque con variables vacías. | S | Hito "Despliegue a producción" | abierta |
 | DT-004 | infra | nginx sin `client_max_body_size` (1 MB por defecto). (Inferencia: depende de qué proxy quede delante.) | Las importaciones masivas grandes fallan con 413. | S | Hito "Despliegue a producción" | abierta |
