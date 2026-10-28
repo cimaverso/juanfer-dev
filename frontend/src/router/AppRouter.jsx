@@ -26,6 +26,9 @@ const ProspectoDetalle = lazy(() => import('../pages/prospectos/ProspectoDetalle
 // Admin (nuevo — solo ADMIN)
 const AdminConfiguracion = lazy(() => import('../pages/admin/AdminConfiguracion.jsx'))
 
+// Mi perfil (nuevo — ADMIN y ASESOR, cada uno ve/edita el suyo)
+const MiPerfil           = lazy(() => import('../pages/perfil/MiPerfil.jsx'))
+
 // Formularios dinámicos (nuevo — admin solo ADMIN, vista pública sin auth)
 const Formularios         = lazy(() => import('../pages/formularios/Formularios.jsx'))
 const FormularioBuilder   = lazy(() => import('../pages/formularios/FormularioBuilder.jsx'))
@@ -81,6 +84,9 @@ export default function AppRouter() {
               <Route path="/prospectos/nuevo"        element={<ProspectoForm />} />
               <Route path="/prospectos/:id"          element={<ProspectoDetalle />} />
               <Route path="/prospectos/:id/editar"   element={<ProspectoForm />} />
+
+              {/* Mi perfil — cualquier rol */}
+              <Route path="/mi-perfil" element={<MiPerfil />} />
 
               {/* M2 — Cotizaciones (próxima fase) */}
               {/* <Route path="/cotizaciones" element={<Cotizaciones />} /> */}

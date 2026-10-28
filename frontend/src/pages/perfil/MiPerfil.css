@@ -1,0 +1,214 @@
+/* ============================================================
+   src/pages/perfil/MiPerfil.css
+   Solo tokens de styles/global.css. Prefijo perfil- para no
+   chocar con otras páginas.
+   ============================================================ */
+
+.perfil-header__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-texto);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.perfil-header__sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* ── Pestañas ── */
+.perfil-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.perfil-tabs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-superficie);
+  color: var(--color-texto-sub);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.perfil-tabs__item:hover {
+  background-color: var(--color-fondo);
+}
+
+.perfil-tabs__item--activo,
+.perfil-tabs__item--activo:hover {
+  background-color: var(--color-azul);
+  border-color: var(--color-azul);
+  color: var(--color-texto-inv);
+}
+
+/* ── Secciones ── */
+.perfil-seccion {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.perfil-seccion__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  color: var(--color-texto);
+}
+
+.perfil-seccion__header h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  margin: 0;
+}
+
+.perfil-sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* ── Información básica ── */
+.perfil-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.perfil-campo:last-child {
+  border-bottom: none;
+}
+
+.perfil-campo__label {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.perfil-campo__valor {
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+}
+
+/* ── Horario ── */
+.perfil-horario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.perfil-horario__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.perfil-horario__fila--inactiva .perfil-horario__dia {
+  color: var(--color-texto-sub);
+}
+
+.perfil-horario__dia {
+  width: 100px;
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+  flex-shrink: 0;
+}
+
+.perfil-horario__hora {
+  height: 34px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+.perfil-horario__hora:disabled {
+  opacity: 0.5;
+}
+
+.perfil-horario__separador {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+}
+
+.perfil-horario__switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-borde);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast);
+}
+
+.perfil-horario__switch--on {
+  background-color: var(--color-azul);
+}
+
+.perfil-horario__switch-bola {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-blanco);
+  transition: transform var(--transition-fast);
+}
+
+.perfil-horario__switch--on .perfil-horario__switch-bola {
+  transform: translateX(16px);
+}
+
+.perfil-btn-primario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--color-azul);
+  color: var(--color-texto-inv);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.perfil-btn-primario:hover {
+  background-color: var(--color-azul-hover);
+}
+
+/* ── Responsive ── */
+@media (max-width: 560px) {
+  .perfil-horario__fila {
+    flex-wrap: wrap;
+  }
+
+  .perfil-horario__dia {
+    width: 100%;
+  }
+}

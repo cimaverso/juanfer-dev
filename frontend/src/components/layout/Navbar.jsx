@@ -3,7 +3,8 @@
 // Barra superior: título, alertas, toggle de tema, usuario
 // ============================================================
 
-import { useLocation } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import './Navbar.css'
@@ -34,8 +35,24 @@ function getSubtitulo(pathname) {
 
 export default function Navbar({ onToggleSidebar, colapsado }) {
   const { pathname } = useLocation()
-  const { usuario } = useAuth()
+  const navigate = useNavigate()
+  const { usuario, logout } = useAuth()
   const { esDark, toggleTema } = useTheme()
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickFuera(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(false)
+    }
+    document.addEventListener('mousedown', handleClickFuera)
+    return () => document.removeEventListener('mousedown', handleClickFuera)
+  }, [])
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
 
   const titulo    = getTitulo(pathname)
   const subtitulo = getSubtitulo(pathname)
@@ -91,17 +108,38 @@ export default function Navbar({ onToggleSidebar, colapsado }) {
         {/* Separador */}
         <div className="navbar__sep" />
 
-        {/* Usuario compacto */}
-        <div className="navbar__usuario">
-          <div className="navbar__avatar">
-            {usuario?.iniciales || '??'}
-          </div>
-          <div className="navbar__usuario-info">
-            <span className="navbar__usuario-nombre">{usuario?.nombre}</span>
-            <span className="navbar__usuario-rol">
-              {usuario?.rol === 'ADMIN' ? 'Administrador' : 'Asesor'}
-            </span>
-          </div>
+        {/* Usuario compacto + menú */}
+        <div className="navbar__usuario-wrap" ref={menuRef}>
+          <button className="navbar__usuario" onClick={() => setMenuAbierto((v) => !v)}>
+            <div className="navbar__avatar">
+              {usuario?.iniciales || '??'}
+            </div>
+            <div className="navbar__usuario-info">
+              <span className="navbar__usuario-nombre">{usuario?.nombre}</span>
+              <span className="navbar__usuario-rol">
+                {usuario?.rol === 'ADMIN' ? 'Administrador' : 'Asesor'}
+              </span>
+            </div>
+            <i className={`bi bi-chevron-down navbar__usuario-flecha ${menuAbierto ? 'navbar__usuario-flecha--abierta' : ''}`} />
+          </button>
+
+          {menuAbierto && (
+            <div className="navbar__menu">
+              <button
+                className="navbar__menu-item"
+                onClick={() => { setMenuAbierto(false); navigate('/mi-perfil') }}
+              >
+                <i className="bi bi-person-circle" /> Mi perfil
+              </button>
+              <div className="navbar__menu-divider" />
+              <button
+                className="navbar__menu-item navbar__menu-item--danger"
+                onClick={handleLogout}
+              >
+                <i className="bi bi-box-arrow-left" /> Cerrar sesión
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
