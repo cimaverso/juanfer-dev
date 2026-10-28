@@ -62,6 +62,29 @@ class EstadoProspectoRead(BaseModel):
     orden: int
 
 
+class CrearEstadoProspecto(BaseModel):
+    nombre: str
+    color: str
+    orden: Optional[int] = None
+
+
+class ActualizarEstadoProspecto(BaseModel):
+    nombre: Optional[str] = None
+    color: Optional[str] = None
+    orden: Optional[int] = None
+    activo: Optional[bool] = None
+
+
+class EstadoProspectoAdminRead(BaseModel):
+    id: int
+    nombre: str
+    color: str
+    orden: int
+    activo: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ── Catálogo genérico (catalogo_tipo / catalogo_valor) ──────────────────
 # Lo usa hoy el módulo de formularios (formulario_estado,
 # formulario_pregunta_tipo, formulario_respuesta_estado); cualquier

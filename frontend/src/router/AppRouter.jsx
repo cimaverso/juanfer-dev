@@ -26,6 +26,12 @@ const ProspectoDetalle = lazy(() => import('../pages/prospectos/ProspectoDetalle
 // Admin (nuevo — solo ADMIN)
 const AdminCatalogos   = lazy(() => import('../pages/admin/AdminCatalogos.jsx'))
 
+// Formularios dinámicos (nuevo — admin solo ADMIN, vista pública sin auth)
+const Formularios         = lazy(() => import('../pages/formularios/Formularios.jsx'))
+const FormularioBuilder   = lazy(() => import('../pages/formularios/FormularioBuilder.jsx'))
+const FormularioRespuestas = lazy(() => import('../pages/formularios/FormularioRespuestas.jsx'))
+const FormularioPublico    = lazy(() => import('../pages/publico/FormularioPublico.jsx'))
+
 // Módulos futuros — descomenta cuando estén listos
 // const Cotizaciones  = lazy(() => import('../pages/cotizaciones/Cotizaciones.jsx'))
 // const Cancelaciones = lazy(() => import('../pages/cancelaciones/Cancelaciones.jsx'))
@@ -52,8 +58,9 @@ export default function AppRouter() {
       <Suspense fallback={<PaginaCargando />}>
         <Routes>
 
-          {/* ── Ruta pública ────────────────────────────── */}
+          {/* ── Rutas públicas (sin login) ──────────────── */}
           <Route path="/login" element={<Login />} />
+          <Route path="/f/:token" element={<FormularioPublico />} />
 
           {/* ── Rutas protegidas (cualquier rol) ────────── */}
           <Route element={<ProtectedRoute />}>
@@ -91,6 +98,9 @@ export default function AppRouter() {
           <Route element={<ProtectedRoute rolRequerido="ADMIN" />}>
             <Route element={<AppLayout />}>
               <Route path="/admin/catalogos" element={<AdminCatalogos />} />
+              <Route path="/admin/formularios" element={<Formularios />} />
+              <Route path="/admin/formularios/:id/editar" element={<FormularioBuilder />} />
+              <Route path="/admin/formularios/:id/respuestas" element={<FormularioRespuestas />} />
             </Route>
           </Route>
 

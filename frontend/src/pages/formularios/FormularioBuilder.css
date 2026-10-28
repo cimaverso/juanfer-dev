@@ -1,0 +1,533 @@
+/* ============================================================
+   src/pages/formularios/FormularioBuilder.css
+   Solo tokens de styles/global.css. Reusa botones/badges/tabla
+   de Formularios.css (mismo módulo, prefijo form-/formularios__).
+   ============================================================ */
+
+.formbuilder__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.formbuilder__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.formbuilder__volver:hover { color: var(--color-azul); }
+
+.formbuilder__header-campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formbuilder__titulo-input {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-texto);
+  border: none;
+  background: none;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid transparent;
+}
+
+.formbuilder__titulo-input:focus {
+  outline: none;
+  border-bottom-color: var(--color-azul);
+}
+
+.formbuilder__descripcion-input {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  border: none;
+  background: none;
+  resize: vertical;
+  padding: var(--space-1) 0;
+}
+
+.formbuilder__descripcion-input:focus {
+  outline: none;
+  background-color: var(--color-fondo);
+}
+
+.formbuilder__header-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Secciones (grupos / preguntas) ── */
+.formbuilder__seccion {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.formbuilder__seccion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.formbuilder__seccion-header h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--color-texto);
+  margin: 0;
+}
+
+.formbuilder__vacio {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+/* ── Grupos ── */
+.formbuilder__grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formbuilder__grupo-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+}
+
+.formbuilder__grupo-campos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formbuilder__grupo-titulo-input {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+  border: 1px solid transparent;
+  background: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.formbuilder__grupo-titulo-input:focus {
+  outline: none;
+  border-color: var(--color-azul);
+  background-color: var(--color-superficie);
+}
+
+.formbuilder__grupo-reps {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.formbuilder__grupo-reps label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+}
+
+.formbuilder__grupo-reps input {
+  width: 100px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+/* ── Lista de preguntas (fuera de .formbuilder__seccion, flujo propio) ── */
+.formbuilder__preguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.formbuilder__agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  border: 1.5px dashed var(--color-borde-dark);
+  border-radius: var(--radius-lg);
+  background: none;
+  color: var(--color-texto-sub);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.formbuilder__agregar:hover {
+  border-color: var(--color-azul);
+  color: var(--color-azul);
+}
+
+.formbuilder__agregar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Tarjeta de pregunta ── */
+.formbuilder__pcard {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-left: 3px solid var(--color-azul);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.formbuilder__pcard-barra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.formbuilder__pcard-orden {
+  display: flex;
+  flex-direction: column;
+}
+
+.formbuilder__pcard-mover {
+  width: 22px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--color-texto-light);
+  cursor: pointer;
+  font-size: var(--text-xs);
+}
+
+.formbuilder__pcard-mover:hover:not(:disabled) { color: var(--color-azul); }
+.formbuilder__pcard-mover:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.formbuilder__pcard-icono {
+  color: var(--color-texto-light);
+}
+
+.formbuilder__pcard-tipo {
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-fondo);
+  color: var(--color-texto-sub);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+}
+
+.formbuilder__pcard-tipo:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.formbuilder__pcard-candado {
+  color: var(--color-texto-light);
+  font-size: var(--text-xs);
+}
+
+.formbuilder__pcard-acciones {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-1);
+}
+
+.formbuilder__pcard-titulo {
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--color-texto);
+  border: none;
+  border-bottom: 1px solid var(--color-borde);
+  background: none;
+  padding: var(--space-2) 0;
+}
+
+.formbuilder__pcard-titulo:focus {
+  outline: none;
+  border-bottom-color: var(--color-azul);
+}
+
+.formbuilder__pcard-subtitulo {
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  border: none;
+  background: none;
+  padding: var(--space-1) 0 var(--space-2) 0;
+}
+
+.formbuilder__pcard-subtitulo:focus { outline: none; }
+
+/* ── Choices (tipo "opción") ── */
+.formbuilder__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.formbuilder__choice-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-texto-light);
+}
+
+.formbuilder__choice-fila--bloqueada {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-sm);
+  color: var(--color-texto-sub);
+  font-size: var(--text-sm);
+}
+
+.formbuilder__choices-sincronizadas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.formbuilder__choice-fila input {
+  flex: 1;
+  height: 34px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-bottom: 1px solid var(--color-borde);
+  background: none;
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+.formbuilder__choice-fila input:focus {
+  outline: none;
+  border-bottom-color: var(--color-azul);
+}
+
+.formbuilder__choice-agregar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--color-azul);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.formbuilder__choice-agregar:hover { text-decoration: underline; }
+
+/* ── Saltos condicionales (branching) ── */
+.formbuilder__branching {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-borde-dark);
+}
+
+.formbuilder__branching-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-texto-sub);
+}
+
+.formbuilder__branching-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+}
+
+.formbuilder__branching-fila select {
+  flex: 1 1 200px;
+  height: 34px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+/* ── Preview para tipos distintos de "opción" ── */
+.formbuilder__preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-md);
+  color: var(--color-texto-light);
+  font-size: var(--text-sm);
+  width: fit-content;
+}
+
+/* ── Footer de la tarjeta (obligatoria + más opciones) ── */
+.formbuilder__pcard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-borde);
+}
+
+.formbuilder__switch-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+}
+
+.formbuilder__switch {
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-borde-dark);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast);
+}
+
+.formbuilder__switch--on { background-color: var(--color-azul); }
+
+.formbuilder__switch:hover { background-color: var(--color-borde-dark); filter: brightness(0.92); }
+.formbuilder__switch--on:hover { background-color: var(--color-azul-hover); filter: none; }
+
+.formbuilder__switch-bola {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-blanco);
+  transition: transform var(--transition-fast);
+}
+
+.formbuilder__switch--on .formbuilder__switch-bola {
+  transform: translateX(16px);
+}
+
+.formbuilder__mas-opciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--color-texto-sub);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.formbuilder__mas-opciones:hover {
+  color: var(--color-azul);
+  background-color: var(--color-azul-light);
+}
+
+.formbuilder__avanzado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-borde);
+}
+
+.formbuilder__avanzado label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  flex: 1 1 200px;
+}
+
+.formbuilder__avanzado input,
+.formbuilder__avanzado select {
+  height: 34px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+.formbuilder__avanzado-nota {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .formbuilder__pcard-barra { flex-wrap: wrap; }
+  .formbuilder__grupo-card { flex-direction: column; }
+}

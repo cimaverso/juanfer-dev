@@ -1,0 +1,381 @@
+/* ============================================================
+   src/pages/publico/FormularioPublico.css
+   Vista pública (sin login). Solo tokens de styles/global.css.
+   Prefijo fpub- para no chocar con otras páginas. Móvil primero.
+   ============================================================ */
+
+.fpub-pagina {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+  background-color: var(--color-fondo);
+}
+
+.fpub-tarjeta {
+  width: 100%;
+  max-width: 640px;
+  background-color: var(--color-superficie);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-5);
+  margin: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fpub-tarjeta--centrada {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  margin: auto 0;
+  gap: var(--space-3);
+}
+
+.fpub-titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-texto);
+  margin: 0;
+}
+
+.fpub-descripcion {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ── Barra de progreso (flujo por pasos) ── */
+.fpub-progreso {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-fondo-alt);
+  overflow: hidden;
+  margin: calc(var(--space-5) * -1) calc(var(--space-5) * -1) 0 calc(var(--space-5) * -1);
+  width: calc(100% + var(--space-5) * 2);
+}
+
+.fpub-progreso__barra {
+  height: 100%;
+  background-color: var(--color-azul);
+  transition: width var(--transition-base);
+}
+
+/* ── Navegación Atrás / Siguiente ── */
+.fpub-navegacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.fpub-atras {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fpub-atras:hover {
+  background-color: var(--color-fondo);
+  border-color: var(--color-borde-dark);
+}
+
+/* ── Estados especiales (cargando / error / enviado) ── */
+.fpub-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-borde);
+  border-top-color: var(--color-azul);
+  border-radius: 50%;
+  animation: fpub-girar 0.8s linear infinite;
+}
+
+@keyframes fpub-girar { to { transform: rotate(360deg); } }
+
+.fpub-icono-error {
+  font-size: var(--text-3xl);
+  color: var(--alerta-critico);
+}
+
+.fpub-icono-exito {
+  font-size: var(--text-3xl);
+  color: var(--estado-expedido);
+}
+
+.fpub-tarjeta--centrada h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-texto);
+  margin: 0;
+}
+
+.fpub-tarjeta--centrada p {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+/* ── Secciones (tipo "seccion") ── */
+.fpub-seccion {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-borde);
+}
+
+.fpub-seccion h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--color-texto);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.fpub-seccion p {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+/* ── Campo de pregunta ── */
+.fpub-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fpub-campo__label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.fpub-requerido {
+  color: var(--alerta-critico);
+}
+
+.fpub-campo__ayuda {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+.fpub-campo input[type="text"],
+.fpub-campo input[type="number"],
+.fpub-campo input[type="email"],
+.fpub-campo input[type="tel"],
+.fpub-campo input[type="date"] {
+  height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-base);
+  font-family: var(--font-body);
+}
+
+.fpub-campo input:focus {
+  outline: none;
+  border-color: var(--color-azul);
+  background-color: var(--color-superficie);
+}
+
+.fpub-campo--invalido input,
+.fpub-campo--invalido .fpub-opciones {
+  border-color: var(--alerta-critico);
+}
+
+.fpub-campo--invalido .fpub-campo__label {
+  color: var(--alerta-critico);
+}
+
+/* ── Opción (radio) ── */
+.fpub-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+}
+
+.fpub-opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--color-texto);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.fpub-opcion:hover {
+  background-color: var(--color-fondo);
+  border-color: var(--color-borde-dark);
+}
+
+.fpub-opcion input {
+  accent-color: var(--color-azul);
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Escala NPS (0-10) ── */
+.fpub-escala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.fpub-escala__num {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fpub-escala__num:hover {
+  border-color: var(--color-azul);
+}
+
+.fpub-escala__num--sel {
+  background-color: var(--color-azul);
+  border-color: var(--color-azul);
+  color: var(--color-texto-inv);
+}
+
+/* ── Calificación (estrellas) ── */
+.fpub-estrellas {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.fpub-estrellas__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-xl);
+  color: var(--color-borde-dark);
+  padding: 0;
+}
+
+.fpub-estrellas__btn i.bi-star-fill {
+  color: var(--estado-proceso);
+}
+
+/* ── Grupo repetible ── */
+.fpub-grupo-bloque {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-borde);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fpub-grupo-bloque__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--color-texto);
+  margin: 0;
+}
+
+.fpub-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fpub-grupo__item {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fpub-grupo__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.fpub-grupo__quitar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--alerta-critico);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.fpub-grupo__quitar:hover { text-decoration: underline; }
+
+.fpub-grupo__agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  border: 1.5px dashed var(--color-borde-dark);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-azul);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fpub-grupo__agregar:hover {
+  background-color: var(--color-azul-light);
+}
+
+/* ── Botón enviar ── */
+.fpub-enviar {
+  height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--color-azul);
+  color: var(--color-texto-inv);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.fpub-enviar:hover { background-color: var(--color-azul-hover); }
+.fpub-enviar:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Responsive: en pantallas más anchas, tarjeta centrada con aire ── */
+@media (min-width: 720px) {
+  .fpub-pagina {
+    padding: var(--space-6) var(--space-4);
+    align-items: flex-start;
+  }
+}

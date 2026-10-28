@@ -11,7 +11,7 @@ from app.models.catalogos.estado_prospecto import EstadoProspecto
 from app.models.catalogos.catalogo_valor import CatalogoValor
 from app.models.catalogos.catalogo_tipo import CatalogoTipo
 from sqlalchemy.exc import IntegrityError
-from app.schemas.catalogo import ActualizarEstadoPoliza, CrearEstadoPoliza, ActualizarAseguradora, CrearAseguradora, ActualizarProducto, CrearProducto, ActualizarRamo, CrearRamo, ActualizarTipoDocumento, CrearTipoDocumento, CatalogoTipoCreate, CatalogoValorCreate, CatalogoValorUpdate
+from app.schemas.catalogo import ActualizarEstadoPoliza, CrearEstadoPoliza, ActualizarAseguradora, CrearAseguradora, ActualizarProducto, CrearProducto, ActualizarRamo, CrearRamo, ActualizarTipoDocumento, CrearTipoDocumento, CatalogoTipoCreate, CatalogoValorCreate, CatalogoValorUpdate, CrearEstadoProspecto, ActualizarEstadoProspecto
 from typing import Optional
 
 class CatalogoService:
@@ -442,3 +442,69 @@ class CatalogoService:
     def listar_estados_prospecto(db: Session):
         stmt = select(EstadoProspecto).where(EstadoProspecto.activo.is_(True))
         return db.execute(stmt).scalars().all()
+
+    @staticmethod
+    def listar_todos_estados_prospecto(db: Session):
+        """Vista admin: incluye inactivos (listar_estados_prospecto solo trae activos, para el selector de ProspectoForm)."""
+        stmt = select(EstadoProspecto).order_by(EstadoProspecto.orden)
+        return db.execute(stmt).scalars().all()
+
+    @staticmethod
+    def find_estado_prospecto_by_id(db: Session, id: int) -> Optional[EstadoProspecto]:
+        stmt = select(EstadoProspecto).where(EstadoProspecto.id == id)
+        return db.execute(stmt).scalar_one_or_none()
+
+    @staticmethod
+    def crear_estado_prospecto(db: Session, data: "CrearEstadoProspecto") -> Optional[EstadoProspecto]:
+        if data.orden is not None:
+            orden = data.orden
+        else:
+            stmt_max = select(func.max(EstadoProspecto.orden))
+            maximo = db.execute(stmt_max).scalar_one_or_none()
+            orden = (maximo + 1) if maximo is not None else 0
+
+        nuevo_estado = EstadoProspecto(
+            nombre=data.nombre.strip(),
+            color=data.color.strip().lower(),
+            orden=orden
+        )
+
+        db.add(nuevo_estado)
+
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return None
+
+        db.refresh(nuevo_estado)
+        return nuevo_estado
+
+    @staticmethod
+    def actualizar_estado_prospecto(db: Session, id: int, data: "ActualizarEstadoProspecto") -> Optional[EstadoProspecto]:
+        estado = CatalogoService.find_estado_prospecto_by_id(db, id)
+
+        if not estado:
+            return None
+
+        if data.nombre is not None:
+            estado.nombre = data.nombre.strip()
+
+        if data.color is not None:
+            estado.color = data.color.strip().lower()
+
+        if data.orden is not None:
+            estado.orden = data.orden
+
+        if data.activo is not None:
+            estado.activo = data.activo
+
+        db.commit()
+        db.refresh(estado)
+
+        return estado
+
+    # No existe eliminar_estado_prospecto a propósito: mismo criterio que el
+    # catálogo genérico (ver DT-017) — el modelo ya trae `activo` pensado
+    # para desactivar, no borrar; un estado sin prospectos hoy puede seguir
+    # siendo indispensable para código que lo referencia por nombre.

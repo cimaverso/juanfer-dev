@@ -1,0 +1,296 @@
+/* ============================================================
+   src/pages/formularios/Formularios.css
+   Solo tokens de styles/global.css. Prefijo form- / formularios__
+   para no chocar con otras páginas.
+   ============================================================ */
+
+.formularios__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.formularios__titulo {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-texto);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.formularios__sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+/* ── Tabla ── */
+.formularios__tabla-wrap {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.formularios__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.formularios__tabla th {
+  text-align: left;
+  color: var(--color-texto-sub);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+.formularios__tabla td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-borde);
+  color: var(--color-texto);
+  vertical-align: middle;
+}
+
+.formularios__fila {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.formularios__fila:hover {
+  background-color: var(--color-fondo);
+}
+
+.formularios__nombre {
+  display: block;
+  font-weight: 500;
+}
+
+.formularios__descripcion {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  margin-top: 2px;
+}
+
+.formularios__sin-publicar {
+  color: var(--color-texto-light);
+}
+
+.formularios__acciones {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.formularios__vacio {
+  text-align: center;
+  padding: var(--space-5);
+  color: var(--color-texto-sub);
+}
+
+.formularios__skeleton-fila {
+  height: 44px;
+  background-color: var(--color-fondo-alt);
+  border-radius: var(--radius-sm);
+  animation: form-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes form-pulso {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.formularios__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--color-texto-sub);
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Badges de estado ── */
+.form-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.form-badge--borrador {
+  background-color: var(--color-fondo-alt);
+  color: var(--color-texto-sub);
+}
+
+.form-badge--activo {
+  background-color: var(--estado-expedido-bg);
+  color: var(--estado-expedido);
+}
+
+.form-badge--archivado {
+  background-color: var(--estado-cancelado-bg);
+  color: var(--estado-cancelado);
+}
+
+/* ── Modal de creación ── */
+.formularios__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+  animation: fadeIn var(--transition-fast) ease both;
+}
+
+.formularios__modal {
+  background-color: var(--color-superficie);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 440px;
+}
+
+.formularios__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-borde);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.formularios__modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.formularios__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+  font-weight: 500;
+}
+
+.formularios__label input,
+.formularios__label textarea {
+  font-family: var(--font-body);
+  font-weight: normal;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  resize: vertical;
+}
+
+.formularios__modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ── Botones y mensajes (compartidos con el builder/respuestas) ── */
+.form-btn-primario,
+.form-btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color var(--transition-fast);
+}
+
+.form-btn-primario {
+  background-color: var(--color-azul);
+  color: var(--color-texto-inv);
+}
+
+.form-btn-primario:hover { background-color: var(--color-azul-hover); }
+.form-btn-primario:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.form-btn-secundario {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border-color: var(--color-borde);
+}
+
+.form-btn-secundario:hover {
+  background-color: var(--color-fondo);
+  border-color: var(--color-borde-dark);
+}
+
+.form-btn-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-superficie);
+  color: var(--color-texto-sub);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.form-btn-icon:hover {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+.form-btn-icon--danger:hover {
+  color: var(--alerta-critico);
+  border-color: var(--alerta-critico);
+  background-color: var(--alerta-critico-bg);
+}
+
+.form-error-msg {
+  font-size: var(--text-xs);
+  color: var(--alerta-critico);
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .formularios__tabla thead { display: none; }
+  .formularios__tabla, .formularios__tabla tbody, .formularios__tabla tr, .formularios__tabla td {
+    display: block;
+    width: 100%;
+  }
+  .formularios__fila {
+    border-bottom: 1px solid var(--color-borde);
+    padding: var(--space-2) 0;
+  }
+  .formularios__tabla td {
+    border-bottom: none;
+    padding: var(--space-1) var(--space-3);
+  }
+}

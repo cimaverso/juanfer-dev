@@ -22,6 +22,8 @@ class FormularioRespuestaRead(BaseModel):
     formulario_id: int
     formulario_version_id: Optional[int] = None
     cliente_id: Optional[int] = None
+    cliente_nombre: Optional[str] = None
+    cliente_documento: Optional[str] = None
     poliza_id: Optional[int] = None
     cotizacion_id: Optional[int] = None
     respuestas: dict

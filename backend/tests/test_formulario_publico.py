@@ -95,6 +95,114 @@ def test_mismo_documento_otra_vez_rechaza(client, admin_headers):
     assert r_repetido.status_code == 409
 
 
+def test_varias_preguntas_mapeadas_al_mismo_campo_no_se_pisan(client, admin_headers):
+    """
+    Caso real: una pregunta "Número de documento" por cada tipo de
+    documento (CC, NIT, ...), mostradas condicionalmente en el front
+    según la respuesta de "Tipo de documento" (branching) y todas
+    mapeadas al mismo campo `numero_documento`. Solo una llega
+    diligenciada en `respuestas`; las demás ni siquiera aparecen como
+    clave (el front no envía preguntas ocultas). Una alternativa vacía
+    no debe pisar el valor real de la que sí se respondió.
+    """
+    formulario_id, token = _publicar_formulario_con_tomador(client, admin_headers)
+
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "tomador.numero_documento_nit", "tipo_codigo": "texto",
+            "titulo": "NIT", "requerida": False,
+            "mapea_a": {"entidad": "cliente", "campo": "numero_documento"}
+        },
+        headers=admin_headers
+    )
+    client.post(f"/api/v1/formularios/{formulario_id}/publicar", headers=admin_headers)
+    r_formulario = client.get(f"/api/v1/formularios/{formulario_id}", headers=admin_headers)
+    token = r_formulario.json()["token_publico"]
+
+    respuesta = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        # Nota: "tomador.numero_documento_nit" ni siquiera se envía,
+        # igual que haría el front con un campo oculto por branching.
+        json={"respuestas": _respuestas_validas("777PYTEST")}
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["cliente_id"] is not None
+
+
+def test_seccion_y_alternativas_ocultas_por_branching_no_bloquean_envio(client, admin_headers):
+    """
+    Caso real reportado: una pregunta tipo "seccion" (encabezado de
+    página, requerida=true por defecto en el builder, sin valor que
+    diligenciar) y una pregunta "Tipo de documento" (opcion) con
+    branching hacia dos preguntas alternativas de "Número de documento"
+    (una por tipo), ambas requeridas pero solo una activa según la
+    respuesta. Ninguna de las dos cosas debe bloquear el envío.
+    """
+    r_formulario = client.post(
+        "/api/v1/formularios",
+        json={"titulo": f"Branching pytest {uuid.uuid4()}"},
+        headers=admin_headers
+    )
+    formulario_id = r_formulario.json()["id"]
+
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={"codigo": "seccion1", "tipo_codigo": "seccion", "titulo": "Información personal", "requerida": True},
+        headers=admin_headers
+    )
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "tipo_doc", "tipo_codigo": "opcion", "titulo": "Tipo de documento", "requerida": True,
+            "configuracion": {"choices": ["CC", "NIT"], "branching": {"CC": "num_cc", "NIT": "num_nit"}},
+            "mapea_a": {"entidad": "cliente", "campo": "tipo_documento"}
+        },
+        headers=admin_headers
+    )
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "num_cc", "tipo_codigo": "texto", "titulo": "Número de documento", "requerida": True,
+            "mapea_a": {"entidad": "cliente", "campo": "numero_documento"}
+        },
+        headers=admin_headers
+    )
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "num_nit", "tipo_codigo": "texto", "titulo": "NIT", "requerida": True,
+            "mapea_a": {"entidad": "cliente", "campo": "numero_documento"}
+        },
+        headers=admin_headers
+    )
+    for codigo, campo in [("nombre", "nombre_completo"), ("cel", "celular")]:
+        client.post(
+            f"/api/v1/formularios/{formulario_id}/preguntas",
+            json={"codigo": codigo, "tipo_codigo": "texto", "titulo": codigo, "requerida": True,
+                  "mapea_a": {"entidad": "cliente", "campo": campo}},
+            headers=admin_headers
+        )
+
+    client.post(f"/api/v1/formularios/{formulario_id}/publicar", headers=admin_headers)
+    token = client.get(f"/api/v1/formularios/{formulario_id}", headers=admin_headers).json()["token_publico"]
+
+    respuesta = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": {
+            "tipo_doc": "CC",
+            "num_cc": "888PYTEST",
+            # "num_nit" ni siquiera se envía: el front lo oculta.
+            "nombre": "Cliente Branching",
+            "cel": "3000000000",
+        }}
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["cliente_id"] is not None
+
+
 def test_rate_limit_por_ip(client, admin_headers, monkeypatch):
     from app.services import formulario_respuesta as modulo_respuesta
     monkeypatch.setattr(modulo_respuesta, "ENVIOS_MAX_POR_IP", 2)

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from app.models.formularios.formulario import Formulario
 from app.models.formularios.formulario_respuesta import FormularioRespuesta
-from app.models.formularios.constantes import CatalogoTipoCodigos, FormularioEstadoCodigos, RespuestaEstadoCodigos
+from app.models.formularios.constantes import CatalogoTipoCodigos, FormularioEstadoCodigos, RespuestaEstadoCodigos, BranchingCodigos
 from app.models.usuarios_clientes.cliente import Cliente
 from app.services.catalogo import CatalogoService
 from app.services.formulario import FormularioService
@@ -21,12 +21,27 @@ class FormularioRespuestaService:
 
     @staticmethod
     def listar(db: Session, formulario_id: int) -> list[FormularioRespuesta]:
+        """
+        Incluye cliente_nombre/cliente_documento (no son columnas de
+        FormularioRespuesta: se asignan como atributo de instancia tras el
+        join, solo para que FormularioRespuestaRead los lea con
+        from_attributes) para que el admin vea algo legible sin tener que
+        resolver cliente_id a mano.
+        """
         stmt = (
-            select(FormularioRespuesta)
+            select(FormularioRespuesta, Cliente.nombre_completo, Cliente.numero_documento)
+            .outerjoin(Cliente, FormularioRespuesta.cliente_id == Cliente.id)
             .where(FormularioRespuesta.formulario_id == formulario_id)
             .order_by(FormularioRespuesta.iniciado_at.desc())
         )
-        return db.execute(stmt).scalars().all()
+
+        resultado = []
+        for respuesta, nombre, documento in db.execute(stmt).all():
+            respuesta.cliente_nombre = nombre
+            respuesta.cliente_documento = documento
+            resultado.append(respuesta)
+
+        return resultado
 
     @staticmethod
     def _excede_limite_ip(db: Session, formulario_id: int, ip: Optional[str]) -> bool:
@@ -66,6 +81,13 @@ class FormularioRespuestaService:
         'cliente' y toma su valor desde `respuestas` por su propio `codigo`
         (asume que son preguntas sueltas, no dentro de un grupo repetible —
         así están diseñadas hoy las preguntas del Tomador).
+
+        Varias preguntas distintas pueden mapear al MISMO campo (ej. una
+        "Número de documento" por cada tipo de documento, mostrada
+        condicionalmente en el front según la respuesta de "Tipo de
+        documento" — ver branching en docs/modulos/formularios.md). Solo
+        una de ellas estará realmente diligenciada; una alternativa vacía
+        nunca debe pisar un valor ya encontrado para ese mismo campo.
         """
         campos = {}
 
@@ -73,9 +95,40 @@ class FormularioRespuestaService:
             mapea_a = pregunta.get("mapea_a")
 
             if mapea_a and mapea_a.get("entidad") == "cliente":
-                campos[mapea_a["campo"]] = respuestas.get(pregunta["codigo"])
+                campo = mapea_a["campo"]
+                valor = respuestas.get(pregunta["codigo"])
+
+                if valor not in (None, ""):
+                    campos[campo] = valor
+                elif campo not in campos:
+                    campos[campo] = valor
 
         return campos
+
+    @staticmethod
+    def _preguntas_controladas(estructura: dict) -> dict:
+        """
+        Igual criterio que el front (ver FormularioPublico.jsx,
+        resolverPagina): una pregunta que es destino de alguna opción de
+        otra pregunta tipo "opcion" queda controlada — solo es exigible
+        cuando la respuesta de quien la controla coincide con esa opción
+        (ej. "Número de documento" solo si "Tipo de documento" = CC).
+        Devuelve {codigo_destino: [(codigo_controladora, valor), ...]}.
+        """
+        controladas = {}
+
+        for pregunta in estructura.get("preguntas", []):
+            if pregunta.get("tipo_codigo") != "opcion":
+                continue
+
+            branching = (pregunta.get("configuracion") or {}).get("branching") or {}
+
+            for valor, destino in branching.items():
+                if destino == BranchingCodigos.FIN:
+                    continue
+                controladas.setdefault(destino, []).append((pregunta["codigo"], valor))
+
+        return controladas
 
     @staticmethod
     def _validar_basico(estructura: dict, respuestas: dict) -> list[str]:
@@ -84,15 +137,31 @@ class FormularioRespuestaService:
         (grupo_id es None). Las preguntas dentro de un grupo repetible
         (arrays en `respuestas`) no se validan campo por campo todavía
         (deuda explícita, ver docs/modulos/formularios.md).
+
+        Excluye las preguntas tipo "seccion" (son encabezados de página,
+        no tienen valor que diligenciar) y, dentro de las controladas por
+        branching, solo exige la que esté realmente activa según la
+        respuesta actual de su controladora — las alternativas ocultas
+        (ej. "NIT" cuando se eligió "CC") nunca deberían bloquear el envío.
+
         Devuelve la lista de `codigo` que fallaron.
         """
         errores = []
+        controladas = FormularioRespuestaService._preguntas_controladas(estructura)
 
         for pregunta in estructura.get("preguntas", []):
             if pregunta.get("grupo_id") is not None:
                 continue
 
+            if pregunta.get("tipo_codigo") == "seccion":
+                continue
+
             codigo = pregunta["codigo"]
+
+            controladores = controladas.get(codigo)
+            if controladores and not any(respuestas.get(c) == v for c, v in controladores):
+                continue
+
             valor = respuestas.get(codigo)
             vacio = valor is None or valor == ""
 

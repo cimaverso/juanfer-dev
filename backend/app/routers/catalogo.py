@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento, EstadoProspectoRead, CatalogoTipoRead, CatalogoTipoCreate, CatalogoValorAdminRead, CatalogoValorCreate, CatalogoValorUpdate
+from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento, EstadoProspectoRead, CatalogoTipoRead, CatalogoTipoCreate, CatalogoValorAdminRead, CatalogoValorCreate, CatalogoValorUpdate, CrearEstadoProspecto, ActualizarEstadoProspecto, EstadoProspectoAdminRead
 from app.services.catalogo import CatalogoService
 from app.core.security import get_current_user_data, require_admin
 
@@ -59,6 +59,32 @@ def actualizar_valor_catalogo(id: int, data: CatalogoValorUpdate, db: Session = 
 @router.get("/estados-prospecto", response_model=list[EstadoProspectoRead])
 def listar_estados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return CatalogoService.listar_estados_prospecto(db)
+
+
+@router.get("/estados-prospecto/admin", response_model=list[EstadoProspectoAdminRead])
+def listar_estados_admin(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
+    """Vista admin: incluye estados inactivos (el GET de arriba solo trae activos, para ProspectoForm)."""
+    return CatalogoService.listar_todos_estados_prospecto(db)
+
+
+@router.post("/estados-prospecto", response_model=EstadoProspectoAdminRead, status_code=201)
+def crear_estado_prospecto(data: CrearEstadoProspecto, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    nuevo_estado = CatalogoService.crear_estado_prospecto(db, data)
+
+    if nuevo_estado is None:
+        raise HTTPException(status_code=409, detail="Ya existe un estado de prospecto con ese nombre")
+
+    return nuevo_estado
+
+
+@router.put("/estados-prospecto/{id}", response_model=EstadoProspectoAdminRead)
+def actualizar_estado_prospecto(id: int, data: ActualizarEstadoProspecto, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    estado = CatalogoService.actualizar_estado_prospecto(db, id, data)
+
+    if not estado:
+        raise HTTPException(status_code=404, detail="El estado de prospecto no existe")
+
+    return estado
 
 @router.get("/estados-poliza", response_model=list[EstadoPolizaRead])
 def get_estados_poliza(db: Session = Depends(get_db), user = Depends(get_current_user_data)):

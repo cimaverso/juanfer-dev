@@ -62,6 +62,12 @@ const NAV_ADMIN = [
     roles: ['ADMIN'],
     // proximamente: true  ← REMOVIDO — AdminCatalogos ya existe
   },
+  {
+    ruta:  '/admin/formularios',
+    icono: 'bi-file-earmark-text',
+    label: 'Formularios',
+    roles: ['ADMIN'],
+  },
 ]
 
 export default function Sidebar({ colapsado, onToggle }) {
