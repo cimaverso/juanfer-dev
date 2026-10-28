@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.catalogos.estado_cotizacion import EstadoCotizacion
     from app.models.usuarios_clientes.usuario import Usuario
     from app.models.modulos_negocio.poliza import Poliza
+    from app.models.formularios.formulario_respuesta import FormularioRespuesta
 
 class Cotizacion(Base):
     __tablename__ = "cotizacion"
@@ -117,4 +118,9 @@ class Cotizacion(Base):
         "Poliza",
         back_populates="cotizacion",
         uselist=False
+    )
+
+    formulario_respuestas: Mapped[list["FormularioRespuesta"]] = relationship(
+        "FormularioRespuesta",
+        back_populates="cotizacion"
     )

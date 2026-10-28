@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.operaciones.cancelacion import Cancelacion
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.operaciones.cambio_intermediario import CambioIntermediario
+    from app.models.formularios.formulario_respuesta import FormularioRespuesta
 
 class Poliza(Base):
     __tablename__ = "poliza"
@@ -213,6 +214,11 @@ class Poliza(Base):
 
     prospecto: Mapped[Optional["Prospecto"]] = relationship(
         "Prospecto",
+        back_populates="poliza"
+    )
+
+    formulario_respuestas: Mapped[list["FormularioRespuesta"]] = relationship(
+        "FormularioRespuesta",
         back_populates="poliza"
     )
 

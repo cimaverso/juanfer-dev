@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.operaciones.endoso_banco import EndosoBanco
     from app.models.operaciones.cambio_intermediario import CambioIntermediario
     from app.models.operaciones.conversacion import Conversacion
+    from app.models.formularios.formulario_respuesta import FormularioRespuesta
 
 class Cliente(Base):
     __tablename__ = "cliente"
@@ -130,6 +131,11 @@ class Cliente(Base):
 
     conversaciones: Mapped[list["Conversacion"]] = relationship(
         "Conversacion",
+        back_populates="cliente"
+    )
+
+    formulario_respuestas: Mapped[list["FormularioRespuesta"]] = relationship(
+        "FormularioRespuesta",
         back_populates="cliente"
     )
 
