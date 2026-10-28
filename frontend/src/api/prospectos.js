@@ -344,6 +344,16 @@ export async function obtenerProspecto(id) {
 }
 
 /**
+ * Formularios respondidos por este prospecto (hoy sin caso real: el flujo
+ * público siempre resuelve a Cliente, ver docs/DEUDA.md DT-020).
+ * GET /api/v1/prospectos/:id/formularios-respondidos
+ */
+export async function obtenerFormulariosRespondidosProspecto(id) {
+  const { data } = await axiosInstance.get(`/prospectos/${id}/formularios-respondidos`)
+  return data
+}
+
+/**
  * Crea un prospecto nuevo.
  * POST /api/v1/prospectos
  * Body: { nombre, tipo_documento_id, numero_documento, telefono,

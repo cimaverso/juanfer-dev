@@ -6,7 +6,7 @@
 //           cambio de estado, conversión a póliza
 // ============================================================
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import {
@@ -14,10 +14,12 @@ import {
   avanzarContacto,
   cambiarEstadoProspecto,
   convertirProspecto,
+  obtenerFormulariosRespondidosProspecto,
   ESTADOS_PIPELINE,
   CADENCIA_DIAS,
   CANALES_ORIGEN,
 } from '../../api/prospectos.js'
+import ModalFormulariosRespondidos from '../../components/ModalFormulariosRespondidos.jsx'
 import './ProspectoDetalle.css'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -169,6 +171,7 @@ export default function ProspectoDetalle() {
   const [error, setError]                 = useState(null)
   const [modalConvertir, setModalConvertir] = useState(false)
   const [modalEstado, setModalEstado]     = useState(false)
+  const [modalFormularios, setModalFormularios] = useState(false)
   const [accionando, setAccionando]       = useState(false)
   const [mensajeExito, setMensajeExito]   = useState(null)
 
@@ -198,6 +201,11 @@ export default function ProspectoDetalle() {
     const t = setTimeout(() => setMensajeExito(null), 3000)
     return () => clearTimeout(t)
   }, [mensajeExito])
+
+  const obtenerRespuestasProspecto = useCallback(
+    () => obtenerFormulariosRespondidosProspecto(id),
+    [id]
+  )
 
   // ── Acciones ──────────────────────────────────────────
   async function handleAvanzarContacto() {
@@ -309,6 +317,14 @@ export default function ProspectoDetalle() {
         </div>
 
         <div className="pdet-header__acciones">
+          {/* Formularios respondidos */}
+          <button
+            className="btn-secundario btn-sm"
+            onClick={() => setModalFormularios(true)}
+          >
+            <i className="bi bi-file-earmark-text" /> Formularios
+          </button>
+
           {/* Editar */}
           {!esConvertido && (
             <button
@@ -610,6 +626,14 @@ export default function ProspectoDetalle() {
           onCerrar={() => setModalEstado(false)}
           onCambiar={handleCambiarEstado}
           cargando={accionando}
+        />
+      )}
+
+      {modalFormularios && (
+        <ModalFormulariosRespondidos
+          nombre={prospecto.nombre}
+          obtenerRespuestas={obtenerRespuestasProspecto}
+          onCerrar={() => setModalFormularios(false)}
         />
       )}
     </div>

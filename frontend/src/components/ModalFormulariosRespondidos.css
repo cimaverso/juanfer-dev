@@ -1,0 +1,112 @@
+/* ============================================================
+   src/components/ModalFormulariosRespondidos.css
+   Solo tokens de styles/global.css. Reusa .form-btn-icon,
+   .form-btn-secundario y .form-badge de pages/formularios/Formularios.css.
+   ============================================================ */
+
+.mfr-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+  animation: fadeIn var(--transition-fast) ease both;
+}
+
+.mfr-modal {
+  background-color: var(--color-superficie);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mfr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-borde);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.mfr-body {
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.mfr-sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+.mfr-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
+  color: var(--color-texto-sub);
+  font-size: var(--text-sm);
+}
+
+.mfr-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  color: var(--color-texto-sub);
+}
+
+.mfr-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mfr-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-md);
+}
+
+.mfr-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mfr-item__titulo {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.mfr-item__fecha {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
+@media (max-width: 480px) {
+  .mfr-item {
+    flex-wrap: wrap;
+  }
+}

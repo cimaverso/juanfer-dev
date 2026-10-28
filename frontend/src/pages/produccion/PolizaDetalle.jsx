@@ -4,10 +4,12 @@
 // Incluye: datos, historial de traspaso, acciones por rol
 // ============================================================
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { obtenerPoliza, obtenerHistorialResponsable } from '../../api/polizas.js'
+import { obtenerFormulariosRespondidosCliente } from '../../api/clientes.js'
+import ModalFormulariosRespondidos from '../../components/ModalFormulariosRespondidos.jsx'
 import './PolizaDetalle.css'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -70,6 +72,7 @@ export default function PolizaDetalle() {
   const [historial, setHistorial] = useState([])
   const [cargando, setCargando]   = useState(true)
   const [error, setError]         = useState(null)
+  const [modalFormularios, setModalFormularios] = useState(false)
 
   useEffect(() => {
     let cancelado = false
@@ -103,6 +106,11 @@ export default function PolizaDetalle() {
     return () => { cancelado = true }
   }, [id])
 
+  const obtenerRespuestasCliente = useCallback(
+    () => obtenerFormulariosRespondidosCliente(poliza?.cliente_id),
+    [poliza?.cliente_id]
+  )
+
   // ── Error ────────────────────────────────────────────────
   if (error) {
     return (
@@ -135,6 +143,12 @@ export default function PolizaDetalle() {
 
         {!cargando && poliza && (
           <div className="det-topbar__acciones">
+            <button
+              className="btn-secundario"
+              onClick={() => setModalFormularios(true)}
+            >
+              <i className="bi bi-file-earmark-text" /> Formularios
+            </button>
             <button
               className="btn-secundario"
               onClick={() => navigate(`/produccion/${id}/editar`)}
@@ -341,6 +355,14 @@ export default function PolizaDetalle() {
 
         </div>
       </div>
+
+      {modalFormularios && poliza && (
+        <ModalFormulariosRespondidos
+          nombre={poliza.cliente_nombre}
+          obtenerRespuestas={obtenerRespuestasCliente}
+          onCerrar={() => setModalFormularios(false)}
+        />
+      )}
     </div>
   )
 }
