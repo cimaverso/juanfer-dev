@@ -24,7 +24,7 @@ const ProspectoForm    = lazy(() => import('../pages/prospectos/ProspectoForm.js
 const ProspectoDetalle = lazy(() => import('../pages/prospectos/ProspectoDetalle.jsx'))
 
 // Admin (nuevo — solo ADMIN)
-const AdminCatalogos   = lazy(() => import('../pages/admin/AdminCatalogos.jsx'))
+const AdminConfiguracion = lazy(() => import('../pages/admin/AdminConfiguracion.jsx'))
 
 // Formularios dinámicos (nuevo — admin solo ADMIN, vista pública sin auth)
 const Formularios         = lazy(() => import('../pages/formularios/Formularios.jsx'))
@@ -97,7 +97,7 @@ export default function AppRouter() {
           {/* ── Rutas protegidas solo ADMIN ─────────────── */}
           <Route element={<ProtectedRoute rolRequerido="ADMIN" />}>
             <Route element={<AppLayout />}>
-              <Route path="/admin/catalogos" element={<AdminCatalogos />} />
+              <Route path="/admin/configuracion" element={<AdminConfiguracion />} />
               <Route path="/admin/formularios" element={<Formularios />} />
               <Route path="/admin/formularios/:id/editar" element={<FormularioBuilder />} />
               <Route path="/admin/formularios/:id/respuestas" element={<FormularioRespuestas />} />

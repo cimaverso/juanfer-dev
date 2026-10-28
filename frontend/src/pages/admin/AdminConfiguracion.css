@@ -1,5 +1,5 @@
 /* ============================================================
-   src/pages/admin/AdminCatalogos.css
+   src/pages/admin/AdminConfiguracion.css
    Solo tokens de styles/global.css. Prefijo catlg- para no
    chocar con otras páginas.
    ============================================================ */
@@ -15,6 +15,44 @@
   font-size: var(--text-sm);
   color: var(--color-texto-sub);
   margin: 0 0 var(--space-4) 0;
+}
+
+/* ── Grupos (por feature: Producción / Prospectos / Formularios) ── */
+.catlg-grupos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.catlg-grupos__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: transparent;
+  color: var(--color-texto-sub);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.catlg-grupos__item:hover {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+.catlg-grupos__item--activo,
+.catlg-grupos__item--activo:hover {
+  background-color: var(--color-azul-light);
+  color: var(--color-azul);
 }
 
 /* ── Pestañas ── */

@@ -1,5 +1,5 @@
 // ============================================================
-// src/pages/admin/AdminCatalogos.jsx
+// src/pages/admin/AdminConfiguracion.jsx
 // Panel de catálogos del sistema, en pestañas:
 //   - Catálogo genérico (catalogo_tipo / catalogo_valor): maestro-
 //     detalle, sin borrado duro (DT-017).
@@ -43,17 +43,31 @@ import {
 } from '../../api/catalogos.js'
 import Toast from '../../components/Toast.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
-import './AdminCatalogos.css'
+import { DatosEmpresa, UsuariosEmpresa, HorariosEmpresa } from './ConfiguracionEmpresa.jsx'
+import './AdminConfiguracion.css'
 
 // ── Pestañas ───────────────────────────────────────────────
+const GRUPOS = [
+  { id: 'produccion', label: 'Producción', icono: 'bi-file-earmark-check' },
+  { id: 'prospectos', label: 'Prospectos', icono: 'bi-person-lines-fill' },
+  { id: 'formularios', label: 'Formularios', icono: 'bi-file-earmark-text' },
+  { id: 'empresa', label: 'Empresa', icono: 'bi-building' },
+]
+
+// El Catálogo genérico vive bajo Formularios porque hoy solo hospeda
+// la categoría de Formulario (ver migración 751a7703f081); si se usa
+// para algo ajeno a Formularios, esta agrupación fija deja de servir.
 const TABS = [
-  { id: 'generico', label: 'Catálogo genérico', icono: 'bi-sliders' },
-  { id: 'estados_poliza', label: 'Estados de póliza', icono: 'bi-file-earmark-check' },
-  { id: 'aseguradoras', label: 'Aseguradoras', icono: 'bi-shield-check' },
-  { id: 'productos', label: 'Productos', icono: 'bi-box-seam' },
-  { id: 'ramos', label: 'Ramos', icono: 'bi-diagram-3' },
-  { id: 'tipos_documento', label: 'Tipos de documento', icono: 'bi-card-text' },
-  { id: 'estados_prospecto', label: 'Estados de prospecto', icono: 'bi-person-lines-fill' },
+  { id: 'estados_poliza', grupo: 'produccion', label: 'Estados de póliza', icono: 'bi-file-earmark-check' },
+  { id: 'aseguradoras', grupo: 'produccion', label: 'Aseguradoras', icono: 'bi-shield-check' },
+  { id: 'productos', grupo: 'produccion', label: 'Productos', icono: 'bi-box-seam' },
+  { id: 'ramos', grupo: 'produccion', label: 'Ramos', icono: 'bi-diagram-3' },
+  { id: 'tipos_documento', grupo: 'produccion', label: 'Tipos de documento', icono: 'bi-card-text' },
+  { id: 'estados_prospecto', grupo: 'prospectos', label: 'Estados de prospecto', icono: 'bi-person-lines-fill' },
+  { id: 'generico', grupo: 'formularios', label: 'Categorías y catálogos', icono: 'bi-sliders' },
+  { id: 'datos_empresa', grupo: 'empresa', label: 'Datos de la empresa', icono: 'bi-building' },
+  { id: 'usuarios', grupo: 'empresa', label: 'Usuarios', icono: 'bi-people' },
+  { id: 'horarios', grupo: 'empresa', label: 'Horarios', icono: 'bi-calendar-week' },
 ]
 
 // Config de cada catálogo legacy: campos propios + funciones de api/catalogos.js.
@@ -117,20 +131,40 @@ const CONFIG_LEGADO = {
 // ============================================================
 // COMPONENTE PRINCIPAL — switch de pestañas
 // ============================================================
-export default function AdminCatalogos() {
-  const [tabActiva, setTabActiva] = useState('generico')
+export default function AdminConfiguracion() {
+  const [grupoActivo, setGrupoActivo] = useState('produccion')
+  const [tabActiva, setTabActiva]     = useState('estados_poliza')
+
+  function seleccionarGrupo(grupoId) {
+    setGrupoActivo(grupoId)
+    setTabActiva(TABS.find((t) => t.grupo === grupoId).id)
+  }
+
+  const tabsDelGrupo = TABS.filter((t) => t.grupo === grupoActivo)
 
   return (
     <div className="catlg page-enter">
       <div className="catlg-header">
-        <h2 className="catlg-header__titulo">Catálogos</h2>
+        <h2 className="catlg-header__titulo">Configuración</h2>
         <p className="catlg-header__sub">
           Valores configurables del sistema (estados, tipos de pregunta, aseguradoras, etc.) sin necesidad de desplegar código nuevo.
         </p>
       </div>
 
+      <div className="catlg-grupos">
+        {GRUPOS.map((g) => (
+          <button
+            key={g.id}
+            className={`catlg-grupos__item ${grupoActivo === g.id ? 'catlg-grupos__item--activo' : ''}`}
+            onClick={() => seleccionarGrupo(g.id)}
+          >
+            <i className={`bi ${g.icono}`} /> {g.label}
+          </button>
+        ))}
+      </div>
+
       <div className="catlg-tabs">
-        {TABS.map((t) => (
+        {tabsDelGrupo.map((t) => (
           <button
             key={t.id}
             className={`catlg-tabs__item ${tabActiva === t.id ? 'catlg-tabs__item--activo' : ''}`}
@@ -143,6 +177,12 @@ export default function AdminCatalogos() {
 
       {tabActiva === 'generico' ? (
         <CatalogoGenerico />
+      ) : tabActiva === 'datos_empresa' ? (
+        <DatosEmpresa />
+      ) : tabActiva === 'usuarios' ? (
+        <UsuariosEmpresa />
+      ) : tabActiva === 'horarios' ? (
+        <HorariosEmpresa />
       ) : (
         <CatalogoLegado key={tabActiva} config={CONFIG_LEGADO[tabActiva]} titulo={TABS.find((t) => t.id === tabActiva).label} />
       )}
@@ -195,7 +235,7 @@ function CatalogoGenerico() {
       if (data.length > 0 && !tipoSel) setTipoSel(data[0].codigo)
     } catch (e) {
       setErrorTipos('No se pudieron cargar los catálogos.')
-      console.error('[AdminCatalogos]', e)
+      console.error('[AdminConfiguracion]', e)
     } finally {
       setCargandoTipos(false)
     }
@@ -215,7 +255,7 @@ function CatalogoGenerico() {
       setValores(data)
     } catch (e) {
       setErrorValores('No se pudieron cargar los valores de este catálogo.')
-      console.error('[AdminCatalogos]', e)
+      console.error('[AdminConfiguracion]', e)
     } finally {
       setCargandoValores(false)
     }
@@ -609,7 +649,7 @@ function CatalogoLegado({ config, titulo }) {
       setValores(data)
     } catch (e) {
       setError('No se pudo cargar este catálogo.')
-      console.error('[AdminCatalogos]', e)
+      console.error('[AdminConfiguracion]', e)
     } finally {
       setCargando(false)
     }

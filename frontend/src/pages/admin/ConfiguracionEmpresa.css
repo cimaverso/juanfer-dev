@@ -1,0 +1,237 @@
+/* ============================================================
+   src/pages/admin/ConfiguracionEmpresa.css
+   Solo tokens de styles/global.css. Prefijo emp- para no
+   chocar con otras páginas.
+   ============================================================ */
+
+.emp-seccion {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.emp-sub {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+/* ── Datos de la empresa ── */
+.emp-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 420px;
+}
+
+.emp-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+}
+
+.emp-campo input {
+  height: 38px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+}
+
+.emp-campo input:focus {
+  outline: none;
+  border-color: var(--color-azul);
+}
+
+.emp-btn-primario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--color-azul);
+  color: var(--color-texto-inv);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  margin-top: var(--space-2);
+}
+
+.emp-btn-primario:hover {
+  background-color: var(--color-azul-hover);
+}
+
+/* ── Usuarios ── */
+.emp-usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.emp-usuarios__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.emp-usuarios__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-navy);
+  color: var(--color-blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.emp-usuarios__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.emp-usuarios__nombre {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.emp-usuarios__email {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
+.emp-badge-rol {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-borde);
+  color: var(--color-texto-sub);
+}
+
+.emp-badge-rol--admin {
+  background-color: var(--color-azul-light);
+  color: var(--color-azul);
+}
+
+.emp-btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.emp-btn-secundario:hover {
+  background-color: var(--color-fondo);
+}
+
+.emp-sin-horario {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  font-style: italic;
+}
+
+/* ── Modal de clave generada ── */
+.emp-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+}
+
+.emp-modal {
+  background-color: var(--color-superficie);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 420px;
+}
+
+.emp-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-borde);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-texto);
+}
+
+.emp-modal__body {
+  padding: var(--space-4);
+}
+
+.emp-clave {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  letter-spacing: 0.1em;
+  text-align: center;
+  background-color: var(--color-fondo);
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+  color: var(--color-azul);
+}
+
+.emp-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+.emp-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  color: var(--color-texto-sub);
+  cursor: pointer;
+}
+
+.emp-btn-icon:hover {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}

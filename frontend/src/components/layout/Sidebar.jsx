@@ -2,7 +2,7 @@
 // src/components/layout/Sidebar.jsx
 // CAMBIOS respecto al original:
 //   1. Prospectos: quitado proximamente:true → ya es NavLink real
-//   2. Admin: ruta cambiada a /admin/catalogos, quitado proximamente:true
+//   2. Admin: ruta cambiada a /admin/configuracion, quitado proximamente:true
 //   3. Sin más cambios — estructura, CSS y lógica idénticos
 // ============================================================
 
@@ -32,6 +32,12 @@ const NAV_ITEMS = [
     // proximamente: true  ← REMOVIDO — M3 ya está listo
   },
   {
+    ruta:  '/admin/formularios',
+    icono: 'bi-file-earmark-text',
+    label: 'Formularios',
+    roles: ['ADMIN'],
+  },
+  {
     ruta:        '/cotizaciones',
     icono:       'bi-calculator',
     label:       'Cotizaciones',
@@ -56,16 +62,9 @@ const NAV_ITEMS = [
 
 const NAV_ADMIN = [
   {
-    ruta:  '/admin/catalogos',   // ← antes era /admin (sin ruta real)
-    icono: 'bi-sliders',
-    label: 'Catálogos',
-    roles: ['ADMIN'],
-    // proximamente: true  ← REMOVIDO — AdminCatalogos ya existe
-  },
-  {
-    ruta:  '/admin/formularios',
-    icono: 'bi-file-earmark-text',
-    label: 'Formularios',
+    ruta:  '/admin/configuracion',
+    icono: 'bi-gear',
+    label: 'Configuración',
     roles: ['ADMIN'],
   },
 ]
