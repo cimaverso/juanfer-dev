@@ -9,9 +9,9 @@
 // Datos: api/formularios.js
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { obtenerFormulario, listarRespuestas, listarVersiones } from '../../api/formularios.js'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useParams, useLocation, Link } from 'react-router-dom'
+import { obtenerFormulario, listarRespuestas, listarVersiones, obtenerMetricas } from '../../api/formularios.js'
 import './Formularios.css'
 import './FormularioRespuestas.css'
 
@@ -23,6 +23,52 @@ function formatoValor(valor) {
 
 function formatoFecha(iso) {
   return new Date(iso).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function formatoFechaCorta(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+}
+
+// ── Panel de métricas básicas (GET /formularios/{id}/metricas) ──
+function PanelMetricas({ metricas }) {
+  const maxSerie = Math.max(1, ...metricas.serie_diaria.map((d) => d.total))
+
+  return (
+    <div id="metricas" className="metricas">
+      <div className="metricas__tiles">
+        <div className="metricas__tile">
+          <span className="metricas__tile-valor">{metricas.total_respuestas}</span>
+          <span className="metricas__tile-label">Total respuestas</span>
+        </div>
+        <div className="metricas__tile">
+          <span className="metricas__tile-valor metricas__tile-valor--ok">{metricas.completadas}</span>
+          <span className="metricas__tile-label">Completadas</span>
+        </div>
+        <div className="metricas__tile">
+          <span className="metricas__tile-valor metricas__tile-valor--pendiente">{metricas.en_progreso}</span>
+          <span className="metricas__tile-label">En progreso</span>
+        </div>
+        <div className="metricas__tile">
+          <span className="metricas__tile-valor">{(metricas.tasa_completitud * 100).toFixed(0)}%</span>
+          <span className="metricas__tile-label">Tasa de completitud</span>
+        </div>
+      </div>
+
+      {metricas.serie_diaria.length > 0 && (
+        <div className="metricas__serie">
+          <span className="metricas__serie-titulo">Respuestas iniciadas por día</span>
+          <div className="metricas__serie-barras">
+            {metricas.serie_diaria.map((d) => (
+              <div key={d.fecha} className="metricas__barra-col" title={`${d.total} el ${formatoFechaCorta(d.fecha)}`}>
+                <div className="metricas__barra" style={{ height: `${(d.total / maxSerie) * 100}%` }} />
+                <span className="metricas__barra-label">{formatoFechaCorta(d.fecha)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Traduce respuesta.respuestas (códigos) a algo legible usando
@@ -78,26 +124,32 @@ function DetalleRespuesta({ respuesta, estructura }) {
 
 export default function FormularioRespuestas() {
   const { id } = useParams()
+  const location = useLocation()
+  const metricasRef = useRef(null)
 
   const [formulario, setFormulario] = useState(null)
   const [respuestas, setRespuestas] = useState([])
   const [versiones, setVersiones]   = useState([])
+  const [metricas, setMetricas]     = useState(null)
   const [cargando, setCargando]     = useState(true)
   const [error, setError]           = useState(null)
   const [abiertaId, setAbiertaId]   = useState(null)
+  const [busqueda, setBusqueda]     = useState('')
 
   const cargar = useCallback(async () => {
     try {
       setCargando(true)
       setError(null)
-      const [f, r, v] = await Promise.all([
+      const [f, r, v, m] = await Promise.all([
         obtenerFormulario(id),
         listarRespuestas(id),
         listarVersiones(id),
+        obtenerMetricas(id),
       ])
       setFormulario(f)
       setRespuestas(r)
       setVersiones(v)
+      setMetricas(m)
     } catch (e) {
       setError('No se pudieron cargar las respuestas.')
       console.error('[FormularioRespuestas]', e)
@@ -109,10 +161,25 @@ export default function FormularioRespuestas() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, mismo patrón que Prospectos.jsx (ver DT-018)
   useEffect(() => { cargar() }, [cargar])
 
+  // Acceso rápido desde Formularios.jsx (.../respuestas#metricas): salta al panel sin recargar la página.
+  useEffect(() => {
+    if (location.hash === '#metricas' && !cargando && metricasRef.current) {
+      metricasRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [location.hash, cargando])
+
   function estructuraDe(respuesta) {
     const version = versiones.find((v) => v.id === respuesta.formulario_version_id)
     return version?.estructura || null
   }
+
+  const terminoBusqueda = busqueda.trim().toLowerCase()
+  const respuestasFiltradas = terminoBusqueda
+    ? respuestas.filter((r) =>
+        (r.cliente_nombre || '').toLowerCase().includes(terminoBusqueda) ||
+        (r.cliente_documento || '').toLowerCase().includes(terminoBusqueda)
+      )
+    : respuestas
 
   return (
     <div className="respuestas page-enter">
@@ -124,6 +191,40 @@ export default function FormularioRespuestas() {
         <h2 className="formularios__titulo">{formulario ? `Respuestas — ${formulario.titulo}` : 'Respuestas'}</h2>
         <p className="formularios__sub">{respuestas.length} respuesta{respuestas.length !== 1 ? 's' : ''} recibidas</p>
       </div>
+
+      {!error && !cargando && respuestas.length > 0 && (
+        <div className="formularios__filtros">
+          <div className="formularios__filtro-grupo">
+            <label className="formularios__filtro-label" htmlFor="respuestas-busqueda">Buscar por nombre o documento</label>
+            <div className="formularios__filtros-busqueda">
+              <i className="bi bi-search" />
+              <input
+                id="respuestas-busqueda"
+                type="text"
+                placeholder="Nombre o número de documento"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+              {busqueda && (
+                <button
+                  type="button"
+                  className="formularios__filtros-limpiar-input"
+                  onClick={() => setBusqueda('')}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <i className="bi bi-x-lg" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!error && !cargando && metricas && (
+        <div ref={metricasRef}>
+          <PanelMetricas metricas={metricas} />
+        </div>
+      )}
 
       {error ? (
         <div className="formularios__error">
@@ -139,9 +240,13 @@ export default function FormularioRespuestas() {
         <div className="formularios__vacio">
           <i className="bi bi-inbox" /> Todavía no hay respuestas para este formulario.
         </div>
+      ) : respuestasFiltradas.length === 0 ? (
+        <div className="formularios__vacio">
+          <i className="bi bi-search" /> Ninguna respuesta coincide con "{busqueda}".
+        </div>
       ) : (
         <div className="respuestas__lista">
-          {respuestas.map((r) => {
+          {respuestasFiltradas.map((r) => {
             const abierta = abiertaId === r.id
             return (
               <div key={r.id} className="respuestas__item">

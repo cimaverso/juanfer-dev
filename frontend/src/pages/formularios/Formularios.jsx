@@ -13,11 +13,12 @@ import {
   crearFormulario,
   eliminarFormulario,
 } from '../../api/formularios.js'
+import { listarValoresCatalogo } from '../../api/catalogos.js'
 import Toast from '../../components/Toast.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import './Formularios.css'
 
-const NUEVO_VACIO = { titulo: '', descripcion: '' }
+const NUEVO_VACIO = { titulo: '', descripcion: '', categoria_codigo: '' }
 
 function urlPublica(token) {
   return `${window.location.origin}/f/${token}`
@@ -33,12 +34,24 @@ function BadgeEstado({ estado }) {
   return <span className={`form-badge ${clase}`}>{estado.nombre}</span>
 }
 
+function BadgeCategoria({ categoria }) {
+  const clase = {
+    cotizacion: 'form-badge--cotizacion',
+    expedicion: 'form-badge--expedicion',
+  }[categoria.codigo] || 'form-badge--cotizacion'
+
+  return <span className={`form-badge ${clase}`}>{categoria.nombre}</span>
+}
+
 export default function Formularios() {
   const navigate = useNavigate()
 
   const [formularios, setFormularios] = useState([])
   const [cargando, setCargando]       = useState(true)
   const [error, setError]             = useState(null)
+
+  const [categorias, setCategorias]   = useState([])
+  const [estados, setEstados]         = useState([])
 
   const [modalAbierto, setModalAbierto] = useState(false)
   const [nuevo, setNuevo]             = useState(NUEVO_VACIO)
@@ -49,11 +62,31 @@ export default function Formularios() {
   const [toast, setToast]             = useState(null)
   const [confirmacion, setConfirmacion] = useState(null)
 
+  // ── Filtros ───────────────────────────────────────────
+  const [busqueda, setBusqueda]             = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [filtroEstado, setFiltroEstado]     = useState('')
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState('')
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState('')
+
+  // Búsqueda con debounce de 350ms (mismo patrón que Prospectos.jsx)
+  const [busquedaDebounced, setBusquedaDebounced] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350)
+    return () => clearTimeout(t)
+  }, [busqueda])
+
   const cargar = useCallback(async () => {
     try {
       setCargando(true)
       setError(null)
-      const data = await listarFormularios()
+      const data = await listarFormularios({
+        titulo: busquedaDebounced || undefined,
+        categoria_codigo: filtroCategoria || undefined,
+        estado_codigo: filtroEstado || undefined,
+        fecha_desde: filtroFechaDesde || undefined,
+        fecha_hasta: filtroFechaHasta || undefined,
+      })
       setFormularios(data)
     } catch (e) {
       setError('No se pudieron cargar los formularios.')
@@ -61,15 +94,32 @@ export default function Formularios() {
     } finally {
       setCargando(false)
     }
+  }, [busquedaDebounced, filtroCategoria, filtroEstado, filtroFechaDesde, filtroFechaHasta])
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount/filtros, mismo patrón que Prospectos.jsx (ver DT-018)
+  useEffect(() => { cargar() }, [cargar])
+
+  useEffect(() => {
+    listarValoresCatalogo('formulario_categoria').then(setCategorias).catch(() => {})
+    listarValoresCatalogo('formulario_estado').then(setEstados).catch(() => {})
   }, [])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, mismo patrón que Prospectos.jsx (ver DT-018)
-  useEffect(() => { cargar() }, [cargar])
+  function limpiarFiltros() {
+    setBusqueda('')
+    setFiltroCategoria('')
+    setFiltroEstado('')
+    setFiltroFechaDesde('')
+    setFiltroFechaHasta('')
+  }
 
   async function handleCrear(e) {
     e.preventDefault()
     if (!nuevo.titulo.trim()) {
       setErrorCrear('El título es obligatorio.')
+      return
+    }
+    if (!nuevo.categoria_codigo) {
+      setErrorCrear('La categoría es obligatoria.')
       return
     }
     try {
@@ -78,6 +128,7 @@ export default function Formularios() {
       const creado = await crearFormulario({
         titulo: nuevo.titulo.trim(),
         descripcion: nuevo.descripcion.trim() || null,
+        categoria_codigo: nuevo.categoria_codigo,
       })
       navigate(`/admin/formularios/${creado.id}/editar`)
     } catch (err) {
@@ -127,6 +178,73 @@ export default function Formularios() {
         </button>
       </div>
 
+      <div className="formularios__filtros">
+        <div className="formularios__filtro-grupo">
+          <label className="formularios__filtro-label" htmlFor="filtro-titulo">Buscar</label>
+          <div className="formularios__filtros-busqueda">
+            <i className="bi bi-search" />
+            <input
+              id="filtro-titulo"
+              type="text"
+              placeholder="Título del formulario…"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+            {busqueda && (
+              <button className="formularios__filtros-limpiar-input" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda">
+                <i className="bi bi-x" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="formularios__filtro-grupo">
+          <label className="formularios__filtro-label" htmlFor="filtro-categoria">Categoría</label>
+          <select id="filtro-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+            <option value="">Todas</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.codigo}>{c.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="formularios__filtro-grupo">
+          <label className="formularios__filtro-label" htmlFor="filtro-estado">Estado</label>
+          <select id="filtro-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <option value="">Todos</option>
+            {estados.map((e) => (
+              <option key={e.id} value={e.codigo}>{e.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="formularios__filtro-grupo">
+          <label className="formularios__filtro-label" htmlFor="filtro-fecha-desde">Creado desde</label>
+          <input
+            id="filtro-fecha-desde"
+            type="date"
+            value={filtroFechaDesde}
+            onChange={(e) => setFiltroFechaDesde(e.target.value)}
+          />
+        </div>
+
+        <div className="formularios__filtro-grupo">
+          <label className="formularios__filtro-label" htmlFor="filtro-fecha-hasta">Creado hasta</label>
+          <input
+            id="filtro-fecha-hasta"
+            type="date"
+            value={filtroFechaHasta}
+            onChange={(e) => setFiltroFechaHasta(e.target.value)}
+          />
+        </div>
+
+        {(busqueda || filtroCategoria || filtroEstado || filtroFechaDesde || filtroFechaHasta) && (
+          <button className="formularios__filtros-reset formularios__filtros-reset--grupo" onClick={limpiarFiltros}>
+            <i className="bi bi-funnel" /> Limpiar filtros
+          </button>
+        )}
+      </div>
+
       {error ? (
         <div className="formularios__error">
           <i className="bi bi-wifi-off" />
@@ -141,6 +259,7 @@ export default function Formularios() {
             <thead>
               <tr>
                 <th>Título</th>
+                <th>Categoría</th>
                 <th>Estado</th>
                 <th>Creado</th>
                 <th style={{ width: '1%' }}>URL pública</th>
@@ -150,13 +269,13 @@ export default function Formularios() {
             <tbody>
               {cargando
                 ? Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i}><td colSpan={5} className="formularios__skeleton-fila" /></tr>
+                    <tr key={i}><td colSpan={6} className="formularios__skeleton-fila" /></tr>
                   ))
                 : formularios.length === 0
                   ? (
                     <tr>
-                      <td colSpan={5} className="formularios__vacio">
-                        <i className="bi bi-file-earmark-text" /> No hay formularios todavía
+                      <td colSpan={6} className="formularios__vacio">
+                        <i className="bi bi-file-earmark-text" /> No hay formularios con estos filtros
                       </td>
                     </tr>
                   )
@@ -166,6 +285,7 @@ export default function Formularios() {
                         <span className="formularios__nombre">{f.titulo}</span>
                         {f.descripcion && <span className="formularios__descripcion">{f.descripcion}</span>}
                       </td>
+                      <td><BadgeCategoria categoria={f.categoria} /></td>
                       <td><BadgeEstado estado={f.estado} /></td>
                       <td>{new Date(f.created_at).toLocaleDateString('es-CO')}</td>
                       <td onClick={(e) => e.stopPropagation()}>
@@ -189,6 +309,13 @@ export default function Formularios() {
                             onClick={() => navigate(`/admin/formularios/${f.id}/respuestas`)}
                           >
                             <i className="bi bi-inbox" />
+                          </button>
+                          <button
+                            className="form-btn-icon"
+                            title="Ver métricas"
+                            onClick={() => navigate(`/admin/formularios/${f.id}/respuestas#metricas`)}
+                          >
+                            <i className="bi bi-bar-chart" />
                           </button>
                           <button
                             className="form-btn-icon"
@@ -242,6 +369,18 @@ export default function Formularios() {
                   placeholder="Texto introductorio que verá quien lo diligencie"
                   rows={3}
                 />
+              </label>
+              <label className="formularios__label">
+                Categoría
+                <select
+                  value={nuevo.categoria_codigo}
+                  onChange={(e) => setNuevo((p) => ({ ...p, categoria_codigo: e.target.value }))}
+                >
+                  <option value="">Selecciona una categoría…</option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.codigo}>{c.nombre}</option>
+                  ))}
+                </select>
               </label>
               {errorCrear && <p className="form-error-msg">{errorCrear}</p>}
               <div className="formularios__modal-footer">

@@ -8,6 +8,93 @@
   margin: var(--space-3) 0 var(--space-4) 0;
 }
 
+/* ── Panel de métricas (GET /formularios/{id}/metricas) ── */
+.metricas {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-lg);
+}
+
+.metricas__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.metricas__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  background-color: var(--color-fondo);
+  border-radius: var(--radius-md);
+}
+
+.metricas__tile-valor {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.metricas__tile-valor--ok { color: var(--estado-expedido); }
+.metricas__tile-valor--pendiente { color: var(--alerta-atencion); }
+
+.metricas__tile-label {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metricas__serie-titulo {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-2);
+}
+
+.metricas__serie-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  height: 110px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.metricas__barra-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  height: 100%;
+  min-width: 28px;
+}
+
+.metricas__barra {
+  width: 16px;
+  min-height: 2px;
+  background-color: var(--color-azul);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.metricas__barra-label {
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .metricas__tiles { grid-template-columns: repeat(2, 1fr); }
+}
+
 .respuestas__lista {
   display: flex;
   flex-direction: column;

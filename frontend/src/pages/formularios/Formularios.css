@@ -26,6 +26,115 @@
   margin: 0;
 }
 
+/* ── Filtros ── */
+.formularios__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.formularios__filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.formularios__filtro-label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-texto-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.formularios__filtros-reset--grupo {
+  margin-bottom: 1px;
+}
+
+.formularios__filtros-busqueda {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.formularios__filtros-busqueda > i {
+  position: absolute;
+  left: 10px;
+  color: var(--color-texto-light);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.formularios__filtros-busqueda input {
+  padding-left: 32px;
+  padding-right: 32px;
+  width: 220px;
+  height: 34px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.formularios__filtros-busqueda input:focus {
+  outline: none;
+  border-color: var(--color-azul);
+}
+
+.formularios__filtros-limpiar-input {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--color-texto-light);
+  font-size: 0.85rem;
+  transition: color var(--transition-fast);
+}
+
+.formularios__filtros-limpiar-input:hover { color: var(--color-texto); }
+
+.formularios__filtros select,
+.formularios__filtros input[type="date"] {
+  height: 34px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-md);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.formularios__filtros select:focus,
+.formularios__filtros input[type="date"]:focus {
+  outline: none;
+  border-color: var(--color-azul);
+}
+
+.formularios__filtros-reset {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-azul);
+  padding: 0 var(--space-3);
+  height: 34px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-borde);
+  transition: background-color var(--transition-fast);
+}
+
+.formularios__filtros-reset:hover { background-color: var(--color-azul-light); }
+
 /* ── Tabla ── */
 .formularios__tabla-wrap {
   background-color: var(--color-superficie);
@@ -144,6 +253,17 @@
   color: var(--estado-cancelado);
 }
 
+/* ── Badges de categoría (negocio, distinta del estado de publicación) ── */
+.form-badge--cotizacion {
+  background-color: var(--color-azul-light);
+  color: var(--color-azul);
+}
+
+.form-badge--expedicion {
+  background-color: var(--estado-expedido-bg);
+  color: var(--estado-expedido);
+}
+
 /* ── Modal de creación ── */
 .formularios__modal-overlay {
   position: fixed;
@@ -193,7 +313,8 @@
 }
 
 .formularios__label input,
-.formularios__label textarea {
+.formularios__label textarea,
+.formularios__label select {
   font-family: var(--font-body);
   font-weight: normal;
   padding: var(--space-2) var(--space-3);

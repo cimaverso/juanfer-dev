@@ -24,8 +24,11 @@ import api from './axios.js'
 // ============================================================
 // FORMULARIO (cabecera)
 // ============================================================
-export async function listarFormularios() {
-  const { data } = await api.get('/formularios')
+export async function listarFormularios(filtros = {}) {
+  const params = Object.fromEntries(
+    Object.entries(filtros).filter(([, v]) => v !== '' && v != null)
+  )
+  const { data } = await api.get('/formularios', { params })
   return data
 }
 
@@ -67,6 +70,11 @@ export async function publicarFormulario(formularioId) {
 // ============================================================
 export async function listarRespuestas(formularioId) {
   const { data } = await api.get(`/formularios/${formularioId}/respuestas`)
+  return data
+}
+
+export async function obtenerMetricas(formularioId) {
+  const { data } = await api.get(`/formularios/${formularioId}/metricas`)
   return data
 }
 
