@@ -10,7 +10,7 @@
 5. Resume en 5 líneas lo entendido y pregunta si vamos con el siguiente paso de ESTADO.md.
 
 ## Método de trabajo (no negociable)
-- Un paso a la vez. Propón, espera mi confirmación explícita, ejecuta, muestra resultado, espera de nuevo. El usuario ejecuta los comandos y devuelve el output cuando así se acuerde.
+- Un paso a la vez. Propón, espera mi confirmación explícita, ejecuta, muestra resultado, espera de nuevo. Claude Code ejecuta los comandos y el usuario aprueba cada uno antes de que corra; no se encadenan comandos con efectos sin aprobación.
 - Antes de cambiar un archivo: ubícalo (`grep -n 'patron'`), lee el bloque (`sed -n 'X,Yp'`), usa `cat` si el bloque es grande o hay duda de duplicados.
 - Patch (workflow OEF+CAT): ÚNICO método, script Python con heredoc desde Git Bash:
   ```
