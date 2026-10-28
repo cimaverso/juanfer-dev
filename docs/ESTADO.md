@@ -26,6 +26,7 @@ Probar con un formulario real, de punta a punta, que toda la información quede 
 - **El puerto 8000 quedó con un socket fantasma de esta sesión** (ver arriba) — `axios.js` apunta a `:8001` como workaround temporal, decisión del usuario de resolverlo después.
 - **`estado_id` (publicación) y `categoria_id` (negocio) son conceptos distintos a propósito** en Formulario — se evitó nombrarlos igual ("estado") para no repetir el error de confundir ciclo de vida de publicación con clasificación de negocio.
 - **`prospecto_id` en `FormularioRespuesta` y su endpoint en Prospecto son deuda especulativa asumida a sabiendas** (DT-020, sesión anterior): se señaló al usuario que viola la regla del propio CLAUDE.md de no construir para requisitos hipotéticos, y decidió seguir igual.
+- **Dos ítems nuevos quedaron anotados en docs/ROADMAP.md "Siguiente" (2026-10-28, tarde), sin empezar**: (1) importación masiva de formularios — el usuario ya tiene los 17 JSON de MS Forms y un Excel consolidado armado a partir de ellos, listos para usar como insumo real del diseño del importador; (2) reordenar el Dashboard por secciones y agregarle las métricas de Formularios (que ya existen en backend). Ninguno de los dos se tocó todavía — quedan para cuando se retome el trabajo.
 
 ## Archivos tocados (no confirmados en commit todavía — DT-022 + DT-023)
 - Backend: `app/models/usuarios_clientes/{horario_usuario,empresa}.py` (nuevos), `app/models/usuarios_clientes/usuario.py` (reset + bloqueo), `app/models/__init__.py`
