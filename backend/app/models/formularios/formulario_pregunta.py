@@ -90,12 +90,18 @@ class FormularioPregunta(Base):
 
     # choices, validaciones (regex/tipo numérico/email), branching
     # (saltos condicionales por valor de respuesta), labels de NPS, etc.
+    # Para tipo='opcion': "multiple" (bool, default false = selección única)
+    # y "allow_other" (bool) para la opción "Otro" con texto libre.
+    # goto_codigo admite BranchingCodigos.FIN ("__fin__") para saltar al
+    # final del formulario sin apuntar a una pregunta real.
     # Ejemplo:
     # {
     #   "choices": [{"value": "SI", "label": "Sí"}, {"value": "NO", "label": "No"}],
+    #   "multiple": false,
+    #   "allow_other": false,
     #   "branching": [
     #       {"if_value": "SI", "goto_codigo": "asegurado.tipo_documento"},
-    #       {"if_value": "NO", "goto_codigo": "cierre.gracias"}
+    #       {"if_value": "NO", "goto_codigo": "__fin__"}
     #   ],
     #   "validacion": {"es_numero": true}
     # }

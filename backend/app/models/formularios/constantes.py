@@ -41,6 +41,15 @@ class PreguntaTipoCodigos:
     OPCION = "opcion"
     NPS = "nps"
     SECCION = "seccion"
+    CALIFICACION = "calificacion"
+
+
+class BranchingCodigos:
+    # goto_codigo reservado dentro de FormularioPregunta.configuracion.branching
+    # para saltar directo al final del formulario (equivalente a BranchInfo:
+    # {"ToTheEnd": true} en el export de Microsoft Forms), sin apuntar a una
+    # pregunta real.
+    FIN = "__fin__"
 
 
 class RespuestaEstadoCodigos:

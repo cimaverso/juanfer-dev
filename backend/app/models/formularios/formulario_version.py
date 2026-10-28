@@ -62,7 +62,8 @@ class FormularioVersion(Base):
 
     formulario: Mapped["Formulario"] = relationship(
         "Formulario",
-        back_populates="versiones"
+        back_populates="versiones",
+        foreign_keys=[formulario_id]
     )
 
     respuestas: Mapped[list["FormularioRespuesta"]] = relationship(

@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from app.db.base import Base
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+import uuid
 
 if TYPE_CHECKING:
     from app.models.formularios.formulario_version import FormularioVersion
@@ -42,11 +43,22 @@ class Formulario(Base):
         nullable=False
     )
 
-    # Apunta al `numero_version` de la FormularioVersion publicada actualmente.
-    # Si es null, el formulario aún no tiene ninguna versión publicada (solo borrador).
-    version_activa: Mapped[Optional[int]] = mapped_column(
+    # FK a la FormularioVersion publicada actualmente (snapshot que se sirve
+    # en la URL pública). Si es null, el formulario aún no tiene ninguna
+    # versión publicada (solo borrador).
+    version_activa_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
+        ForeignKey("formulario_version.id", ondelete="SET NULL"),
         nullable=True
+    )
+
+    # Identificador no adivinable para la URL pública del formulario
+    # (ej. /f/<token_publico>), independiente del id autoincremental.
+    token_publico: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        unique=True,
+        nullable=False,
+        server_default=text("gen_random_uuid()")
     )
 
     # Tema, colores, mensaje final, settings generales del form (equivalente a
@@ -79,7 +91,14 @@ class Formulario(Base):
     versiones: Mapped[list["FormularioVersion"]] = relationship(
         "FormularioVersion",
         back_populates="formulario",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        foreign_keys="FormularioVersion.formulario_id"
+    )
+
+    version_activa: Mapped[Optional["FormularioVersion"]] = relationship(
+        "FormularioVersion",
+        foreign_keys=[version_activa_id],
+        uselist=False
     )
 
     grupos_pregunta: Mapped[list["FormularioGrupoPregunta"]] = relationship(
