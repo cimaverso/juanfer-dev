@@ -1,46 +1,55 @@
 # Estado
-Actualizado por /cierre — 2026-10-27 (primer estado, escrito durante el arranque de gobierno)
+Actualizado por /cierre — 2026-10-27
 
 ## Siguiente paso (UNO, concreto)
-Reproducir el error de runtime y pegar el traceback completo: encender Docker Desktop, comprobar que `juanfer_postgres` esté arriba (puerto 5433), y desde `backend/` correr `uv run uvicorn app.main:app --reload`; llamar al endpoint que falla y copiar el traceback entero. Resultado esperado: el traceback real, más la salida de `uv run alembic current` y `uv run alembic heads`, para decidir si la causa es el desfase entre modelos y tablas o es otra. No se rediseña nada antes de tener esto.
+Empezar el ítem 2 del roadmap (backend de formularios y catálogos). Primer sub-paso: decidir el formato de entrada para importar los 17 formularios reales (ya no es solo "Excel o JSON" genérico de RF-013 — hay 17 JSON concretos exportados de Microsoft Forms en `DOCUMENTACION\Juanfer Seguros\FORMULARIOS`, con el inventario ya contrastado contra el modelo). Resultado esperado: un plan de mapeo JSON→modelo (qué `Question.*` va a qué `tipo_id`, cómo se resuelven los `#1..#4` a `FormularioGrupoPregunta`, qué `codigo` estable se asigna a cada pregunta) antes de escribir el importador.
 
 ## Última sesión
-- Hecho: estructura de gobierno del proyecto. Entrevista completa (Fase 0), propuesta aprobada (Fase 1) y creados `CLAUDE.md`, `docs/PROPOSITO.md`, `docs/REQUISITOS.md`, `docs/ROADMAP.md`, `docs/DEUDA.md`, `docs/DECISIONES.md`, `docs/ARQUITECTURA.md`, `docs/GUIA.md`, `backend/.env.example`, `frontend/.env.example`, `.claude/commands/cierre.md` y este archivo. No se escribió código de producto.
-- Verificado con: lectura del output de los comandos que ejecutó el usuario; sin tests ni ejecución del sistema.
-- Commits: `Docs(Gobierno): Agregar contrato de trabajo, documentos vivos y comando /cierre` en `desarrollo`, ya con push (hash: [PENDIENTE]).
+- Hecho:
+  1. Reproducido el error de runtime con el traceback real: `Cliente`/`Poliza`/`Cotizacion` no tenían la relationship inversa `formulario_respuestas` que `FormularioRespuesta` esperaba vía `back_populates` → `sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[Cliente(cliente)]' has no property 'formulario_respuestas'`. No era desfase de migración: agregada la relationship en los 3 modelos.
+  2. Contrastado el modelo de formularios contra un inventario real de los 17 JSON (1518 preguntas, 161 `ColumnGroup`, hasta 109 repeticiones de pregunta por formulario, 247 con salto condicional, 51 Choice no simple, 29 con "Otro"). Confirma que el híbrido relacional+JSONB (D-D) los soporta sin tabla por formulario.
+  3. Corregidos 2 huecos de diseño, reescribiendo la migración `98500168c7d6` (permitido, no es de las 4 intocables):
+     - `Formulario.version_activa` (int suelto, sin integridad referencial) → `version_activa_id` (FK real a `formulario_version.id`, `ON DELETE SET NULL`).
+     - Agregada `Formulario.token_publico` (UUID único, default `gen_random_uuid()`) para la futura URL pública (antes no existía ningún identificador no adivinable).
+  4. Fijadas 3 convenciones de diseño sin cambio de esquema (en `constantes.py` y el comentario de `formulario_pregunta.py`): `configuracion.multiple`/`allow_other` para Choice no simple y opción "Otro"; `BranchingCodigos.FIN = "__fin__"` para salto al final del formulario; nuevo valor de catálogo `calificacion` en `formulario_pregunta_tipo` (para `Question.Rating`, 12 casos en el inventario).
+- Verificado con:
+  - Traceback real pegado por el usuario (antes y después del fix).
+  - `configure_mappers()` sin error tras cada tanda de cambios.
+  - `uv run alembic downgrade -1` → edición de la migración → `uv run alembic upgrade head`, sin error; `alembic current` y `alembic heads` coinciden en `98500168c7d6`.
+  - `\d formulario` en psql muestra `version_activa_id` con su FK y `token_publico` con su UNIQUE.
+  - Catálogo `formulario_pregunta_tipo` con 9 valores tras repoblar con el seed (incluye `calificacion`).
+  - El usuario levantó el server en su terminal y confirmó `POST /api/v1/auth/login` → 200 OK, antes y después de los cambios de esquema.
+  - No hay pruebas automáticas (DT-006, sigue sin existir pytest).
+- Commits: ninguno esta sesión; todo sigue sin commitear (ver "Archivos tocados").
 
 ## Bloqueos / esperando mi respuesta
-- Traceback del error de runtime (siguiente paso).
-- Segundo commit con las correcciones de despliegue (Dokploy aún no conectado) y de la condición de D-008.
-- Probar `/cierre` una vez en seco antes de confiar en él.
-- Abiertas, de `docs/REQUISITOS.md`: estructura real de los 17 formularios, si una respuesta se vincula a un prospecto o cliente o puede ser anónima, qué catálogos edita el panel, formato de importación Excel/JSON, texto de autorización de datos (habeas data), umbral del límite de envíos, dominio de correo para Resend, anchos de prueba para responsive.
-- Condición de D-008 resuelta: no hay otro entorno ni despliegue hecho (confirmado por el usuario). Pendiente antes del `downgrade`: `pg_dump` y saber si hay formularios o respuestas cargados (los 17) en la DB local: [PENDIENTE]. El usuario recuerda haber ejecutado el seed, que carga los catálogos de formularios (sin contar filas).
+- Formato de entrada para importar los 17 formularios (ver "Siguiente paso"): decidir si el importador parte de los JSON de Microsoft Forms directamente o de un formato intermedio.
+- `backend/backups/juanfer_db_20261027_191351.sql` (pg_dump hecho antes del downgrade de hoy, por la regla D-008): conservarlo hasta confirmar que todo quedó estable; no se commiteó.
+- Bug de `.gitignore` encontrado (ver abajo): `backend/backups/` no se está ignorando de verdad. Pendiente de tu OK para corregirlo (propuesto en DEUDA).
+- `CLAUDE.md` tiene un cambio sin commitear que no se originó en esta sesión (ya estaba así al empezar) — confirmar si es intencional antes de commitear nada que lo incluya.
+- Siguen abiertas, de `docs/REQUISITOS.md`: si una respuesta se vincula a un prospecto/cliente o puede ser anónima, qué catálogos edita el panel, texto de habeas data, umbral de envíos, dominio Resend, anchos de prueba responsive.
 
 ## Contexto que se pierde si no se escribe
-- **Hipótesis sin confirmar:** que el error de runtime lo causa el modelo de datos. Solo se sabe que el server levanta y falla al ejecutar, tras la última migración. El usuario cree que rediseñar el modelo lo estabiliza; se verifica con el traceback.
-- **Shell:** Claude Code debe usar Git Bash (`C:\Program Files\Git\bin\bash.exe`), no el `bash` de WSL. En los parches, `python` (no `python3`) y `open(..., encoding='utf-8', newline='')`.
-- **Docker y DB local:** la DB que usa el `.env` es el contenedor `juanfer_postgres` (puerto 5433, base `juanfer_db`, usuario `juanferseg`), que no está definido en el repo (cómo se creó: [PENDIENTE]). Los contenedores `juanfer_db`, `juanfer_backend`, `juanfer_frontend` y `juanfer_nginx` del compose están detenidos desde hace meses y no se usan. No hay `psql` en Windows: usar `docker exec juanfer_postgres psql ...` o pgAdmin.
-- **Modelo de formularios (D-D, sin decidir):** inclinación hacia un híbrido (columnas relacionales para lo consultable, JSONB para la definición y los valores, respuestas atadas a una versión inmutable). Es `[SUPUESTO]` hasta leer los 17 formularios y los modelos actuales. Alternativas: tablas normalizadas, o todo en JSONB.
-- **Decisiones:** D-001 a D-008 en `docs/DECISIONES.md`. Sigue sin decidir el modelo de datos de formularios (D-D).
-- **Seed:** `backend/scripts/seed_data.py` importa `app.models.formularios.constantes` (códigos de tipo de catálogo, estado de formulario, tipo de pregunta y estado de respuesta) y escribe con SQL crudo en una transacción manual. Si el modelo o esas constantes cambian bajo D-008, el seed puede romperse: revisarlo en el hito 1. Es casi idempotente: la mayoría es `ON CONFLICT DO NOTHING`, salvo un `DO UPDATE` por `id` (línea 70) que sobrescribe esa fila; no hay DELETE, TRUNCATE ni DROP. Tiene `if __name__ == "__main__"` (línea 286); el comando exacto, probablemente `uv run python -m scripts.seed_data` desde `backend/`, no está verificado. Si es así, tras un `downgrade` + `upgrade` el seed repone los catálogos; si los 17 formularios están en el seed: [PENDIENTE].
-- **Tamaños del front (recuento del 2026-10-27):** el `.js`/`.jsx` más grande es `PolizaForm.jsx` con 783 líneas; ninguno pasa de 1000. `AdminCatalogos.jsx` mide menos de 205 líneas.
-- **Front en local:** `vite.config.js` no define proxy; el front llama al backend directo (`VITE_API_URL`, por defecto `http://localhost:8000`). Al restringir CORS (DT-011) hay que permitir el origen del servidor de desarrollo de Vite. Bootstrap Icons se carga por CDN (jsdelivr, v1.11.3) desde `index.html`; sin internet no hay iconos. Cómo se cargan DM Sans e IBM Plex Sans: [PENDIENTE].
-- **Front:** `frontend/src/pages/admin/` ya contiene `AdminCatalogos.jsx` (ruta `/admin/catalogos`, solo ADMIN; su alcance frente a RF-012 no se ha leído); `src/dashboard/` está vacía. `global.css` tiene los tokens. El mecanismo del modo oscuro (`ThemeContext.jsx`) no está confirmado. Bootstrap Icons no está en `package.json`; se carga por otra vía sin verificar.
-- **Despliegue:** diferido a propósito. nginx recorta el prefijo (`/api/x` llega al backend como `/x`). Los hallazgos están en `DEUDA.md` (DT-001 a DT-005).
-- **Migraciones:** 5 archivos en cadena lineal (head `98500168c7d6`, la de formularios). Las 4 anteriores son intocables; la de formularios se reescribe con `downgrade` bajo D-008, tras el traceback y un `pg_dump`.
-- **Consola:** PowerShell 5.1 muestra mal los acentos de archivos UTF-8 (`Ã¡`); es de la consola, no de los archivos.
+- **El error de runtime NO era el modelo de datos de formularios en el sentido temido:** no había desfase entre migraciones y tablas (coincidían en `98500168c7d6` desde el inicio de la sesión). Era una relationship de SQLAlchemy incompleta (`back_populates` sin su contraparte). Las 4 migraciones anteriores a la de formularios nunca estuvieron en duda.
+- **D-D resuelto:** el modelo híbrido (relacional para lo consultable: `FormularioPregunta`/`FormularioGrupoPregunta` con `codigo` estable, `orden` numérico, `requerida`; JSONB para configuración/branching/validaciones/respuestas; `FormularioVersion` como snapshot inmutable) queda confirmado contra los 17 formularios reales, no solo como hipótesis. Falta registrar esto en DECISIONES.md (propuesto, ver abajo).
+- **Inventario de los 17 formularios:** recibido como `docs` externo (`inventario_forms.md`, generado desde los JSON en `DOCUMENTACION\Juanfer Seguros\FORMULARIOS`; los JSON son la fuente de verdad, no el .md). El contraste contra el modelo se hizo a mano en esta sesión, leyendo los 5 modelos de `app/models/formularios/`; no hay script automatizado de validación.
+- **Convenciones nuevas que el futuro importador debe respetar:** `FormularioPregunta.configuracion` ahora documenta `multiple`, `allow_other` y `goto_codigo: "__fin__"` (constante `BranchingCodigos.FIN`); el catálogo `formulario_pregunta_tipo` tiene 9 valores (se agregó `calificacion`).
+- **Migración de formularios editable, usada de nuevo:** se repitió el ciclo `pg_dump` → `downgrade -1` → editar → `upgrade head` sobre `98500168c7d6`, que sigue siendo la única no intocable. La tabla `formulario` seguía en 0 filas antes de esta sesión (los 17 formularios no estaban cargados, al contrario de lo que el usuario recordaba del seed). Las 4 anteriores (`1862ff089733`, `871cc6d526bd`, `07f706ae928e`, `0122a2ce8ea1`) no se tocaron.
+- **Seed:** sigue siendo casi idempotente (`ON CONFLICT DO NOTHING`); se le agregó una fila (`calificacion`). Comando confirmado y funcionando: `uv run python -m scripts.seed_data` desde `backend/`, pero en Windows necesita `PYTHONIOENCODING=utf-8` por delante — la consola (cp1252) no puede imprimir los emojis del script (`UnicodeEncodeError`). No se tocó el script para quitar los emojis; es deuda de consola, no del código (propuesto en DEUDA).
+- **Bug de `.gitignore`:** `backend/.gitignore` línea 56 tiene el patrón `backend/backups/`. Por estar dentro de `backend/.gitignore`, ese patrón se resuelve relativo a `backend/`, así que en realidad busca ignorar `backend/backups/backend/backups/` — no ignora la carpeta real. `git status` la muestra como untracked. Debería ser `backups/` a secas. No corregido (fuera del alcance de archivos que /cierre puede tocar sin permiso).
+- **`CLAUDE.md` con una diferencia sin commitear que no viene de esta sesión:** la frase sobre quién ejecuta los comandos en "Método de trabajo" ya estaba cambiada al iniciar esta sesión. No se tocó ni se debe commitear junto con el resto sin que el usuario confirme si es intencional.
+- **Backend corriendo:** el servidor lo levanta y prueba el usuario en su propia terminal (Git Bash, venv `backend\.venv`), nunca Claude Code directamente. Confirmado 200 OK en login después de todos los cambios de esta sesión.
+- **Tamaños del front, consola de Windows, Docker/DB local, despliegue diferido:** sin cambios respecto a lo ya registrado (ver sesión anterior); esta sesión no tocó frontend.
 
 ## Archivos tocados (no confirmados en commit)
-Subidos en el primer commit. Las correcciones de CLAUDE.md, ARQUITECTURA, DECISIONES, DEUDA y este archivo esperan el segundo commit:
-- `CLAUDE.md`
-- `docs/PROPOSITO.md`
-- `docs/REQUISITOS.md`
-- `docs/ROADMAP.md`
-- `docs/DEUDA.md`
-- `docs/ESTADO.md`
-- `docs/DECISIONES.md`
-- `docs/ARQUITECTURA.md`
-- `docs/GUIA.md`
-- `backend/.env.example`
-- `frontend/.env.example`
-- `.claude/commands/cierre.md` (se versiona: `.claude/commands/` no va en `.gitignore`, decidido el 2026-10-27)
+- `backend/alembic/versions/98500168c7d6_v3_agregar_tablas_para_formularios.py` (reescrita, no es una migración nueva)
+- `backend/app/models/formularios/constantes.py`
+- `backend/app/models/formularios/formulario.py`
+- `backend/app/models/formularios/formulario_pregunta.py` (solo comentario, sin cambio de columnas)
+- `backend/app/models/formularios/formulario_version.py`
+- `backend/app/models/modulos_negocio/cotizacion.py`
+- `backend/app/models/modulos_negocio/poliza.py`
+- `backend/app/models/usuarios_clientes/cliente.py`
+- `backend/scripts/seed_data.py`
+- `backend/backups/juanfer_db_20261027_191351.sql` (no versionado; ver nota del bug de `.gitignore` arriba)
+- `CLAUDE.md` (diferencia preexistente, no de esta sesión — no tocar sin confirmar con el usuario)
