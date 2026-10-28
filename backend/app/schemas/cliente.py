@@ -20,14 +20,15 @@ class ClienteRead(ClienteBase):
     id: int
     celular: str
     tipo_de_documento: str = Field(..., alias="tipo_de_documento")
+    total_formularios_respondidos: int
 
     class Config:
         from_attributes = True
 
 class ClienteProspectoRead(ClienteRead):
-    correo: str
-    ocupacion: str
-    ciudad: str
+    correo: Optional[str] = None
+    ocupacion: Optional[str] = None
+    ciudad: Optional[str] = None
 
 # Actualizar desde Prospecto
 class ClienteUpdate(BaseModel):

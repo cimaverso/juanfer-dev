@@ -13,14 +13,47 @@ from app.schemas.formulario import (
     FormularioPreguntaCreate, FormularioPreguntaUpdate
 )
 from typing import Optional
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 
 class FormularioService:
 
     @staticmethod
-    def listar(db: Session) -> list[Formulario]:
-        stmt = select(Formulario).order_by(Formulario.created_at.desc())
+    def listar(
+        db: Session,
+        categoria_codigo: Optional[str] = None,
+        estado_codigo: Optional[str] = None,
+        titulo: Optional[str] = None,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
+    ) -> list[Formulario]:
+        stmt = select(Formulario)
+
+        if categoria_codigo is not None:
+            categoria_id = CatalogoService.get_valor_id(
+                db, CatalogoTipoCodigos.FORMULARIO_CATEGORIA, categoria_codigo
+            )
+            stmt = stmt.where(Formulario.categoria_id == categoria_id)
+
+        if estado_codigo is not None:
+            estado_id = CatalogoService.get_valor_id(
+                db, CatalogoTipoCodigos.FORMULARIO_ESTADO, estado_codigo
+            )
+            stmt = stmt.where(Formulario.estado_id == estado_id)
+
+        if titulo is not None:
+            stmt = stmt.where(Formulario.titulo.ilike(f"%{titulo}%"))
+
+        if fecha_desde is not None:
+            stmt = stmt.where(Formulario.created_at >= datetime.combine(fecha_desde, datetime.min.time()))
+
+        if fecha_hasta is not None:
+            stmt = stmt.where(
+                Formulario.created_at < datetime.combine(fecha_hasta, datetime.min.time()) + timedelta(days=1)
+            )
+
+        stmt = stmt.order_by(Formulario.created_at.desc())
         return db.execute(stmt).scalars().all()
 
     @staticmethod
@@ -34,17 +67,28 @@ class FormularioService:
         return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
-    def crear(db: Session, data: FormularioCreate) -> Formulario:
+    def crear(db: Session, data: FormularioCreate):
+        """Devuelve "categoria_invalida" si data.categoria_codigo no existe en el catálogo."""
         estado_id = CatalogoService.get_valor_id(
             db,
             CatalogoTipoCodigos.FORMULARIO_ESTADO,
             FormularioEstadoCodigos.BORRADOR
         )
 
+        categoria_id = CatalogoService.get_valor_id(
+            db,
+            CatalogoTipoCodigos.FORMULARIO_CATEGORIA,
+            data.categoria_codigo
+        )
+
+        if categoria_id is None:
+            return "categoria_invalida"
+
         nuevo_formulario = Formulario(
             titulo=data.titulo.strip(),
             descripcion=data.descripcion,
             estado_id=estado_id,
+            categoria_id=categoria_id,
             configuracion=data.configuracion
         )
 
@@ -55,7 +99,8 @@ class FormularioService:
         return nuevo_formulario
 
     @staticmethod
-    def actualizar(db: Session, id: int, data: FormularioUpdate) -> Optional[Formulario]:
+    def actualizar(db: Session, id: int, data: FormularioUpdate):
+        """Devuelve "categoria_invalida" si data.categoria_codigo no existe en el catálogo."""
         formulario = FormularioService.obtener(db, id)
 
         if not formulario:
@@ -69,6 +114,18 @@ class FormularioService:
 
         if data.estado_id is not None:
             formulario.estado_id = data.estado_id
+
+        if data.categoria_codigo is not None:
+            categoria_id = CatalogoService.get_valor_id(
+                db,
+                CatalogoTipoCodigos.FORMULARIO_CATEGORIA,
+                data.categoria_codigo
+            )
+
+            if categoria_id is None:
+                return "categoria_invalida"
+
+            formulario.categoria_id = categoria_id
 
         if data.configuracion is not None:
             formulario.configuracion = data.configuracion

@@ -36,6 +36,7 @@ class ProspectoRead(ProspectoBase):
     poliza_id: Optional[int]
     created_at: datetime
     updated_at: datetime
+    total_formularios_respondidos: int
 
 class ProspectoCreate(BaseModel):
     #cliente

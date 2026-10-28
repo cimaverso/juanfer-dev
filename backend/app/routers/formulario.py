@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from datetime import date
 from app.core.db import get_db
 from app.schemas.formulario import (
     FormularioRead, FormularioCreate, FormularioUpdate,
@@ -7,7 +8,7 @@ from app.schemas.formulario import (
     FormularioGrupoPreguntaRead, FormularioGrupoPreguntaCreate, FormularioGrupoPreguntaUpdate,
     FormularioPreguntaRead, FormularioPreguntaCreate, FormularioPreguntaUpdate
 )
-from app.schemas.formulario_respuesta import FormularioRespuestaRead
+from app.schemas.formulario_respuesta import FormularioRespuestaRead, FormularioMetricasRead
 from app.services.formulario import (
     FormularioService, FormularioVersionService,
     FormularioGrupoPreguntaService, FormularioPreguntaService
@@ -22,8 +23,23 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[FormularioRead])
-def listar_formularios(db: Session = Depends(get_db), user=Depends(get_current_user_data)):
-    return FormularioService.listar(db)
+def listar_formularios(
+    categoria_codigo: str | None = Query(None),
+    estado_codigo: str | None = Query(None),
+    titulo: str | None = Query(None),
+    fecha_desde: date | None = Query(None),
+    fecha_hasta: date | None = Query(None),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user_data),
+):
+    return FormularioService.listar(
+        db,
+        categoria_codigo=categoria_codigo,
+        estado_codigo=estado_codigo,
+        titulo=titulo,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+    )
 
 
 @router.get("/{id}", response_model=FormularioRead)
@@ -38,15 +54,23 @@ def obtener_formulario(id: int, db: Session = Depends(get_db), user=Depends(get_
 
 @router.post("", response_model=FormularioRead, status_code=201)
 def crear_formulario(data: FormularioCreate, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
-    return FormularioService.crear(db, data)
+    resultado = FormularioService.crear(db, data)
+
+    if resultado == "categoria_invalida":
+        raise HTTPException(status_code=400, detail="categoria_codigo no corresponde a ningún valor de formulario_categoria")
+
+    return resultado
 
 
 @router.put("/{id}", response_model=FormularioRead)
 def actualizar_formulario(id: int, data: FormularioUpdate, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
     formulario = FormularioService.actualizar(db, id, data)
 
-    if not formulario:
+    if formulario is None:
         raise HTTPException(status_code=404, detail="El formulario no existe")
+
+    if formulario == "categoria_invalida":
+        raise HTTPException(status_code=400, detail="categoria_codigo no corresponde a ningún valor de formulario_categoria")
 
     return formulario
 
@@ -84,6 +108,16 @@ def publicar_formulario(formulario_id: int, db: Session = Depends(get_db), user=
 @router.get("/{formulario_id}/respuestas", response_model=list[FormularioRespuestaRead])
 def listar_respuestas(formulario_id: int, db: Session = Depends(get_db), user=Depends(get_current_user_data)):
     return FormularioRespuestaService.listar(db, formulario_id)
+
+
+@router.get("/{formulario_id}/metricas", response_model=FormularioMetricasRead)
+def obtener_metricas(formulario_id: int, db: Session = Depends(get_db), user=Depends(get_current_user_data)):
+    metricas = FormularioRespuestaService.metricas(db, formulario_id)
+
+    if metricas is None:
+        raise HTTPException(status_code=404, detail="El formulario no existe")
+
+    return metricas
 
 
 # ── Grupos de pregunta ──────────────────────────────────────────────────

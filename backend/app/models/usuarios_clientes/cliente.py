@@ -143,3 +143,7 @@ class Cliente(Base):
     @property
     def tipo_de_documento(self) -> str:
         return self.tipo_documento.nombre
+
+    @property
+    def total_formularios_respondidos(self) -> int:
+        return len(self.formulario_respuestas)

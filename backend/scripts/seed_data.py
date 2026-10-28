@@ -4,6 +4,7 @@ from app.core.security import get_password_hash
 from app.models.formularios.constantes import (
     CatalogoTipoCodigos,
     FormularioEstadoCodigos,
+    FormularioCategoriaCodigos,
     PreguntaTipoCodigos,
     RespuestaEstadoCodigos,
 )
@@ -111,6 +112,11 @@ def seed():
                         "descripcion": "Estados posibles de un formulario dinámico",
                     },
                     {
+                        "codigo": CatalogoTipoCodigos.FORMULARIO_CATEGORIA,
+                        "nombre": "Categoría de formulario",
+                        "descripcion": "Clasificación de negocio del formulario (cotización/expedición)",
+                    },
+                    {
                         "codigo": CatalogoTipoCodigos.FORMULARIO_PREGUNTA_TIPO,
                         "nombre": "Tipo de pregunta",
                         "descripcion": "Tipos de pregunta soportados por el motor de formularios",
@@ -129,6 +135,11 @@ def seed():
             formulario_estado_tipo_id = db.execute(
                 text("SELECT id FROM catalogo_tipo WHERE codigo = :codigo"),
                 {"codigo": CatalogoTipoCodigos.FORMULARIO_ESTADO}
+            ).scalar()
+
+            formulario_categoria_tipo_id = db.execute(
+                text("SELECT id FROM catalogo_tipo WHERE codigo = :codigo"),
+                {"codigo": CatalogoTipoCodigos.FORMULARIO_CATEGORIA}
             ).scalar()
 
             formulario_pregunta_tipo_id = db.execute(
@@ -156,6 +167,10 @@ def seed():
                     {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.BORRADOR, "nombre": "Borrador", "orden": 1},
                     {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.ACTIVO, "nombre": "Activo", "orden": 2},
                     {"tipo_id": formulario_estado_tipo_id, "codigo": FormularioEstadoCodigos.ARCHIVADO, "nombre": "Archivado", "orden": 3},
+
+                    # --- formulario_categoria ---
+                    {"tipo_id": formulario_categoria_tipo_id, "codigo": FormularioCategoriaCodigos.COTIZACION, "nombre": "Cotización", "orden": 1},
+                    {"tipo_id": formulario_categoria_tipo_id, "codigo": FormularioCategoriaCodigos.EXPEDICION, "nombre": "Expedición", "orden": 2},
 
                     # --- formulario_pregunta_tipo ---
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.TEXTO, "nombre": "Texto", "orden": 1},

@@ -3,7 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.schemas.cliente import ClienteRead, ClienteCreate, ClienteProspectoRead
+from app.schemas.formulario_respuesta import FormularioRespuestaRead
 from app.services.cliente import ClienteService
+from app.services.formulario_respuesta import FormularioRespuestaService
 from app.core.security import get_current_user_data
 
 router = APIRouter(
@@ -30,3 +32,11 @@ def registrar_cliente(data: ClienteCreate, db: Session = Depends(get_db), user =
 @router.get("/", response_model=list[ClienteProspectoRead])
 def get_all(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return ClienteService.listar_todos(db)
+
+@router.get("/{id}/formularios-respondidos", response_model=list[FormularioRespuestaRead])
+def listar_formularios_respondidos(id: int, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
+    cliente = ClienteService.buscar_cliente_id(id, db)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="El cliente no existe")
+
+    return FormularioRespuestaService.listar_por_cliente(db, id)

@@ -2,40 +2,41 @@
 Actualizado manualmente (sin skill /cierre disponible en este entorno) — 2026-10-28
 
 ## Siguiente paso (UNO, concreto)
-Probar con un formulario real, de punta a punta, que toda la información quede guardada sin errores (crear en el admin, publicar, diligenciar por la URL pública, confirmar la respuesta y el Cliente creado/reusado en la DB). Mientras eso no se confirme, el ítem 3 del roadmap sigue abierto aunque el front ya esté funcionalmente completo.
+Probar con un formulario real, de punta a punta, que toda la información quede guardada sin errores (crear en el admin, publicar, diligenciar por la URL pública, confirmar la respuesta y el Cliente creado/reusado en la DB). Mientras eso no se confirme, el ítem 3 del roadmap sigue abierto aunque el front ya esté funcionalmente completo. Esto sigue pendiente desde antes de esta sesión; hoy no se tocó.
 
-## Última sesión
-- Hecho (frontend de formularios, ítem 3 del roadmap, construido paso a paso):
-  1. `AdminCatalogos.jsx` ampliado para cubrir TODOS los catálogos de la DB (no solo el genérico): tabs con `CatalogoGenerico` (catalogo_tipo/valor) y un componente reusable `CatalogoLegado` para los catálogos existentes (estados_poliza, aseguradoras, productos, ramos, tipos_documento, estados_prospecto). CRUD admin de `estados_prospecto` agregado en backend para esto (schemas/services/router nuevos, sin borrado duro, igual criterio que DT-017).
-  2. `Formularios.jsx` (listado, crear, publicar, copiar URL, eliminar) y `FormularioBuilder.jsx` (727 líneas): preguntas como tarjetas siempre editables al estilo Microsoft Forms, grupos repetibles, branching por pregunta tipo "opción" (salto a otra pregunta o a otra página/sección, o fin del formulario), vínculo de preguntas a campos del Cliente (`CAMPOS_CLIENTE`) con tipo de dato forzado y bloqueado, "Tipo de documento" sincronizado contra el catálogo real en vez de texto libre, código interno de la pregunta ahora de solo lectura (ya no editable, para no romper saltos condicionales).
-  3. `FormularioPublico.jsx`: vista pública paginada por secciones (como MS Forms), con preguntas condicionales (ocultas hasta que su pregunta controladora responde la opción correcta, reactivo a cambios) resuelto con el modelo `controladoPor`.
-  4. `Toast.jsx`/`ConfirmDialog.jsx` (componentes compartidos nuevos): eliminan todo uso de `alert()` y `window.confirm()` del navegador en las pantallas nuevas.
-  5. Backend: dos bugs reales encontrados con datos reales de un formulario de prueba y corregidos — `_extraer_campos_cliente` pisaba el valor correcto de un campo (ej. `numero_documento`) con `None` de una alternativa de branching vacía; `_validar_basico` no excluía preguntas tipo "sección" (encabezados sin valor) ni las alternativas de branching inactivas, rechazando envíos correctos. Ambos corregidos con un nuevo helper `_preguntas_controladas` que replica en el servidor el mismo criterio de visibilidad del front (defensa en profundidad). 2 tests de regresión nuevos.
+## Última sesión (2026-10-28, backend sobre el módulo de formularios — sin tocar front todavía)
+- Hecho, paso a paso con aprobación:
+  1. **`Formulario.categoria_id`** (NOT NULL, FK a `catalogo_valor`, catálogo nuevo `formulario_categoria`: `cotizacion`/`expedicion`) — clasificación de negocio, independiente del `estado_id` de publicación que ya existía. Migración `751a7703f081` (catálogo + columna + backfill a `cotizacion` en los 2 formularios reales existentes + NOT NULL + FK). Seed actualizado en paralelo. Sin default en creación: el admin debe elegir la categoría sí o sí (`"categoria_invalida"` si no existe el código).
+  2. **Filtros en `GET /formularios`**: `categoria_codigo`, `estado_codigo`, `titulo` (parcial), `fecha_desde`/`fecha_hasta`.
+  3. **Métricas por formulario**: `GET /formularios/{id}/metricas` — total de respuestas, completadas vs en progreso, tasa de completitud, serie diaria. Set básico, ampliable.
+  4. **`FormularioRespuesta.prospecto_id`** (nullable, FK a `prospecto`, migración `38441a12ff62`) — sin uso real hoy (el flujo público siempre resuelve a Cliente), agregado por pedido explícito del usuario pese a que se le señaló que es deuda especulativa (ver DEUDA DT-020).
+  5. **Cliente/Prospecto ↔ Formularios respondidos**: `Cliente.total_formularios_respondidos` (property calculada sobre la relación ya existente, sin columna nueva) + `GET /clientes/{id}/formularios-respondidos`; mismo patrón completo para Prospecto (`ProspectoRead.total_formularios_respondidos`, `GET /prospectos/{id}/formularios-respondidos`), también sin consumidor real hoy.
+  6. **Bug real encontrado y corregido**: `ClienteProspectoRead` (usado por `GET /clientes/`) exigía `correo`/`ocupacion`/`ciudad` como obligatorios pese a ser nullable en el modelo; un cliente creado por el formulario público sin esos campos mapeados tronaba el endpoint con 500. Corregido a `Optional[str]`.
 - Verificado con:
-  - `uv run pytest` desde `backend/` → 17 passed (eran 12 al cierre del ítem 2).
-  - `npx eslint` y `npm run build` sin errores tras cada cambio de frontend.
-  - Los dos bugs de backend se confirmaron primero contra datos reales de un formulario de prueba del usuario (payload real, DB real vía `docker exec juanfer_postgres psql`) antes de escribir el fix.
-  - **No** se probó todavía un formulario real completo de punta a punta sin intervención manual de depuración — eso es justamente el siguiente paso.
-- Commits: ninguno todavía. Todo el trabajo de esta sesión (frontend completo de formularios + fixes de backend) sigue sin commitear desde `5b434e2`.
+  - `uv run pytest` desde `backend/` → 24 passed (eran 17 al cierre del frontend de formularios).
+  - `upgrade head` y `downgrade -1` probados para las 2 migraciones nuevas (`751a7703f081`, `38441a12ff62`) contra `juanfer_postgres` (única DB real hoy).
+  - Import de `app.main` sin errores tras cada cambio.
+- **Todo backend a propósito**: el usuario pidió explícitamente dejar el front para después y "alistar" el backend ya. Queda documentado en docs/modulos/formularios.md qué pantallas faltan y dónde van (filtros/categoría en Formularios.jsx y builder, métricas en el admin de formularios, `/clientes/{id}/formularios-respondidos` consumido desde Pólizas).
+- Commits: ninguno todavía. Todo lo de esta sesión (lo del frontend de formularios ya existente desde antes + todo lo de hoy) sigue sin commitear desde `5b434e2`.
 
 ## Bloqueos / esperando mi respuesta
-- Ninguno. El usuario dejó 3 notas explícitas para no perder de vista en próximas sesiones (ver ROADMAP.md "Siguiente" y DEUDA.md): importación masiva de formularios, prueba end-to-end con formulario real, pulido continuo de UI/UX. Ninguna bloquea seguir trabajando.
+- Ninguno.
 
 ## Contexto que se pierde si no se escribe
-- **El modelo de branching pasó por 3 iteraciones reales**, no fue un diseño de una sola vez: (1) salto simple pregunta→pregunta con "continuar flujo natural" dejaba reaparecer preguntas ya saltadas; (2) "saltar cursor entre origen y destino" no cubría alternativas posicionadas DESPUÉS del destino; (3) el modelo final, `controladoPor`, es un filtro reactivo: cualquier pregunta que sea destino de alguna opción de otra pregunta tipo "opción" queda oculta por defecto y solo se muestra si la respuesta actual de su controladora coincide con el valor que apunta a ella. Este modelo final se implementó IDÉNTICO en front (`FormularioPublico.jsx`) y back (`_preguntas_controladas` en `formulario_respuesta.py`) a propósito, para que el backend nunca dependa de que el front mandó bien los datos.
-- **El vínculo pregunta↔campo del Cliente ahora fuerza y bloquea el tipo de dato** (`CAMPOS_CLIENTE` con `tipoForzado` por campo) porque el usuario marcó como "inaceptable" que el admin pudiera, por ejemplo, mapear "nombre" a tipo "número". No se generan preguntas automáticamente (se consideró y se descartó explícitamente): el admin sigue creando la pregunta, pero al vincularla a un campo del Cliente el tipo queda fijo.
-- **El código interno de cada pregunta (`codigo`) ya no es editable** porque es la clave literal que usan el branching y el JSON de `respuestas`; el usuario lo señaló como un riesgo de "error desconocido" dependiente del admin, no una decisión de diseño previa.
-- **Los 4 campos NOT NULL de `Cliente`** (`tipo_documento_id`, `numero_documento`, `nombre_completo`, `celular`) siguen siendo, por D-009, obligatorios de mapear en todo formulario público — esto es relevante para el futuro importador masivo (ver ROADMAP "Siguiente"): cada formulario importado necesita esas 4 preguntas mapeadas y requeridas, o el endpoint público rechazará toda respuesta con "faltan_campos_cliente".
+- **`estado_id` (publicación) y `categoria_id` (negocio) son conceptos distintos a propósito** — se evitó nombrarlos igual ("estado") para no repetir el error de confundir ciclo de vida de publicación con clasificación de negocio.
+- **`prospecto_id` en `FormularioRespuesta` y su endpoint en Prospecto son deuda especulativa asumida a sabiendas** (DT-020): se señaló al usuario que viola la regla del propio CLAUDE.md de no construir para requisitos hipotéticos, y decidió seguir igual porque "mejor tenerla lista desde ya". Si nunca aparece un caso real, es candidato a limpieza en una auditoría futura.
+- **El listado de filtros de Formulario resuelve código→id antes de filtrar** (vía `CatalogoService.get_valor_id`), no con joins — más simple y consistente con el patrón ya usado en preguntas/grupos. Un código inválido en el filtro simplemente no devuelve resultados (no es un error 400), porque es un filtro de lista, no una escritura.
 
-## Archivos tocados (no confirmados en commit)
-- `backend/app/routers/catalogo.py`, `backend/app/schemas/catalogo.py`, `backend/app/services/catalogo.py` (CRUD admin de `estados_prospecto`)
-- `backend/app/schemas/formulario_respuesta.py` (`cliente_nombre`/`cliente_documento` en el read)
-- `backend/app/services/formulario_respuesta.py` (fixes de `_extraer_campos_cliente` y `_validar_basico`, nuevo `_preguntas_controladas`)
-- `backend/tests/test_formulario_publico.py` (2 tests nuevos), `backend/tests/test_estado_prospecto_admin.py` (nuevo)
-- `frontend/src/api/catalogos.js` (CRUD admin de catálogos legado), `frontend/src/api/formularios.js` (nuevo)
-- `frontend/src/components/ConfirmDialog.jsx`/`.css`, `frontend/src/components/Toast.jsx`/`.css` (nuevos)
-- `frontend/src/components/layout/Sidebar.jsx`, `frontend/src/router/AppRouter.jsx` (rutas y nav de formularios)
-- `frontend/src/pages/admin/AdminCatalogos.jsx`/`.css` (todos los catálogos)
-- `frontend/src/pages/formularios/` (nuevo: `Formularios.jsx`, `FormularioBuilder.jsx` + `.css`)
-- `frontend/src/pages/publico/` (nuevo: `FormularioPublico.jsx` + `.css`)
-- `docs/DEUDA.md`, `docs/ROADMAP.md` (actualizados esta sesión)
+## Archivos tocados (no confirmados en commit, además de los ya listados en el cierre anterior del ítem 3)
+- `backend/app/models/formularios/constantes.py` (`FORMULARIO_CATEGORIA`, `FormularioCategoriaCodigos`)
+- `backend/app/models/formularios/formulario.py` (`categoria_id` + relationship)
+- `backend/app/models/formularios/formulario_respuesta.py` (`prospecto_id` + relationship)
+- `backend/app/models/modulos_negocio/prospecto.py` (`formulario_respuestas`, `total_formularios_respondidos`)
+- `backend/app/models/usuarios_clientes/cliente.py` (`total_formularios_respondidos`)
+- `backend/alembic/versions/751a7703f081_...py`, `backend/alembic/versions/38441a12ff62_...py` (nuevas)
+- `backend/scripts/seed_data.py` (catálogo `formulario_categoria`)
+- `backend/app/schemas/formulario.py`, `backend/app/schemas/formulario_respuesta.py`, `backend/app/schemas/cliente.py`, `backend/app/schemas/prospecto.py`
+- `backend/app/services/formulario.py` (filtros, `categoria_id`), `backend/app/services/formulario_respuesta.py` (`metricas`, `listar_por_cliente`, `listar_por_prospecto`)
+- `backend/app/routers/formulario.py`, `backend/app/routers/cliente.py`, `backend/app/routers/prospecto.py`
+- `backend/tests/test_formulario_builder.py`, `backend/tests/test_formulario_publico.py`
+- `docs/DEUDA.md` (DT-020 + fix de `ClienteProspectoRead` en "Pagadas"), `docs/modulos/formularios.md`

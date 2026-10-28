@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.usuarios_clientes.cliente import Cliente
     from app.models.modulos_negocio.poliza import Poliza
     from app.models.modulos_negocio.cotizacion import Cotizacion
+    from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.catalogos.catalogo_valor import CatalogoValor
 
 
@@ -51,6 +52,16 @@ class FormularioRespuesta(Base):
     cliente_id: Mapped[Optional[int]] = mapped_column(
         BigInteger,
         ForeignKey("cliente.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    # Hoy sin uso: el flujo público siempre resuelve a Cliente (ver regla de
+    # negocio en docs/modulos/formularios.md), nunca deja la respuesta
+    # asociada solo a un Prospecto. Columna lista por si se requiere a
+    # futuro; sin disparador concreto todavía (ver DEUDA).
+    prospecto_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("prospecto.id", ondelete="SET NULL"),
         nullable=True
     )
 
@@ -121,6 +132,11 @@ class FormularioRespuesta(Base):
 
     cliente: Mapped[Optional["Cliente"]] = relationship(
         "Cliente",
+        back_populates="formulario_respuestas"
+    )
+
+    prospecto: Mapped[Optional["Prospecto"]] = relationship(
+        "Prospecto",
         back_populates="formulario_respuestas"
     )
 

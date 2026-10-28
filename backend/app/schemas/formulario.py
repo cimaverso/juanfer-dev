@@ -17,6 +17,7 @@ class CatalogoValorRead(BaseModel):
 class FormularioCreate(BaseModel):
     titulo: str
     descripcion: Optional[str] = None
+    categoria_codigo: str
     configuracion: Optional[dict] = None
 
 
@@ -24,6 +25,7 @@ class FormularioUpdate(BaseModel):
     titulo: Optional[str] = None
     descripcion: Optional[str] = None
     estado_id: Optional[int] = None
+    categoria_codigo: Optional[str] = None
     configuracion: Optional[dict] = None
 
 
@@ -32,6 +34,7 @@ class FormularioRead(BaseModel):
     titulo: str
     descripcion: Optional[str] = None
     estado: CatalogoValorRead
+    categoria: CatalogoValorRead
     version_activa_id: Optional[int] = None
     token_publico: uuid.UUID
     configuracion: Optional[dict] = None

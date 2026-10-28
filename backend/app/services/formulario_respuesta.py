@@ -44,6 +44,83 @@ class FormularioRespuestaService:
         return resultado
 
     @staticmethod
+    def metricas(db: Session, formulario_id: int) -> Optional[dict]:
+        """
+        Set básico de métricas (ver docs/modulos/formularios.md): total de
+        respuestas, completadas vs en progreso, tasa de completitud y una
+        serie diaria de respuestas iniciadas. Devuelve None si el
+        formulario no existe.
+        """
+        if not FormularioService.obtener(db, formulario_id):
+            return None
+
+        completada_id = CatalogoService.get_valor_id(
+            db, CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO, RespuestaEstadoCodigos.COMPLETADA
+        )
+        en_progreso_id = CatalogoService.get_valor_id(
+            db, CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO, RespuestaEstadoCodigos.EN_PROGRESO
+        )
+
+        total = db.execute(
+            select(func.count(FormularioRespuesta.id)).where(FormularioRespuesta.formulario_id == formulario_id)
+        ).scalar_one()
+
+        completadas = db.execute(
+            select(func.count(FormularioRespuesta.id)).where(
+                FormularioRespuesta.formulario_id == formulario_id,
+                FormularioRespuesta.estado_id == completada_id
+            )
+        ).scalar_one()
+
+        en_progreso = db.execute(
+            select(func.count(FormularioRespuesta.id)).where(
+                FormularioRespuesta.formulario_id == formulario_id,
+                FormularioRespuesta.estado_id == en_progreso_id
+            )
+        ).scalar_one()
+
+        tasa_completitud = (completadas / total) if total > 0 else 0.0
+
+        dia = func.date(FormularioRespuesta.iniciado_at)
+        stmt_serie = (
+            select(dia, func.count(FormularioRespuesta.id))
+            .where(FormularioRespuesta.formulario_id == formulario_id)
+            .group_by(dia)
+            .order_by(dia)
+        )
+        serie_diaria = [
+            {"fecha": fecha, "total": total_dia}
+            for fecha, total_dia in db.execute(stmt_serie).all()
+        ]
+
+        return {
+            "total_respuestas": total,
+            "completadas": completadas,
+            "en_progreso": en_progreso,
+            "tasa_completitud": round(tasa_completitud, 4),
+            "serie_diaria": serie_diaria,
+        }
+
+    @staticmethod
+    def listar_por_cliente(db: Session, cliente_id: int) -> list[FormularioRespuesta]:
+        stmt = (
+            select(FormularioRespuesta)
+            .where(FormularioRespuesta.cliente_id == cliente_id)
+            .order_by(FormularioRespuesta.iniciado_at.desc())
+        )
+        return db.execute(stmt).scalars().all()
+
+    @staticmethod
+    def listar_por_prospecto(db: Session, prospecto_id: int) -> list[FormularioRespuesta]:
+        """Sin uso hoy desde el front (ver prospecto_id en el modelo y DT-020)."""
+        stmt = (
+            select(FormularioRespuesta)
+            .where(FormularioRespuesta.prospecto_id == prospecto_id)
+            .order_by(FormularioRespuesta.iniciado_at.desc())
+        )
+        return db.execute(stmt).scalars().all()
+
+    @staticmethod
     def _excede_limite_ip(db: Session, formulario_id: int, ip: Optional[str]) -> bool:
         if not ip:
             return False

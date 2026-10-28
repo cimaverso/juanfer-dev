@@ -4,9 +4,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.schemas.prospecto import ProspectoRead, ProspectoCreate, ProspectoListResponse, ResumenPipeline, ProspectoTareaRead, CambiarEstado, ProspectoUpdate, ProspectoFiltro, ImportarResponse, ProspectoCreateImport
+from app.schemas.formulario_respuesta import FormularioRespuestaRead
 from app.utils.parse_file import parse_file
 from app.core.security import get_current_user_data, require_admin
 from app.services.prospecto import ProspectoService
+from app.services.formulario_respuesta import FormularioRespuestaService
 from fastapi.responses import StreamingResponse
 
 router = APIRouter(
@@ -43,6 +45,12 @@ def resumen_pipeline(db: Session = Depends(get_db), user = Depends(get_current_u
 @router.get("/{id}", response_model=ProspectoRead)
 def obtener_prospecto_id(id: int, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return ProspectoService.obtener_prospecto_id(id, db, user)
+
+@router.get("/{id}/formularios-respondidos", response_model=list[FormularioRespuestaRead])
+def listar_formularios_respondidos(id: int, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
+    """Sin uso hoy desde el front (ver prospecto_id en FormularioRespuesta y DT-020)."""
+    ProspectoService.obtener_prospecto_id(id, db, user)
+    return FormularioRespuestaService.listar_por_prospecto(db, id)
 
 @router.post("/", response_model=ProspectoRead)
 def crear_prospecto(data: ProspectoCreate, db: Session = Depends(get_db), user = Depends(get_current_user_data)):

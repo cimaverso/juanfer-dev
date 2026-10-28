@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 from app.schemas.formulario import CatalogoValorRead
 
 
@@ -33,3 +33,17 @@ class FormularioRespuestaRead(BaseModel):
     completado_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FormularioMetricasSerieDia(BaseModel):
+    fecha: date
+    total: int
+
+
+class FormularioMetricasRead(BaseModel):
+    """Set básico de métricas por formulario (ver docs/modulos/formularios.md)."""
+    total_respuestas: int
+    completadas: int
+    en_progreso: int
+    tasa_completitud: float
+    serie_diaria: list[FormularioMetricasSerieDia]

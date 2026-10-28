@@ -22,6 +22,7 @@ muestra como etiqueta), no hace falta declararlo aquí.
 
 class CatalogoTipoCodigos:
     FORMULARIO_ESTADO = "formulario_estado"
+    FORMULARIO_CATEGORIA = "formulario_categoria"
     FORMULARIO_PREGUNTA_TIPO = "formulario_pregunta_tipo"
     FORMULARIO_RESPUESTA_ESTADO = "formulario_respuesta_estado"
 
@@ -30,6 +31,11 @@ class FormularioEstadoCodigos:
     BORRADOR = "borrador"
     ACTIVO = "activo"
     ARCHIVADO = "archivado"
+
+
+class FormularioCategoriaCodigos:
+    COTIZACION = "cotizacion"
+    EXPEDICION = "expedicion"
 
 
 class PreguntaTipoCodigos:

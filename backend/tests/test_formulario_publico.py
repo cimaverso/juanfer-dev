@@ -5,7 +5,7 @@ import uuid
 def _publicar_formulario_con_tomador(client, admin_headers):
     r_formulario = client.post(
         "/api/v1/formularios",
-        json={"titulo": f"Publico pytest {uuid.uuid4()}"},
+        json={"titulo": f"Publico pytest {uuid.uuid4()}", "categoria_codigo": "cotizacion"},
         headers=admin_headers
     )
     formulario = r_formulario.json()
@@ -86,6 +86,56 @@ def test_envio_valido_crea_cliente_sin_responsable(client, admin_headers):
     assert respuesta.json()["cliente_id"] is not None
 
 
+def test_metricas_reflejan_respuesta_completada(client, admin_headers):
+    formulario_id, token = _publicar_formulario_con_tomador(client, admin_headers)
+
+    client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": _respuestas_validas("444PYTEST")}
+    )
+
+    r_metricas = client.get(f"/api/v1/formularios/{formulario_id}/metricas", headers=admin_headers)
+    metricas = r_metricas.json()
+    assert metricas["total_respuestas"] == 1
+    assert metricas["completadas"] == 1
+    assert metricas["en_progreso"] == 0
+    assert metricas["tasa_completitud"] == 1.0
+    assert len(metricas["serie_diaria"]) == 1
+    assert metricas["serie_diaria"][0]["total"] == 1
+
+
+def test_cliente_formularios_respondidos(client, admin_headers):
+    formulario_id, token = _publicar_formulario_con_tomador(client, admin_headers)
+
+    r_respuesta = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": _respuestas_validas("555PYTEST")}
+    )
+    cliente_id = r_respuesta.json()["cliente_id"]
+
+    r_listado = client.get(f"/api/v1/clientes/{cliente_id}/formularios-respondidos", headers=admin_headers)
+    assert r_listado.status_code == 200
+    respondidos = r_listado.json()
+    assert len(respondidos) == 1
+    assert respondidos[0]["formulario_id"] == formulario_id
+
+    r_cliente = client.get(
+        "/api/v1/clientes/buscar", params={"documento": "555PYTEST"}, headers=admin_headers
+    )
+    assert r_cliente.json()["total_formularios_respondidos"] == 1
+
+    # Regresión: un Cliente creado por el formulario público (sin correo/
+    # ocupacion/ciudad, no mapeados en este formulario de prueba) no debe
+    # tronar el listado admin con 500 (ver docs/DEUDA.md).
+    r_listado_clientes = client.get("/api/v1/clientes/", headers=admin_headers)
+    assert r_listado_clientes.status_code == 200
+
+
+def test_cliente_formularios_respondidos_404_si_no_existe(client, admin_headers):
+    r_listado = client.get("/api/v1/clientes/999999999/formularios-respondidos", headers=admin_headers)
+    assert r_listado.status_code == 404
+
+
 def test_mismo_documento_otra_vez_rechaza(client, admin_headers):
     _, token = _publicar_formulario_con_tomador(client, admin_headers)
 
@@ -142,7 +192,7 @@ def test_seccion_y_alternativas_ocultas_por_branching_no_bloquean_envio(client, 
     """
     r_formulario = client.post(
         "/api/v1/formularios",
-        json={"titulo": f"Branching pytest {uuid.uuid4()}"},
+        json={"titulo": f"Branching pytest {uuid.uuid4()}", "categoria_codigo": "cotizacion"},
         headers=admin_headers
     )
     formulario_id = r_formulario.json()["id"]

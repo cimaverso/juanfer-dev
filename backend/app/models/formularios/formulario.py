@@ -43,6 +43,16 @@ class Formulario(Base):
         nullable=False
     )
 
+    # FK a catalogo_valor (catalogo_tipo.codigo = 'formulario_categoria', ej.
+    # 'cotizacion'/'expedicion'). Clasificación de negocio, independiente del
+    # estado de publicación de arriba. Sin default: el admin debe elegirla
+    # explícitamente al crear el formulario.
+    categoria_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("catalogo_valor.id", ondelete="RESTRICT"),
+        nullable=False
+    )
+
     # FK a la FormularioVersion publicada actualmente (snapshot que se sirve
     # en la URL pública). Si es null, el formulario aún no tiene ninguna
     # versión publicada (solo borrador).
@@ -86,6 +96,11 @@ class Formulario(Base):
     estado: Mapped["CatalogoValor"] = relationship(
         "CatalogoValor",
         foreign_keys=[estado_id]
+    )
+
+    categoria: Mapped["CatalogoValor"] = relationship(
+        "CatalogoValor",
+        foreign_keys=[categoria_id]
     )
 
     versiones: Mapped[list["FormularioVersion"]] = relationship(

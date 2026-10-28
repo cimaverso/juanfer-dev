@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.catalogos.aseguradora import Aseguradora
     from app.models.catalogos.ramo import Ramo
     from app.models.modulos_negocio.poliza import Poliza
+    from app.models.formularios.formulario_respuesta import FormularioRespuesta
 
 class Prospecto(Base):
     __tablename__ = "prospecto"
@@ -169,6 +170,17 @@ class Prospecto(Base):
         "Poliza",
         back_populates="prospecto"
     )
+
+    # Sin uso hoy: ver prospecto_id en FormularioRespuesta (deuda asumida
+    # a propósito, sin disparador todavía).
+    formulario_respuestas: Mapped[list["FormularioRespuesta"]] = relationship(
+        "FormularioRespuesta",
+        back_populates="prospecto"
+    )
+
+    @property
+    def total_formularios_respondidos(self) -> int:
+        return len(self.formulario_respuestas)
 
     # Validaciones
 
