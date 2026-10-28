@@ -86,12 +86,18 @@ export function AuthProvider({ children }) {
 
     // ── Backend real ──────────────────────────────────
     const { default: api } = await import('../api/axios.js')
-    const { data } = await api.post('/auth/login', { email, password })
+    try {
+      const { data } = await api.post('/auth/login', { email, password })
 
-    localStorage.setItem('jf_token', data.access_token)
-    localStorage.setItem('jf_usuario', JSON.stringify(data.usuario))
-    setUsuario(data.usuario)
-    return data.usuario
+      localStorage.setItem('jf_token', data.access_token)
+      localStorage.setItem('jf_usuario', JSON.stringify(data.usuario))
+      setUsuario(data.usuario)
+      return data.usuario
+    } catch (err) {
+      // El backend manda el detalle real (credenciales inválidas, cuenta
+      // bloqueada 423 con minutos restantes, etc.) en err.response.data.detail
+      throw new Error(err.response?.data?.detail || 'Error al iniciar sesión. Intenta de nuevo.')
+    }
   }
 
   // ── logout() ──────────────────────────────────────────

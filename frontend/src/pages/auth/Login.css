@@ -234,6 +234,18 @@
   font-size: 1rem;
 }
 
+.login-form__olvide {
+  align-self: center;
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  text-decoration: none;
+  text-align: center;
+}
+
+.login-form__olvide:hover {
+  color: var(--color-azul);
+}
+
 /* Botón submit */
 .login-form__btn {
   height: 48px;

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, ForeignKey, Boolean, DateTime, text, func
+from sqlalchemy import BigInteger, String, ForeignKey, Boolean, DateTime, Integer, text, func
 from app.db.base import Base
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from app.models.roles_permisos.rol import Rol
     from app.models.usuarios_clientes.cliente import Cliente
+    from app.models.usuarios_clientes.horario_usuario import HorarioUsuario
     from app.models.modulos_negocio.prospecto import Prospecto
     from app.models.modulos_negocio.nota_prospecto import NotaProspecto
     from app.models.modulos_negocio.cotizacion import Cotizacion
@@ -53,6 +54,27 @@ class Usuario(Base):
     activo: Mapped[bool] = mapped_column(
         Boolean,
         server_default=text("true")
+    )
+
+    reset_codigo_hash: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    reset_codigo_expira_en: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+
+    intentos_fallidos: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0")
+    )
+
+    bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -154,6 +176,12 @@ class Usuario(Base):
     auditorias: Mapped[list["Auditoria"]] = relationship(
         "Auditoria",
         back_populates="usuario"
+    )
+
+    horarios: Mapped[list["HorarioUsuario"]] = relationship(
+        "HorarioUsuario",
+        back_populates="usuario",
+        cascade="all, delete-orphan"
     )
 
     @property

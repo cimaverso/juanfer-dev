@@ -36,4 +36,4 @@ from app.models.plantillas_conocimiento import link_proceso, plantilla_mensaje
 from app.models.roles_permisos import permiso, rol_permiso, rol
 
 # 10. Usuarios y Clientes
-from app.models.usuarios_clientes import cliente, usuario
+from app.models.usuarios_clientes import cliente, usuario, horario_usuario, empresa

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import './Login.css'
 
@@ -171,6 +171,10 @@ export default function Login() {
             </button>
 
           </form>
+
+          <Link to="/restablecer-password" className="login-form__olvide">
+            ¿Tienes un código del administrador para restablecer tu contraseña?
+          </Link>
 
           {/* Hint de credenciales mock */}
           {import.meta.env.VITE_USE_MOCK === 'true' && (

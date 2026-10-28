@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.auth import Token
+from app.schemas.auth import Token, ValidarCodigoResetRequest, ResetPasswordRequest
 from app.services.auth import auth_service
+from app.services.usuario import UsuarioService
 
 router = APIRouter(
     prefix="/auth",
@@ -30,3 +31,18 @@ async def login(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
     return token_response
+
+
+@router.post("/validar-codigo-reset")
+def validar_codigo_reset(datos: ValidarCodigoResetRequest, db: Session = Depends(get_db)):
+    if not UsuarioService.validar_codigo_reset(db, datos.email, datos.codigo):
+        raise HTTPException(status_code=400, detail="Código inválido o expirado")
+    return {"valido": True}
+
+
+@router.post("/reset-password")
+def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)):
+    ok = UsuarioService.completar_reset_password(db, datos.email, datos.codigo, datos.nueva_password)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Código inválido o expirado")
+    return {"actualizado": True}

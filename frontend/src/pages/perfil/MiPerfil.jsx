@@ -5,16 +5,16 @@
 //   - Información básica: datos de la tabla `usuario` (solo lectura,
 //     vienen de AuthContext — mismo shape que GET /usuarios).
 //   - Horario: franjas de disponibilidad por día de la semana,
-//     propio y editable. Front-only por ahora (sin modelo en
-//     backend/DB todavía, ver DEUDA): se guarda en localStorage por
-//     usuario. Ver los horarios de TODO el equipo es cosa del ADMIN
-//     y vive en Configuración → Empresa → Horarios
+//     propio y editable. Backend real (DT-022 pagada):
+//     GET/PUT /mi-horario. Ver los horarios de TODO el equipo es
+//     cosa del ADMIN y vive en Configuración → Empresa → Horarios
 //     (pages/admin/ConfiguracionEmpresa.jsx), no aquí.
 // ============================================================
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import Toast from '../../components/Toast.jsx'
+import { obtenerMiHorario, guardarMiHorario } from '../../api/horarios.js'
 import './MiPerfil.css'
 
 const TABS = [
@@ -39,13 +39,20 @@ function horarioVacio() {
   }), {})
 }
 
-function cargarHorarioLocal(usuarioId) {
-  try {
-    const guardado = localStorage.getItem(`jf_horario_${usuarioId}`)
-    return guardado ? JSON.parse(guardado) : horarioVacio()
-  } catch {
-    return horarioVacio()
-  }
+function diasApiAObjeto(dias) {
+  return dias.reduce((acc, d) => ({
+    ...acc,
+    [d.dia_semana]: { activo: d.activo, desde: d.hora_desde.slice(0, 5), hasta: d.hora_hasta.slice(0, 5) },
+  }), {})
+}
+
+function objetoADiasApi(horario) {
+  return DIAS.map((d) => ({
+    dia_semana: d.id,
+    activo: horario[d.id].activo,
+    hora_desde: `${horario[d.id].desde}:00`,
+    hora_hasta: `${horario[d.id].hasta}:00`,
+  }))
 }
 
 export default function MiPerfil() {
@@ -74,7 +81,7 @@ export default function MiPerfil() {
       {tabActiva === 'info' ? (
         <InformacionBasica usuario={usuario} />
       ) : (
-        <Horario usuario={usuario} />
+        <Horario />
       )}
     </div>
   )
@@ -109,9 +116,26 @@ function InformacionBasica({ usuario }) {
 // ============================================================
 // HORARIO — franjas por día de la semana (propio, editable)
 // ============================================================
-function Horario({ usuario }) {
-  const [horario, setHorario] = useState(() => cargarHorarioLocal(usuario?.id))
+function Horario() {
+  const [horario, setHorario] = useState(horarioVacio)
+  const [cargando, setCargando] = useState(true)
+  const [guardando, setGuardando] = useState(false)
   const [toast, setToast] = useState(null)
+
+  const cargar = useCallback(async () => {
+    try {
+      setCargando(true)
+      const dias = await obtenerMiHorario()
+      setHorario(diasApiAObjeto(dias))
+    } catch {
+      setToast({ tipo: 'error', mensaje: 'No se pudo cargar tu horario.' })
+    } finally {
+      setCargando(false)
+    }
+  }, [])
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, mismo patrón que Prospectos.jsx (ver DT-018)
+  useEffect(() => { cargar() }, [cargar])
 
   function alternarDia(diaId) {
     setHorario((prev) => ({ ...prev, [diaId]: { ...prev[diaId], activo: !prev[diaId].activo } }))
@@ -121,13 +145,21 @@ function Horario({ usuario }) {
     setHorario((prev) => ({ ...prev, [diaId]: { ...prev[diaId], [campo]: valor } }))
   }
 
-  function guardar() {
+  async function guardar() {
     try {
-      localStorage.setItem(`jf_horario_${usuario.id}`, JSON.stringify(horario))
-      setToast({ tipo: 'exito', mensaje: 'Horario guardado en este dispositivo (pendiente de backend, ver DEUDA).' })
+      setGuardando(true)
+      const dias = await guardarMiHorario(objetoADiasApi(horario))
+      setHorario(diasApiAObjeto(dias))
+      setToast({ tipo: 'exito', mensaje: 'Horario guardado.' })
     } catch {
       setToast({ tipo: 'error', mensaje: 'No se pudo guardar el horario.' })
+    } finally {
+      setGuardando(false)
     }
+  }
+
+  if (cargando) {
+    return <div className="perfil-seccion"><p>Cargando horario…</p></div>
   }
 
   return (
@@ -163,8 +195,8 @@ function Horario({ usuario }) {
           ))}
         </div>
 
-        <button className="perfil-btn-primario" onClick={guardar}>
-          <i className="bi bi-check-lg" /> Guardar horario
+        <button className="perfil-btn-primario" onClick={guardar} disabled={guardando}>
+          <i className="bi bi-check-lg" /> {guardando ? 'Guardando…' : 'Guardar horario'}
         </button>
       </div>
 

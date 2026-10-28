@@ -1,55 +1,89 @@
 // ============================================================
 // src/pages/admin/ConfiguracionEmpresa.jsx
 // Grupo "Empresa" de Configuración (solo ADMIN):
-//   - Datos de la empresa: formulario front-only, sin modelo en
-//     backend/DB todavía (se guarda en localStorage). Ver DEUDA.
+//   - Datos de la empresa: backend real (DT-023a pagada):
+//     GET /empresa (cualquier autenticado), PUT /empresa (ADMIN).
 //   - Usuarios: lista real (GET /usuarios) con acción de
-//     "Restablecer contraseña". La clave dinámica se genera en el
-//     navegador y solo se muestra en pantalla — no hay endpoint de
-//     backend que la aplique todavía (ver DEUDA). El bloqueo tras
-//     3 intentos fallidos (15 min) es una feature de Login.jsx
-//     pendiente, no se construye aquí.
+//     "Restablecer contraseña". Backend real (DT-023b pagada):
+//     POST /usuarios/{id}/generar-codigo-reset genera un código de
+//     un solo uso que el admin entrega al usuario por un canal
+//     seguro; el usuario lo usa en /restablecer-password para
+//     definir su propia contraseña nueva (pages/auth/RestablecerPassword.jsx).
 //   - Horarios: vista de solo lectura de la disponibilidad de TODO
 //     el equipo. Cada usuario edita el suyo en Mi Perfil → Horario
-//     (pages/perfil/MiPerfil.jsx); aquí el admin solo mira. Front-only
-//     (sin backend que guarde el horario de otros, ver DEUDA).
+//     (pages/perfil/MiPerfil.jsx); aquí el admin solo mira.
+//     Backend real (DT-022 pagada): GET /horarios.
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerAsesores } from '../../api/catalogos.js'
+import { obtenerHorariosEquipo } from '../../api/horarios.js'
+import { obtenerEmpresa, guardarEmpresa } from '../../api/empresa.js'
+import { generarCodigoReset } from '../../api/usuarios.js'
 import Toast from '../../components/Toast.jsx'
 import './ConfiguracionEmpresa.css'
+
+const DIAS_LABEL = {
+  lunes: 'Lun', martes: 'Mar', miercoles: 'Mié', jueves: 'Jue',
+  viernes: 'Vie', sabado: 'Sáb', domingo: 'Dom',
+}
 
 // ============================================================
 // DATOS DE LA EMPRESA
 // ============================================================
 const EMPRESA_VACIA = { nombre: '', nit: '', direccion: '', telefono: '', correo: '' }
 
-function cargarEmpresaLocal() {
-  try {
-    const guardado = localStorage.getItem('jf_empresa')
-    return guardado ? JSON.parse(guardado) : EMPRESA_VACIA
-  } catch {
-    return EMPRESA_VACIA
+function aFormulario(datos) {
+  return {
+    nombre: datos.nombre || '',
+    nit: datos.nit || '',
+    direccion: datos.direccion || '',
+    telefono: datos.telefono || '',
+    correo: datos.correo || '',
   }
 }
 
 export function DatosEmpresa() {
-  const [empresa, setEmpresa] = useState(() => cargarEmpresaLocal())
+  const [empresa, setEmpresa] = useState(EMPRESA_VACIA)
+  const [cargando, setCargando] = useState(true)
+  const [guardando, setGuardando] = useState(false)
   const [toast, setToast]     = useState(null)
+
+  const cargar = useCallback(async () => {
+    try {
+      setCargando(true)
+      const datos = await obtenerEmpresa()
+      setEmpresa(aFormulario(datos))
+    } catch {
+      setToast({ tipo: 'error', mensaje: 'No se pudieron cargar los datos de la empresa.' })
+    } finally {
+      setCargando(false)
+    }
+  }, [])
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, mismo patrón que Prospectos.jsx (ver DT-018)
+  useEffect(() => { cargar() }, [cargar])
 
   function cambiar(campo, valor) {
     setEmpresa((prev) => ({ ...prev, [campo]: valor }))
   }
 
-  function guardar(e) {
+  async function guardar(e) {
     e.preventDefault()
     try {
-      localStorage.setItem('jf_empresa', JSON.stringify(empresa))
-      setToast({ tipo: 'exito', mensaje: 'Guardado en este dispositivo (pendiente de backend, ver DEUDA).' })
+      setGuardando(true)
+      const datos = await guardarEmpresa(empresa)
+      setEmpresa(aFormulario(datos))
+      setToast({ tipo: 'exito', mensaje: 'Datos de la empresa guardados.' })
     } catch {
       setToast({ tipo: 'error', mensaje: 'No se pudo guardar.' })
+    } finally {
+      setGuardando(false)
     }
+  }
+
+  if (cargando) {
+    return <div className="emp-seccion"><p className="emp-sub">Cargando…</p></div>
   }
 
   return (
@@ -76,8 +110,8 @@ export function DatosEmpresa() {
             <span>Correo de contacto</span>
             <input type="email" value={empresa.correo} onChange={(e) => cambiar('correo', e.target.value)} />
           </label>
-          <button type="submit" className="emp-btn-primario">
-            <i className="bi bi-check-lg" /> Guardar
+          <button type="submit" className="emp-btn-primario" disabled={guardando}>
+            <i className="bi bi-check-lg" /> {guardando ? 'Guardando…' : 'Guardar'}
           </button>
         </form>
       </div>
@@ -89,18 +123,12 @@ export function DatosEmpresa() {
 // ============================================================
 // USUARIOS — lista + restablecer contraseña (clave dinámica)
 // ============================================================
-function generarClaveDinamica() {
-  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  let clave = ''
-  for (let i = 0; i < 10; i++) clave += alfabeto[Math.floor(Math.random() * alfabeto.length)]
-  return clave
-}
-
 export function UsuariosEmpresa() {
   const [usuarios, setUsuarios] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError]       = useState(null)
-  const [claveGenerada, setClaveGenerada] = useState(null) // { usuario, clave }
+  const [codigoGenerado, setCodigoGenerado] = useState(null) // { usuario, codigo }
+  const [generando, setGenerando] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -119,8 +147,16 @@ export function UsuariosEmpresa() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, mismo patrón que Prospectos.jsx (ver DT-018)
   useEffect(() => { cargar() }, [cargar])
 
-  function restablecerClave(usuario) {
-    setClaveGenerada({ usuario, clave: generarClaveDinamica() })
+  async function restablecerClave(usuario) {
+    try {
+      setGenerando(true)
+      const codigo = await generarCodigoReset(usuario.id)
+      setCodigoGenerado({ usuario, codigo })
+    } catch {
+      setError('No se pudo generar el código.')
+    } finally {
+      setGenerando(false)
+    }
   }
 
   return (
@@ -144,7 +180,7 @@ export function UsuariosEmpresa() {
                 <span className={`emp-badge-rol ${u.rol === 'ADMIN' ? 'emp-badge-rol--admin' : ''}`}>
                   {u.rol === 'ADMIN' ? 'Administrador' : 'Asesor'}
                 </span>
-                <button className="emp-btn-secundario" onClick={() => restablecerClave(u)}>
+                <button className="emp-btn-secundario" onClick={() => restablecerClave(u)} disabled={generando}>
                   <i className="bi bi-key" /> Restablecer contraseña
                 </button>
               </li>
@@ -153,22 +189,22 @@ export function UsuariosEmpresa() {
         )}
       </div>
 
-      {claveGenerada && (
-        <div className="emp-overlay" onClick={(e) => e.target === e.currentTarget && setClaveGenerada(null)}>
+      {codigoGenerado && (
+        <div className="emp-overlay" onClick={(e) => e.target === e.currentTarget && setCodigoGenerado(null)}>
           <div className="emp-modal" role="dialog" aria-modal="true">
             <div className="emp-modal__header">
-              <span><i className="bi bi-key" /> Clave temporal generada</span>
-              <button className="emp-btn-icon" onClick={() => setClaveGenerada(null)} aria-label="Cerrar">
+              <span><i className="bi bi-key" /> Código de restablecimiento generado</span>
+              <button className="emp-btn-icon" onClick={() => setCodigoGenerado(null)} aria-label="Cerrar">
                 <i className="bi bi-x-lg" />
               </button>
             </div>
             <div className="emp-modal__body">
               <p className="emp-sub">
-                Entrégale esta clave a <strong>{claveGenerada.usuario.nombre}</strong> por un canal seguro. Al ingresar con ella deberá definir su nueva contraseña.
+                Entrégale este código a <strong>{codigoGenerado.usuario.nombre}</strong> por un canal seguro. Con su correo y este código podrá definir su nueva contraseña en la pantalla de inicio de sesión.
               </p>
-              <div className="emp-clave">{claveGenerada.clave}</div>
+              <div className="emp-clave">{codigoGenerado.codigo}</div>
               <p className="emp-aviso">
-                <i className="bi bi-exclamation-triangle" /> Vista de frontend por ahora: esta clave no se aplica todavía en el backend (pendiente, ver DEUDA).
+                <i className="bi bi-exclamation-triangle" /> El código vence en 60 minutos y solo se puede usar una vez.
               </p>
             </div>
           </div>
@@ -181,6 +217,18 @@ export function UsuariosEmpresa() {
 // ============================================================
 // HORARIOS — vista de solo lectura de todo el equipo
 // ============================================================
+function formatearHorario(dias) {
+  const activos = dias.filter((d) => d.activo)
+  if (activos.length === 0) return 'Sin días activos'
+
+  const horas = new Set(activos.map((d) => `${d.hora_desde.slice(0, 5)}-${d.hora_hasta.slice(0, 5)}`))
+  const diasTexto = activos.map((d) => DIAS_LABEL[d.dia_semana]).join(', ')
+
+  return horas.size === 1
+    ? `${diasTexto} · ${[...horas][0]}`
+    : `${diasTexto} (horario variable por día)`
+}
+
 export function HorariosEmpresa() {
   const [equipo, setEquipo]     = useState([])
   const [cargando, setCargando] = useState(true)
@@ -190,7 +238,7 @@ export function HorariosEmpresa() {
     try {
       setCargando(true)
       setError(null)
-      const data = await obtenerAsesores()
+      const data = await obtenerHorariosEquipo()
       setEquipo(data)
     } catch (e) {
       setError('No se pudo cargar el equipo.')
@@ -218,13 +266,15 @@ export function HorariosEmpresa() {
       ) : (
         <ul className="emp-usuarios">
           {equipo.map((u) => (
-            <li key={u.id} className="emp-usuarios__item">
-              <div className="emp-usuarios__avatar">{u.iniciales}</div>
+            <li key={u.usuario_id} className="emp-usuarios__item">
+              <div className="emp-usuarios__avatar">
+                {u.nombre.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase()).join('')}
+              </div>
               <div className="emp-usuarios__info">
                 <span className="emp-usuarios__nombre">{u.nombre}</span>
                 <span className="emp-usuarios__email">{u.rol === 'ADMIN' ? 'Administrador' : 'Asesor'}</span>
               </div>
-              <span className="emp-sin-horario">Sin horario configurado</span>
+              <span className="emp-sin-horario">{formatearHorario(u.dias)}</span>
             </li>
           ))}
         </ul>

@@ -11,6 +11,7 @@ import AppLayout from '../components/layout/AppLayout.jsx'
 
 // ── Carga diferida de páginas ─────────────────────────────
 const Login            = lazy(() => import('../pages/auth/Login.jsx'))
+const RestablecerPassword = lazy(() => import('../pages/auth/RestablecerPassword.jsx'))
 const Dashboard        = lazy(() => import('../pages/dashboard/Dashboard.jsx'))
 
 // M1 — Producción (existente)
@@ -63,6 +64,7 @@ export default function AppRouter() {
 
           {/* ── Rutas públicas (sin login) ──────────────── */}
           <Route path="/login" element={<Login />} />
+          <Route path="/restablecer-password" element={<RestablecerPassword />} />
           <Route path="/f/:token" element={<FormularioPublico />} />
 
           {/* ── Rutas protegidas (cualquier rol) ────────── */}
