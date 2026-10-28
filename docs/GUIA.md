@@ -57,6 +57,7 @@ uv run python -m scripts.seed_data   # datos iniciales [SUPUESTO: comando sin ve
 - Crear una migración tras cambiar un modelo: `uv run alembic revision --autogenerate -m "mensaje"` (va en el mismo commit; revisar a mano el archivo; ver D-004 y D-008).
 - Consola de la base: `docker exec -it juanfer_postgres psql -U juanferseg -d juanfer_db` (en Git Bash puede requerir `winpty` delante).
 - Respaldo antes de un `downgrade` (hacerlo en Git Bash, no en PowerShell, que corrompe la salida binaria): `docker exec juanfer_postgres pg_dump -U juanferseg -d juanfer_db -Fc > respaldo-$(date +%F).dump`. Guardar el archivo fuera del repo.
+- Tests (desde `backend/`): `uv run pytest`. Son contra la DB de desarrollo real (no hay DB de test separada); `tests/conftest.py` envuelve cada test en un SAVEPOINT que se revierte al final, incluso con los `db.commit()` internos de los servicios — no deja datos.
 
 ## 5. Ejecución en local
 ```bash

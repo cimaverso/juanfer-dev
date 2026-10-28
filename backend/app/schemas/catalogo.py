@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
 
 class CatalogoBase(BaseModel):
@@ -60,3 +60,56 @@ class EstadoProspectoRead(BaseModel):
     nombre: str
     color: str
     orden: int
+
+
+# ── Catálogo genérico (catalogo_tipo / catalogo_valor) ──────────────────
+# Lo usa hoy el módulo de formularios (formulario_estado,
+# formulario_pregunta_tipo, formulario_respuesta_estado); cualquier
+# catálogo nuevo del sistema puede apoyarse en este mismo par de tablas
+# en vez de crear una tabla propia.
+
+class CatalogoTipoRead(BaseModel):
+    id: int
+    codigo: str
+    nombre: str
+    descripcion: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CatalogoTipoCreate(BaseModel):
+    codigo: str
+    nombre: str
+    descripcion: Optional[str] = None
+
+
+class CatalogoValorAdminRead(BaseModel):
+    id: int
+    catalogo_tipo_id: int
+    codigo: str
+    nombre: str
+    descripcion: Optional[str] = None
+    orden: int
+    activo: bool
+    metadatos: Optional[dict] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CatalogoValorCreate(BaseModel):
+    codigo: str
+    nombre: str
+    descripcion: Optional[str] = None
+    orden: Optional[int] = None
+    metadatos: Optional[dict] = None
+
+
+class CatalogoValorUpdate(BaseModel):
+    # codigo NO es editable aquí a propósito: el código de negocio lo usa
+    # para ramificar lógica (ver docstring de CatalogoValor). Lo que el
+    # admin edita libremente es nombre/descripcion/orden/activo/metadatos.
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    orden: Optional[int] = None
+    activo: Optional[bool] = None
+    metadatos: Optional[dict] = None

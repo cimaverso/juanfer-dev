@@ -65,6 +65,30 @@ Solo decisiones difíciles de revertir o no obvias. Formato corto.
 - **Revisar si:** la migración llega a aplicarse fuera de la DB local (hoy no existe otro entorno ni se ha hecho un despliegue, confirmado por el usuario el 2026-10-27); desde ese momento, pasar a la migración nueva.
 - **Estado:** vigente
 
+## D-009 — Toda respuesta de formulario público crea o reusa un Cliente (2026-10-27)
+- **Contexto:** quedaba abierto en REQUISITOS.md si una respuesta se vincula a un cliente/prospecto existente o puede ser anónima (bloqueaba RF-010/RF-011).
+- **Decisión:** toda persona que diligencia y envía un formulario público pasa a ser `Cliente`. El servicio público resuelve por `numero_documento` (único): reusa el `Cliente` si existe, lo crea si no, con `responsable_id = NULL` hasta que un asesor lo tome. Nunca se guarda una respuesta anónima ni vinculada solo a un `Prospecto`.
+- **Alternativas descartadas:** permitir respuesta anónima sin crear `Cliente`: más simple, pero no cumple el objetivo de negocio de capturar leads. Vincular a `Prospecto` en vez de `Cliente`: `Prospecto` es un estado de pipeline posterior, no el registro de identidad.
+- **Consecuencias / costo asumido:** el grupo "Tomador" de cada formulario real debe mapear (`mapea_a`) las 4 columnas NOT NULL de `Cliente` (`tipo_documento`, `numero_documento`, `nombre_completo`, `celular`) y marcarlas `requerida=true`; si el importador de los 17 formularios no lo hace, la respuesta pública falla con 400.
+- **Revisar si:** aparece un formulario real que legítimamente deba ser anónimo (ej. una encuesta sin identificar a la persona).
+- **Estado:** vigente
+
+## D-010 — `catalogo_valor` sin borrado duro, solo desactivación (2026-10-27)
+- **Contexto:** al construir el CRUD admin del catálogo genérico, una prueba manual sin aislamiento transaccional borró de verdad el valor `'borrador'` de `formulario_estado`, porque el `ON DELETE RESTRICT` de las FKs solo protege un valor que YA tiene alguna fila referenciándolo; un valor "default" usado por código (`FormularioEstadoCodigos.BORRADOR`) puede no tener ninguna fila en un momento dado y seguir siendo indispensable.
+- **Decisión:** no exponer ningún endpoint ni método de servicio para borrar un `catalogo_valor`. El admin solo lo desactiva (`activo=false`), como ya sugería el docstring original del modelo.
+- **Alternativas descartadas:** permitir borrado duro protegido solo por el `RESTRICT` de la FK (es justo lo que falló). Bloquear el borrado comparando contra una lista de códigos "protegidos" en código: más complejo y sin garantía de estar completa.
+- **Consecuencias / costo asumido:** un valor creado por error y nunca usado queda inactivo para siempre en la tabla en vez de poder borrarse; no se considera relevante dado el volumen esperado de catálogos.
+- **Revisar si:** se necesita limpiar catálogos de prueba masivamente (se haría por SQL directo, no por la API).
+- **Estado:** vigente
+
+## D-011 — Alcance del endpoint público: envío único, dedupe + rate limit, validación básica (2026-10-27)
+- **Contexto:** RNF-002/003 y varias preguntas abiertas de REQUISITOS.md (modo de envío, umbral de envíos, validación server-side) no tenían respuesta.
+- **Decisión (confirmada por el usuario):** el envío es un solo POST con todas las respuestas completas (sin autosave progresivo). El límite de envíos combina dedupe por documento (una respuesta `completada` por `numero_documento` y formulario) y rate limit por IP (5 envíos por hora, constantes ajustables en `services/formulario_respuesta.py`, sin infraestructura aparte). La validación server-side cubre requerida + tipo simple, pero SOLO para preguntas sueltas (fuera de un grupo repetible); las preguntas dentro de un grupo repetible (arrays en el JSONB) no se validan campo por campo (ver DT-015).
+- **Alternativas descartadas:** autosave progresivo (soporta recuperar un formulario a medio llenar, pero más superficie sin auth que proteger); motor de validación completo (branching/regex por tipo) en esta etapa (ya identificado como trabajo aparte, ver D-D).
+- **Consecuencias / costo asumido:** el rate limit por IP usa `request.client.host` directo, sin `X-Forwarded-For` (ver DT-016, se rompe detrás de un proxy); los grupos repetibles pueden llegar con datos incompletos o mal tipados sin que el backend lo note.
+- **Revisar si:** aparece abuso real del endpoint público, o se construye el motor de validación completo.
+- **Estado:** vigente
+
 ## D-D — Modelo híbrido de formularios confirmado, con identificador público (2026-10-27)
 - **Contexto:** D-D quedaba abierto como `[SUPUESTO]`: un híbrido (relacional para lo consultable, JSONB para configuración/respuestas, versión inmutable) sin haber leído los 17 formularios reales. El usuario trajo un inventario generado desde los 17 JSON exportados (Microsoft Forms) para contrastarlo.
 - **Decisión:** se confirma el híbrido tal como estaba implementado (`Formulario`→`FormularioVersion`/`FormularioGrupoPregunta`/`FormularioPregunta`→`FormularioRespuesta`), sin tabla por formulario, con 2 correcciones de esquema sobre la misma migración `98500168c7d6` (bajo D-008): `Formulario.version_activa` (int suelto) pasa a `version_activa_id` (FK real a `formulario_version.id`); se agrega `Formulario.token_publico` (UUID único) porque no existía ningún identificador no adivinable para la futura URL pública (RF-011/012). Además, 3 convenciones fijadas sin cambio de esquema (documentadas en el código, no en una tabla nueva): `configuracion.multiple`/`allow_other` para Choice no simple y "Otro"; `goto_codigo: "__fin__"` (constante `BranchingCodigos.FIN`) para salto al final; nuevo valor de catálogo `calificacion` en `formulario_pregunta_tipo`.

@@ -1,17 +1,146 @@
 from app.core.security import verify_password, create_access_token
 from app.services.usuario import UsuarioService
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.catalogos.estado_poliza import EstadoPoliza
 from app.models.catalogos.aseguradora import Aseguradora
 from app.models.catalogos.producto import Producto
 from app.models.catalogos.ramo import Ramo
 from app.models.catalogos.tipo_documento import TipoDocumento
 from app.models.catalogos.estado_prospecto import EstadoProspecto
-from app.schemas.catalogo import ActualizarEstadoPoliza, CrearEstadoPoliza, ActualizarAseguradora, CrearAseguradora, ActualizarProducto, CrearProducto, ActualizarRamo, CrearRamo, ActualizarTipoDocumento, CrearTipoDocumento
+from app.models.catalogos.catalogo_valor import CatalogoValor
+from app.models.catalogos.catalogo_tipo import CatalogoTipo
+from sqlalchemy.exc import IntegrityError
+from app.schemas.catalogo import ActualizarEstadoPoliza, CrearEstadoPoliza, ActualizarAseguradora, CrearAseguradora, ActualizarProducto, CrearProducto, ActualizarRamo, CrearRamo, ActualizarTipoDocumento, CrearTipoDocumento, CatalogoTipoCreate, CatalogoValorCreate, CatalogoValorUpdate
 from typing import Optional
 
 class CatalogoService:
+
+    # Catálogo genérico (CatalogoTipo / CatalogoValor) ----------------------------------
+    @staticmethod
+    def get_valor_id(db: Session, tipo_codigo: str, valor_codigo: str) -> Optional[int]:
+        """
+        Resuelve el id de un CatalogoValor a partir del codigo de su
+        CatalogoTipo y su propio codigo, ej. ('formulario_estado', 'borrador').
+        Lo usan los servicios de negocio (formularios, etc.) para asignar un
+        estado/tipo por defecto sin depender de ids fijos.
+        """
+        stmt = (
+            select(CatalogoValor.id)
+            .join(CatalogoTipo, CatalogoValor.catalogo_tipo_id == CatalogoTipo.id)
+            .where(CatalogoTipo.codigo == tipo_codigo, CatalogoValor.codigo == valor_codigo)
+        )
+        return db.execute(stmt).scalar_one_or_none()
+
+    @staticmethod
+    def listar_tipos(db: Session):
+        stmt = select(CatalogoTipo).order_by(CatalogoTipo.nombre)
+        return db.execute(stmt).scalars().all()
+
+    @staticmethod
+    def crear_tipo(db: Session, data: CatalogoTipoCreate) -> Optional[CatalogoTipo]:
+        nuevo_tipo = CatalogoTipo(
+            codigo=data.codigo.strip(),
+            nombre=data.nombre.strip(),
+            descripcion=data.descripcion
+        )
+
+        db.add(nuevo_tipo)
+
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return None
+
+        db.refresh(nuevo_tipo)
+        return nuevo_tipo
+
+    @staticmethod
+    def listar_valores(db: Session, tipo_codigo: str):
+        stmt = (
+            select(CatalogoValor)
+            .join(CatalogoTipo, CatalogoValor.catalogo_tipo_id == CatalogoTipo.id)
+            .where(CatalogoTipo.codigo == tipo_codigo)
+            .order_by(CatalogoValor.orden)
+        )
+        return db.execute(stmt).scalars().all()
+
+    @staticmethod
+    def find_valor_by_id(db: Session, id: int) -> Optional[CatalogoValor]:
+        stmt = select(CatalogoValor).where(CatalogoValor.id == id)
+        return db.execute(stmt).scalar_one_or_none()
+
+    @staticmethod
+    def crear_valor(db: Session, tipo_codigo: str, data: CatalogoValorCreate):
+        stmt = select(CatalogoTipo).where(CatalogoTipo.codigo == tipo_codigo)
+        tipo = db.execute(stmt).scalar_one_or_none()
+
+        if not tipo:
+            return "tipo_no_existe"
+
+        if data.orden is not None:
+            orden = data.orden
+        else:
+            stmt_max = select(func.max(CatalogoValor.orden)).where(CatalogoValor.catalogo_tipo_id == tipo.id)
+            maximo = db.execute(stmt_max).scalar_one_or_none()
+            orden = (maximo + 1) if maximo is not None else 0
+
+        nuevo_valor = CatalogoValor(
+            catalogo_tipo_id=tipo.id,
+            codigo=data.codigo.strip(),
+            nombre=data.nombre.strip(),
+            descripcion=data.descripcion,
+            orden=orden,
+            metadatos=data.metadatos
+        )
+
+        db.add(nuevo_valor)
+
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return "codigo_duplicado"
+
+        db.refresh(nuevo_valor)
+        return nuevo_valor
+
+    @staticmethod
+    def actualizar_valor(db: Session, id: int, data: CatalogoValorUpdate) -> Optional[CatalogoValor]:
+        valor = CatalogoService.find_valor_by_id(db, id)
+
+        if not valor:
+            return None
+
+        if data.nombre is not None:
+            valor.nombre = data.nombre.strip()
+
+        if data.descripcion is not None:
+            valor.descripcion = data.descripcion
+
+        if data.orden is not None:
+            valor.orden = data.orden
+
+        if data.activo is not None:
+            valor.activo = data.activo
+
+        if data.metadatos is not None:
+            valor.metadatos = data.metadatos
+
+        db.commit()
+        db.refresh(valor)
+
+        return valor
+
+    # No existe eliminar_valor a propósito: el ON DELETE RESTRICT de las FKs
+    # que apuntan a catalogo_valor (formulario.estado_id, etc.) solo protege
+    # un valor que YA tiene alguna fila referenciándolo en este momento. Un
+    # valor como 'borrador' puede no tener ninguna fila todavía y seguir
+    # siendo indispensable porque el código lo asume por `codigo` (ver
+    # app/models/formularios/constantes.py), no por FK — borrarlo rompe la
+    # próxima creación aunque hoy "no esté en uso". El admin desactiva
+    # (actualizar_valor con activo=False), nunca borra.
 
     # Estados Póliza--------------------------------------------------------------------
     @staticmethod

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento, EstadoProspectoRead
+from app.schemas.catalogo import EstadoPolizaRead, AseguradoraRead, ProductoRead, RamoRead, TiposDocumentoRead, CrearEstadoPoliza, ActualizarEstadoPoliza, CrearAseguradora, ActualizarAseguradora, CrearProducto, ActualizarProducto, ActualizarRamo, CrearRamo, CrearTipoDocumento, ActualizarTipoDocumento, EstadoProspectoRead, CatalogoTipoRead, CatalogoTipoCreate, CatalogoValorAdminRead, CatalogoValorCreate, CatalogoValorUpdate
 from app.services.catalogo import CatalogoService
 from app.core.security import get_current_user_data, require_admin
 
@@ -10,6 +10,51 @@ router = APIRouter(
     prefix="/catalogos",
     tags=["Catálogos Maestros"]
 )
+
+# ── Catálogo genérico (catalogo_tipo / catalogo_valor) ──────────────────
+
+@router.get("/tipos", response_model=list[CatalogoTipoRead])
+def listar_tipos_catalogo(db: Session = Depends(get_db), user=Depends(get_current_user_data)):
+    return CatalogoService.listar_tipos(db)
+
+
+@router.post("/tipos", response_model=CatalogoTipoRead, status_code=201)
+def crear_tipo_catalogo(data: CatalogoTipoCreate, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    nuevo_tipo = CatalogoService.crear_tipo(db, data)
+
+    if nuevo_tipo is None:
+        raise HTTPException(status_code=409, detail="Ya existe un catálogo con ese código")
+
+    return nuevo_tipo
+
+
+@router.get("/tipos/{codigo}/valores", response_model=list[CatalogoValorAdminRead])
+def listar_valores_catalogo(codigo: str, db: Session = Depends(get_db), user=Depends(get_current_user_data)):
+    return CatalogoService.listar_valores(db, codigo)
+
+
+@router.post("/tipos/{codigo}/valores", response_model=CatalogoValorAdminRead, status_code=201)
+def crear_valor_catalogo(codigo: str, data: CatalogoValorCreate, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    resultado = CatalogoService.crear_valor(db, codigo, data)
+
+    if resultado == "tipo_no_existe":
+        raise HTTPException(status_code=404, detail=f"No existe el catálogo '{codigo}'")
+
+    if resultado == "codigo_duplicado":
+        raise HTTPException(status_code=409, detail="Ya existe un valor con ese código en este catálogo")
+
+    return resultado
+
+
+@router.put("/valores/{id}", response_model=CatalogoValorAdminRead)
+def actualizar_valor_catalogo(id: int, data: CatalogoValorUpdate, db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    valor = CatalogoService.actualizar_valor(db, id, data)
+
+    if not valor:
+        raise HTTPException(status_code=404, detail="El valor no existe")
+
+    return valor
+
 
 @router.get("/estados-prospecto", response_model=list[EstadoProspectoRead])
 def listar_estados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):

@@ -26,8 +26,8 @@ flowchart LR
 | Clientes | Búsqueda y registro de clientes. | [PENDIENTE] | [PENDIENTE] | — |
 | Pólizas (producción) | Pólizas, importación y exportación, traspaso entre responsables e historial. | catálogos, clientes, historial | [PENDIENTE] | — |
 | Dashboard | Métricas, alertas, producción mensual y distribución de estados. | pólizas | [PENDIENTE] | — |
-| Catálogos | Lectura de catálogos y alta, edición y baja (solo admin) de algunos. | — | [PENDIENTE] | — |
-| Formularios | Definición, versionado y respuestas de formularios. Solo hay modelos y migración. | catálogos (por diseño) | [PENDIENTE] | docs/modulos/formularios.md (se crea al abrir el hito 1) |
+| Catálogos | Lectura de catálogos y alta/edición (solo admin) de los de tabla propia; más el par genérico `catalogo_tipo`/`catalogo_valor` (crear tipo, listar/crear/editar valores — sin borrado duro a propósito, solo `activo=false`) que usa el módulo de formularios y cualquier catálogo nuevo. | — | [PENDIENTE] | — |
+| Formularios | Definición, versionado y respuestas de formularios. CRUD de `Formulario`, builder de grupos/preguntas, publicación y endpoint público con creación/reuso de `Cliente` ya construidos y con pytest; falta el importador de los 17 formularios reales. | catálogos (genérico `catalogo_valor`), clientes (toda respuesta crea o reusa un `Cliente`) | [PENDIENTE] | docs/modulos/formularios.md |
 
 ### Cobertura por capa (hecho, según el inventario)
 | Módulo | Router (endpoints) | Schema | Service (líneas) | Modelos | Front |
@@ -38,8 +38,8 @@ flowchart LR
 | Clientes | `cliente` (3) | sí | sí (188) | `cliente` | sin página propia visible |
 | Pólizas | `poliza` (11) | sí | sí (953) | `poliza`, `historial_responsable*` | `pages/produccion`, `api/polizas.js`, `api/importExport.js` |
 | Dashboard | `dashboard` (4) | sí | no tiene service propio | `config_alerta` | `pages/dashboard`, `api/dashboard.js` |
-| Catálogos | `catalogo` (21: 6 GET, 5 POST, 5 PUT, 5 DELETE) | sí | sí (315) | `catalogos/*` | `api/catalogos.js`, `pages/admin/AdminCatalogos.jsx` (ruta `/admin/catalogos`, solo ADMIN; contenido sin leer) |
-| Formularios | no existe | no existe | no existe | 5 modelos + `constantes.py` | no existe |
+| Catálogos | `catalogo` (26: 8 GET, 6 POST, 6 PUT, 5 DELETE — incluye el par genérico `catalogo_tipo`/`catalogo_valor`) | sí | sí (315+) | `catalogos/*` | `api/catalogos.js`, `pages/admin/AdminCatalogos.jsx` (ruta `/admin/catalogos`, solo ADMIN; contenido sin leer) |
+| Formularios | `formulario` + `formulario_publico` (17: CRUD de cabecera + publicación/versiones + builder de grupos/preguntas + endpoint público sin auth) | sí | sí (helper genérico en `catalogo` + 5 clases de service propias) | 5 modelos + `constantes.py` | no existe |
 
 **Modelos sin router ni pantalla:** `cotizacion`, `tarea`, `cancelacion`, `cambio_intermediario`, `endoso_banco`, `conversacion`, `mensaje`, `plantilla_mensaje`, `link_proceso`, `auditoria`. En el front, las rutas de cotizaciones, cancelaciones y plantillas están comentadas.
 

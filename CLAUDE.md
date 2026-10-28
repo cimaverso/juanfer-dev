@@ -61,7 +61,7 @@ FastAPI (Python ≥3.12, `uv`) · SQLAlchemy 2 **síncrono** + `psycopg` 3 + Ale
 ## Comandos habituales
 Backend (desde `backend/`): `uv sync` · `uv run uvicorn app.main:app --reload` · `uv run alembic revision --autogenerate -m "msg"` · `uv run alembic upgrade head` · `uv run alembic downgrade -1`
 Frontend (desde `frontend/`): `npm install` · `npm run dev` · `npm run lint` · `npm run build`
-Tests: [PENDIENTE] (no hay pytest todavía; ver docs/DEUDA.md).
+Tests backend: `uv run pytest` (desde `backend/`). Frontend: [PENDIENTE] (ver docs/DEUDA.md).
 
 ## Documentos vivos
 | Archivo | Para qué | Quién lo actualiza |

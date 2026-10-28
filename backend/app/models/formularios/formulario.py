@@ -95,10 +95,16 @@ class Formulario(Base):
         foreign_keys="FormularioVersion.formulario_id"
     )
 
+    # post_update=True rompe el ciclo de FKs con FormularioVersion.formulario_id
+    # (Formulario -> version_activa_id -> formulario_version, y
+    # formulario_version.formulario_id -> formulario): sin esto, borrar un
+    # Formulario con version_activa_id seteado falla con "Circular dependency
+    # detected", porque SQLAlchemy no sabe en qué orden emitir los DELETE.
     version_activa: Mapped[Optional["FormularioVersion"]] = relationship(
         "FormularioVersion",
         foreign_keys=[version_activa_id],
-        uselist=False
+        uselist=False,
+        post_update=True
     )
 
     grupos_pregunta: Mapped[list["FormularioGrupoPregunta"]] = relationship(

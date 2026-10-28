@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, catalogo, usuario, cliente, poliza, dashboard, prospecto
+from app.routers import auth, catalogo, usuario, cliente, poliza, dashboard, prospecto, formulario, formulario_publico
 
 app = FastAPI(
     title="JuanFer Seguros API V1",
@@ -23,6 +23,8 @@ app.include_router(cliente.router, prefix="/api/v1")
 app.include_router(poliza.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(prospecto.router, prefix="/api/v1")
+app.include_router(formulario.router, prefix="/api/v1")
+app.include_router(formulario_publico.router, prefix="/api/v1")
 
 # Health check (útil para monitoreo)
 @app.get("/health")
