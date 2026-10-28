@@ -1,6 +1,19 @@
 """Restablecer contraseña por código de un solo uso (DT-023b)."""
 
+from sqlalchemy import select
+from app.models.usuarios_clientes.usuario import Usuario
+
 EMAIL_ASESOR = "gina@juanfer.com"
+
+
+def _limpiar_bloqueo(db_session):
+    """La cuenta real puede quedar bloqueada por pruebas manuales en el
+    navegador (ver docs/DEUDA.md / bloqueo de login) — se limpia dentro
+    del propio SAVEPOINT del test, sin tocar el dato real."""
+    usuario = db_session.execute(select(Usuario).where(Usuario.email == EMAIL_ASESOR)).scalar_one()
+    usuario.intentos_fallidos = 0
+    usuario.bloqueado_hasta = None
+    db_session.commit()
 
 
 def _generar_codigo(client, admin_headers, usuario_id=3):
@@ -40,7 +53,8 @@ def test_validar_codigo_incorrecto_400(client, admin_headers):
     assert respuesta.status_code == 400
 
 
-def test_reset_password_completo_y_login_con_clave_nueva(client, admin_headers):
+def test_reset_password_completo_y_login_con_clave_nueva(client, admin_headers, db_session):
+    _limpiar_bloqueo(db_session)
     codigo = _generar_codigo(client, admin_headers)
 
     respuesta = client.post(
