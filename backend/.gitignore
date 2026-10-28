@@ -41,6 +41,7 @@ alembic/versions/*.pyc
 media/
 uploads/
 static/pdfs/
+backups/
 
 # ── IDEs ──────────────────────────────────────────────────
 .vscode/
