@@ -62,9 +62,21 @@
 
 .emp-modal__footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-2);
+}
+
+/* .emp-btn-primario trae align-self/height/margin-top pensados para el
+   botón "Guardar" suelto del formulario de datos de empresa (fuera de
+   un modal) -- dentro de un footer de modal, junto a .emp-btn-secundario
+   (height: 34px, sin margin-top), esas tres propiedades lo desalineaban
+   verticalmente. */
+.emp-modal__footer .emp-btn-primario {
+  align-self: auto;
+  height: 34px;
+  margin-top: 0;
 }
 
 .emp-error-msg {
