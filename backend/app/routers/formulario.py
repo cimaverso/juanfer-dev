@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date
+from typing import Union
 from app.core.db import get_db
 from app.schemas.formulario import (
     FormularioRead, FormularioCreate, FormularioUpdate,
@@ -14,6 +15,7 @@ from app.services.formulario import (
     FormularioGrupoPreguntaService, FormularioPreguntaService
 )
 from app.services.formulario_respuesta import FormularioRespuestaService
+from app.services.formulario_importador_ms_persistencia import importar_formularios_ms
 from app.core.security import get_current_user_data, require_admin
 
 router = APIRouter(
@@ -60,6 +62,21 @@ def crear_formulario(data: FormularioCreate, db: Session = Depends(get_db), user
         raise HTTPException(status_code=400, detail="categoria_codigo no corresponde a ningún valor de formulario_categoria")
 
     return resultado
+
+
+@router.post("/importar-ms")
+def importar_formularios_microsoft(
+    body: Union[dict, list[dict]] = Body(..., description="Un JSON de MS Forms, o una lista de varios"),
+    categoria_codigo: str | None = Query(
+        None,
+        description="cotizacion/expedicion para todos los del lote; si se omite, se intenta detectar por el título de cada uno"
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user_data),
+    admin=Depends(require_admin),
+):
+    items = body if isinstance(body, list) else [body]
+    return importar_formularios_ms(db, items, categoria_codigo)
 
 
 @router.put("/{id}", response_model=FormularioRead)

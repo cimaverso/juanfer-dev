@@ -332,6 +332,72 @@
   gap: var(--space-2);
 }
 
+.formularios__header-acciones {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Modal de importación (más ancho que el de creación simple) ── */
+.formularios__modal--ancho {
+  max-width: 560px;
+}
+
+.formularios__importar-ayuda {
+  font-size: var(--text-sm);
+  color: var(--color-texto-sub);
+  margin: 0;
+}
+
+.formularios__importar-lista-archivos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--color-texto);
+}
+
+.formularios__importar-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.formularios__importar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.formularios__importar-item--ok {
+  background-color: var(--estado-expedido-bg);
+  color: var(--estado-expedido);
+}
+
+.formularios__importar-item--error {
+  background-color: var(--alerta-critico-bg);
+  color: var(--alerta-critico);
+}
+
+.formularios__importar-item strong {
+  display: block;
+  color: var(--color-texto);
+}
+
+.formularios__importar-detalle {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-texto-sub);
+}
+
 /* ── Botones y mensajes (compartidos con el builder/respuestas) ── */
 .form-btn-primario,
 .form-btn-secundario {

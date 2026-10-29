@@ -1,0 +1,392 @@
+{
+  "data": {
+    "form": {
+      "title": "COTIZACIÓN PÓLIZA DE SALUD",
+      "description": "Para cotizar tu Póliza de Salud necesito estos datos.",
+      "descriptiveQuestions": [
+        {
+          "id": "rc5669a0972f1411990c554dbc204f2bb",
+          "title": "¡Gracias por completar la información!\n",
+          "type": "Question.ColumnGroup",
+          "order": 900,
+          "required": false,
+          "subtitle": null,
+          "questionInfo": "{\"BranchInfo\":{\"ToTheEnd\":true}}",
+          "trackingId": "138942b93f524ed0b7ee392c7c573d15"
+        },
+        {
+          "id": "r60ee71e684374ae28f72545597ac4369",
+          "title": "INFORMACIÓN DEL TOMADOR",
+          "type": "Question.ColumnGroup",
+          "order": 100,
+          "required": false,
+          "subtitle": "El tomador es quien se hace responsable del pago.",
+          "questionInfo": null,
+          "trackingId": "3e0e398a96d2478fac01a3802318c052"
+        },
+        {
+          "id": "r36734f93cd8047879f897a2d2b730dac",
+          "title": "INFORMACIÓN BÁSICA DEL/LOS ASEGURADO/S",
+          "type": "Question.ColumnGroup",
+          "order": 200,
+          "required": false,
+          "subtitle": "El Asegurado es la persona que se va a beneficiar del plan.",
+          "questionInfo": null,
+          "trackingId": "1c4ad56178944543864267091e1ee4fb"
+        },
+        {
+          "id": "rebd0ce72b7c3426ab70b49d842ccf347",
+          "title": "INFORMACIÓN BÁSICA DEL ASEGURADO #2",
+          "type": "Question.ColumnGroup",
+          "order": 300,
+          "required": false,
+          "subtitle": "",
+          "questionInfo": null,
+          "trackingId": "76c5a6a6577449d99e7d2dae8515a4d1"
+        },
+        {
+          "id": "r45b34f5433bb405a8b091ccbedb99f3f",
+          "title": "INFORMACIÓN BÁSICA DEL ASEGURADO #3",
+          "type": "Question.ColumnGroup",
+          "order": 400,
+          "required": false,
+          "subtitle": "",
+          "questionInfo": null,
+          "trackingId": "ec41f945486b4e2896b1055ec5e87ccb"
+        },
+        {
+          "id": "re42bae2cef954301be1477e71c9be1c3",
+          "title": "INFORMACIÓN BÁSICA DEL ASEGURADO #4",
+          "type": "Question.ColumnGroup",
+          "order": 500,
+          "required": false,
+          "subtitle": "",
+          "questionInfo": null,
+          "trackingId": "f2376663511a4473b17567ba9b44a5de"
+        }
+      ],
+      "questions": [
+        {
+          "id": "rd6f61a7436a14779b72d1646ba127464",
+          "title": "Tipo de documento del tomador. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 101,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"},{\"Description\":\"NIT\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "r981931f389524e62b386becc98e50855",
+          "title": "Número de documento del tomador. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 102,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"IsNumber\":true}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "rf5e2d9c7b0704e168da6dfd84aa5cb3f",
+          "title": "Nombres y apellidos completos del tomador",
+          "type": "Question.TextField",
+          "order": 103,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "b5655d1e843e4e3b81de0e97fb4bb3db"
+        },
+        {
+          "id": "r3411a5736028424cb66598a8a9ce5e1b",
+          "title": "Correo electrónico del tomador",
+          "type": "Question.TextField",
+          "order": 104,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"Validation\":{\"rule\":11}}",
+          "trackingId": "91809df1af61477185835f233b0602e2"
+        },
+        {
+          "id": "raa0852df90254e4fa566e6ae424de401",
+          "title": "Número de celular del tomador",
+          "type": "Question.TextField",
+          "order": 105,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"IsNumber\":true}",
+          "trackingId": "54a368ed15274604b85d6169f38bc257"
+        },
+        {
+          "id": "r5297a8c0a759466b85afe3d7ddcd08a8",
+          "title": "¿El asegurado principal es el mismo tomador?",
+          "type": "Question.Choice",
+          "order": 106,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\",\"BranchInfo\":{\"TargetQuestionId\":\"rNOEXISTE0000000000000000000000\"}},{\"Description\":\"NO\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "600594da5d9148248a9b3f7040ac8a68"
+        },
+        {
+          "id": "ra37c4f082a34432b8bb55045cdd1ad58",
+          "title": "Parentesco del asegurado #1 con el tomador",
+          "type": "Question.TextField",
+          "order": 201,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "ae93c084309042bb91f9997258f8463d"
+        },
+        {
+          "id": "r5168935e6e2d455482eb62c873cb2cd3",
+          "title": "Nombres y apellidos completos del asegurado #1",
+          "type": "Question.TextField",
+          "order": 202,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "a5904e26ac6e42fcb0f7d27706bf7b19"
+        },
+        {
+          "id": "rbe9cf5768c87492ead65b36f3bc26a1a",
+          "title": "Tipo de documento del asegurado #1. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 203,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"},{\"Description\":\"REGISTRO CIVIL\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "ra721cf6eba024765abef2399464a73b5",
+          "title": "Número de documento del asegurado #1. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 204,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "r782ad7bab1f2476aaf166915f6407a56",
+          "title": "Género del asegurado #1",
+          "type": "Question.Choice",
+          "order": 205,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"Femenino\"},{\"Description\":\"Masculino\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "9e1b7fdd9cf24d0ca661f4274b5693bb"
+        },
+        {
+          "id": "r4c2f279f47a64ab39d1e23d3cc5848e6",
+          "title": "Fecha de nacimiento del asegurado #1",
+          "type": "Question.DateTime",
+          "order": 206,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Date\":true,\"Time\":false}",
+          "trackingId": "fc95f3c332344844a41e24f54995ec3e"
+        },
+        {
+          "id": "rb01b45bb4cdd45bebf5268f0797e4d44",
+          "title": "¿Cotizar otro asegurado?",
+          "type": "Question.Choice",
+          "order": 207,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\"},{\"Description\":\"NO\",\"BranchInfo\":{\"TargetQuestionId\":\"rc5669a0972f1411990c554dbc204f2bb\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "36f2d143343d41059229457c5e756e15"
+        },
+        {
+          "id": "r1fd2bfb14bed4814a23aa3ec322d46e7",
+          "title": "Parentesco del asegurado #2 con el tomador",
+          "type": "Question.TextField",
+          "order": 301,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "ae93c084309042bb91f9997258f8463d"
+        },
+        {
+          "id": "r6f6e2c64a87340b5b9839c13850330fb",
+          "title": "Nombres y apellidos completos del asegurado #2",
+          "type": "Question.TextField",
+          "order": 302,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "a5904e26ac6e42fcb0f7d27706bf7b19"
+        },
+        {
+          "id": "r37713e604d87402aab6b49188d2dc854",
+          "title": "Tipo de documento del asegurado #2. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 303,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "r04006601602e471fad960986f1c0fad2",
+          "title": "Número de documento del asegurado #2. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 304,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "rcc70b4cf59a748f8baf34f0667db32b7",
+          "title": "Género del asegurado #2",
+          "type": "Question.Choice",
+          "order": 305,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"Femenino\"},{\"Description\":\"Masculino\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "9e1b7fdd9cf24d0ca661f4274b5693bb"
+        },
+        {
+          "id": "r91a97d09ff0241b4a89a2da6739d9ca2",
+          "title": "¿Cotizar otro asegurado?",
+          "type": "Question.Choice",
+          "order": 306,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\",\"BranchInfo\":{\"TargetQuestionId\":\"r45b34f5433bb405a8b091ccbedb99f3f\"}},{\"Description\":\"NO\",\"BranchInfo\":{\"TargetQuestionId\":\"rc5669a0972f1411990c554dbc204f2bb\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "36f2d143343d41059229457c5e756e15"
+        },
+        {
+          "id": "r9a8189ea83f34323bd43b6172ece71f1",
+          "title": "Parentesco del asegurado #3 con el tomador",
+          "type": "Question.TextField",
+          "order": 401,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "ae93c084309042bb91f9997258f8463d"
+        },
+        {
+          "id": "rf9034a97f51744c388f7dc0b52646eed",
+          "title": "Nombres y apellidos completos del asegurado #3",
+          "type": "Question.TextField",
+          "order": 402,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "a5904e26ac6e42fcb0f7d27706bf7b19"
+        },
+        {
+          "id": "r81a417b7a4874361a7f15ea13c207799",
+          "title": "Tipo de documento del asegurado #3. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 403,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "r4a64444f1bb447b9b05bdf1ac76bef1b",
+          "title": "Número de documento del asegurado #3. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 404,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "ra7a9676c5a264bd898ab5bd5bb68568e",
+          "title": "Género del asegurado #3",
+          "type": "Question.Choice",
+          "order": 405,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"Femenino\"},{\"Description\":\"Masculino\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "9e1b7fdd9cf24d0ca661f4274b5693bb"
+        },
+        {
+          "id": "ra79be41f11ad46e99dc0202984a736fc",
+          "title": "¿Cotizar otro asegurado?",
+          "type": "Question.Choice",
+          "order": 406,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\",\"BranchInfo\":{\"TargetQuestionId\":\"re42bae2cef954301be1477e71c9be1c3\"}},{\"Description\":\"NO\",\"BranchInfo\":{\"TargetQuestionId\":\"rc5669a0972f1411990c554dbc204f2bb\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "36f2d143343d41059229457c5e756e15"
+        },
+        {
+          "id": "r17f33daadad144cfae97018fdd7e8c47",
+          "title": "Parentesco del asegurado #4 con el tomador",
+          "type": "Question.TextField",
+          "order": 501,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "ae93c084309042bb91f9997258f8463d"
+        },
+        {
+          "id": "rc4c37546071145099cb538970f57bd29",
+          "title": "Nombres y apellidos completos del asegurado #4",
+          "type": "Question.TextField",
+          "order": 502,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "a5904e26ac6e42fcb0f7d27706bf7b19"
+        },
+        {
+          "id": "r0f7db5cfe7724f5cada69934d7b2bb57",
+          "title": "Tipo de documento del asegurado #4. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 503,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "r0714947fb145437796057ca8c4972170",
+          "title": "Número de documento del asegurado #4. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 504,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "r8809fb9c1bb444ba9f95561d3a70ec6f",
+          "title": "Género del asegurado #4",
+          "type": "Question.Choice",
+          "order": 505,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"Femenino\"},{\"Description\":\"Masculino\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "9e1b7fdd9cf24d0ca661f4274b5693bb"
+        },
+        {
+          "id": "r458ea38e131949e89c2b876b55a73125",
+          "title": "¿Qué probabilidades hay de que nos recomiende a un amigo o compañero?",
+          "type": "Question.NPS",
+          "order": 901,
+          "required": false,
+          "subtitle": null,
+          "questionInfo": "{\"LeftDescription\":\"Nada probable\",\"RightDescription\":\"Muy probable\"}",
+          "trackingId": "9db9ddb9199840f4b180b002f3740f31"
+        },
+        {
+          "id": "r0ab44d2149c94f6e9aa26bf3b48634d6",
+          "title": "Pronto recibirás la cotización solicitada.\n¡Feliz día!",
+          "type": "Question.TextField",
+          "order": 902,
+          "required": false,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "f038ca4a1dab45db807d0cdb7f5bd6ad"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "data": {
+    "form": {
+      "title": "COTIZACIÓN PÓLIZA AUTOS Y MOTOS",
+      "description": "Por favor completa estos datos para cotizar tu póliza de auto o moto.",
+      "descriptiveQuestions": [
+        {
+          "id": "rc5669a0972f1411990c554dbc204f2bb",
+          "title": "¡Gracias por completar la información!\n",
+          "type": "Question.ColumnGroup",
+          "order": 39022494.57383755,
+          "required": false,
+          "subtitle": null,
+          "questionInfo": "{\"BranchInfo\":{\"ToTheEnd\":true}}",
+          "trackingId": "138942b93f524ed0b7ee392c7c573d15"
+        },
+        {
+          "id": "r60ee71e684374ae28f72545597ac4369",
+          "title": "INFORMACIÓN DEL TOMADOR Y ASEGURADO",
+          "type": "Question.ColumnGroup",
+          "order": 1000500,
+          "required": false,
+          "subtitle": "El tomador es quien se hace responsable del pago.",
+          "questionInfo": null,
+          "trackingId": "3e0e398a96d2478fac01a3802318c052"
+        }
+      ],
+      "questions": [
+        {
+          "id": "r981931f389524e62b386becc98e50855",
+          "title": "Número de documento del tomador. Sin puntos, comas, ni espacios.",
+          "type": "Question.TextField",
+          "order": 3000500,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"IsNumber\":true}",
+          "trackingId": "2e123c175b9b4d2784e7ed7ebb1751ed"
+        },
+        {
+          "id": "rd6f61a7436a14779b72d1646ba127464",
+          "title": "Tipo de documento del tomador. Elija una opción.",
+          "type": "Question.Choice",
+          "order": 2000500,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"CEDULA DE CIUDADANIA\"},{\"Description\":\"CEDULA DE EXTRANJERIA\"}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "d99859ff5335475e963ad57c006deb8d"
+        },
+        {
+          "id": "rf5e2d9c7b0704e168da6dfd84aa5cb3f",
+          "title": "Nombres y apellidos completos del tomador",
+          "type": "Question.TextField",
+          "order": 4000500,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "b5655d1e843e4e3b81de0e97fb4bb3db"
+        },
+        {
+          "id": "r3411a5736028424cb66598a8a9ce5e1b",
+          "title": "Correo electrónico del tomador",
+          "type": "Question.TextField",
+          "order": 5875500,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"Validation\":{\"rule\":11}}",
+          "trackingId": "91809df1af61477185835f233b0602e2"
+        },
+        {
+          "id": "raa0852df90254e4fa566e6ae424de401",
+          "title": "Número de celular del tomador",
+          "type": "Question.TextField",
+          "order": 5641125,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false,\"IsNumber\":true}",
+          "trackingId": "54a368ed15274604b85d6169f38bc257"
+        },
+        {
+          "id": "r7dc55bf25caf4e02b641ff1814d71a5e",
+          "title": "Tipo de vehículo",
+          "type": "Question.Choice",
+          "order": 7471203.125,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"Carro\"},{\"Description\":\"Moto\",\"BranchInfo\":{\"TargetQuestionId\":\"r22267400432244e09969ab5eb7b82a14\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "eae49db69c1747dc93f281bc00b362b4"
+        },
+        {
+          "id": "r0d5d51d7ae9a4d92990e5dce32b0cca0",
+          "title": "Placa del vehículo a asegurar",
+          "type": "Question.TextField",
+          "order": 6712414.0625,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "0d4d24f7b0d64660a02a31b7b27e26b8"
+        },
+        {
+          "id": "r1fabb0b3fba04bf89da848b7d35b28f5",
+          "title": "¿El vehículo es nuevo?",
+          "type": "Question.Choice",
+          "order": 9621105.46875,
+          "required": true,
+          "subtitle": " * Se considera nuevo si está en el concesionario.",
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\"},{\"Description\":\"NO\",\"BranchInfo\":{\"TargetQuestionId\":\"r660d84688fae4defb942f81df0ab83d4\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "885c0a9604a645b39069fd96fd19b07f"
+        },
+        {
+          "id": "r660d84688fae4defb942f81df0ab83d4",
+          "title": "¿Está financiado con un banco?",
+          "type": "Question.Choice",
+          "order": 13750500,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Choices\":[{\"Description\":\"SI\"},{\"Description\":\"NO\",\"BranchInfo\":{\"TargetQuestionId\":\"rc5669a0972f1411990c554dbc204f2bb\"}}],\"ChoiceType\":1,\"AllowOtherAnswer\":false}",
+          "trackingId": "8964f629c1f9405892d065edaa73224c"
+        },
+        {
+          "id": "r22267400432244e09969ab5eb7b82a14",
+          "title": "Modelo y línea",
+          "type": "Question.TextField",
+          "order": 9241710.9375,
+          "required": true,
+          "subtitle": null,
+          "questionInfo": "{\"Multiline\":false}",
+          "trackingId": "de6c3bd3e4ca4316857bcff9bb1771e4"
+        },
+        {
+          "id": "rf1d00d65c6be4a59a3fe6f563c4d43f1",
+          "title": "Valor factura de tu vehículo",
+          "type": "Question.TextField",
+          "order": 11685802.734375,
+          "required": true,
+          "subtitle": "Recuerda enviarnos una foto de la factura por whatsapp.",
+          "questionInfo": "{\"Multiline\":false,\"ShowSubtitle\":true}",
+          "trackingId": "1a8091953a134075932d6cdbc4c5b91e"
+        },
+        {
+          "id": "r1531048291ac4e798db2e5e60ea24bb4",
+          "title": "¡Gracias por tu tiempo! Por favor califica nuestro servicio.",
+          "type": "Question.Rating",
+          "order": 43000500,
+          "required": false,
+          "subtitle": null,
+          "questionInfo": "{\"Length\":5,\"RatingShape\":\"Star\",\"MinRating\":1}",
+          "trackingId": "744c3e293c3249c4affc2c9e20a51594"
+        }
+      ]
+    }
+  }
+}

@@ -90,19 +90,23 @@ class FormularioPregunta(Base):
 
     # choices, validaciones (regex/tipo numérico/email), branching
     # (saltos condicionales por valor de respuesta), labels de NPS, etc.
-    # Para tipo='opcion': "multiple" (bool, default false = selección única)
-    # y "allow_other" (bool) para la opción "Otro" con texto libre.
-    # goto_codigo admite BranchingCodigos.FIN ("__fin__") para saltar al
-    # final del formulario sin apuntar a una pregunta real.
+    # Para tipo='opcion': "multiple" (bool, default false = selección única
+    # -- hoy solo se guarda el dato, el frontend aún no renderiza checkbox,
+    # ver DEUDA) y "allow_other" (bool) para la opción "Otro" con texto
+    # libre. "branching" es un dict {valor_de_la_opcion: codigo_destino}
+    # -- NO una lista de {if_value,goto_codigo}; el valor puede ser
+    # BranchingCodigos.FIN ("__fin__") para saltar al final del formulario
+    # sin apuntar a una pregunta real. Esta es la forma que de verdad leen
+    # FormularioBuilder.jsx (PreguntaCard) y FormularioPublico.jsx -- antes
+    # este docstring describía otra forma que nunca coincidió con el
+    # frontend real (se descubrió al construir el importador de MS Forms,
+    # que al seguir este docstring dejaba la página del builder en blanco).
     # Ejemplo:
     # {
-    #   "choices": [{"value": "SI", "label": "Sí"}, {"value": "NO", "label": "No"}],
+    #   "choices": ["SI", "NO"],
     #   "multiple": false,
     #   "allow_other": false,
-    #   "branching": [
-    #       {"if_value": "SI", "goto_codigo": "asegurado.tipo_documento"},
-    #       {"if_value": "NO", "goto_codigo": "__fin__"}
-    #   ],
+    #   "branching": {"SI": "asegurado.tipo_documento", "NO": "__fin__"},
     #   "validacion": {"es_numero": true}
     # }
     configuracion: Mapped[Optional[dict]] = mapped_column(

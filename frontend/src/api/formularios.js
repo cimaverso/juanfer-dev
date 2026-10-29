@@ -52,6 +52,15 @@ export async function eliminarFormulario(id) {
   return data
 }
 
+// Importación masiva desde el export JSON de Microsoft Forms. `items` es
+// un array (1 o varios); categoriaCodigo es opcional, si no se envía el
+// backend intenta detectarla por el título (COTIZACIÓN/EXPEDICIÓN).
+export async function importarFormularios(items, categoriaCodigo) {
+  const params = categoriaCodigo ? { categoria_codigo: categoriaCodigo } : {}
+  const { data } = await api.post('/formularios/importar-ms', items, { params })
+  return data
+}
+
 // ============================================================
 // VERSIONES / PUBLICACIÓN
 // ============================================================

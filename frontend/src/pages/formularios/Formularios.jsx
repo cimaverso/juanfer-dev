@@ -12,6 +12,7 @@ import {
   listarFormularios,
   crearFormulario,
   eliminarFormulario,
+  importarFormularios,
 } from '../../api/formularios.js'
 import { listarValoresCatalogo } from '../../api/catalogos.js'
 import Toast from '../../components/Toast.jsx'
@@ -57,6 +58,12 @@ export default function Formularios() {
   const [nuevo, setNuevo]             = useState(NUEVO_VACIO)
   const [creando, setCreando]         = useState(false)
   const [errorCrear, setErrorCrear]   = useState(null)
+
+  const [modalImportarAbierto, setModalImportarAbierto] = useState(false)
+  const [archivosImportar, setArchivosImportar] = useState([])
+  const [importando, setImportando]       = useState(false)
+  const [errorImportar, setErrorImportar] = useState(null)
+  const [resultadoImportar, setResultadoImportar] = useState(null)
 
   const [copiadoId, setCopiadoId]     = useState(null)
   const [toast, setToast]             = useState(null)
@@ -138,6 +145,44 @@ export default function Formularios() {
     }
   }
 
+  function cerrarModalImportar() {
+    setModalImportarAbierto(false)
+    setArchivosImportar([])
+    setErrorImportar(null)
+    setResultadoImportar(null)
+  }
+
+  async function handleImportar(e) {
+    e.preventDefault()
+    if (archivosImportar.length === 0) {
+      setErrorImportar('Selecciona al menos un archivo JSON.')
+      return
+    }
+    try {
+      setImportando(true)
+      setErrorImportar(null)
+      setResultadoImportar(null)
+
+      const items = await Promise.all(
+        archivosImportar.map(async (archivo) => {
+          try {
+            return JSON.parse(await archivo.text())
+          } catch {
+            throw new Error(`"${archivo.name}" no es un JSON válido.`)
+          }
+        })
+      )
+
+      const resultado = await importarFormularios(items)
+      setResultadoImportar(resultado)
+      if (resultado.creados.length > 0) cargar()
+    } catch (err) {
+      setErrorImportar(err.response?.data?.detail || err.message || 'No se pudo importar.')
+    } finally {
+      setImportando(false)
+    }
+  }
+
   function handleEliminar(id) {
     setConfirmacion({
       mensaje: '¿Eliminar este formulario? Esta acción no se puede deshacer.',
@@ -173,9 +218,14 @@ export default function Formularios() {
           <h2 className="formularios__titulo">Formularios</h2>
           <p className="formularios__sub">Diseña formularios dinámicos y compártelos por URL pública.</p>
         </div>
-        <button className="form-btn-primario" onClick={() => setModalAbierto(true)}>
-          <i className="bi bi-plus-lg" /> Nuevo formulario
-        </button>
+        <div className="formularios__header-acciones">
+          <button className="form-btn-secundario" onClick={() => setModalImportarAbierto(true)}>
+            <i className="bi bi-upload" /> Importar
+          </button>
+          <button className="form-btn-primario" onClick={() => setModalAbierto(true)}>
+            <i className="bi bi-plus-lg" /> Nuevo formulario
+          </button>
+        </div>
       </div>
 
       <div className="formularios__filtros">
@@ -389,6 +439,84 @@ export default function Formularios() {
                 </button>
                 <button type="submit" className="form-btn-primario" disabled={creando}>
                   {creando ? 'Creando…' : 'Crear y continuar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalImportarAbierto && (
+        <div className="formularios__modal-overlay" onClick={(e) => e.target === e.currentTarget && cerrarModalImportar()}>
+          <div className="formularios__modal formularios__modal--ancho" role="dialog" aria-modal="true" aria-label="Importar formularios">
+            <div className="formularios__modal-header">
+              <span><i className="bi bi-upload" /> Importar desde Microsoft Forms</span>
+              <button className="form-btn-icon" onClick={cerrarModalImportar} aria-label="Cerrar">
+                <i className="bi bi-x-lg" />
+              </button>
+            </div>
+            <form className="formularios__modal-body" onSubmit={handleImportar}>
+              <p className="formularios__importar-ayuda">
+                Selecciona uno o varios archivos JSON exportados de Microsoft Forms. La categoría
+                (cotización/expedición) se detecta sola desde el título de cada formulario.
+              </p>
+              <label className="formularios__label">
+                Archivos JSON
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  multiple
+                  onChange={(e) => {
+                    setArchivosImportar(Array.from(e.target.files))
+                    setResultadoImportar(null)
+                  }}
+                />
+              </label>
+              {archivosImportar.length > 0 && (
+                <ul className="formularios__importar-lista-archivos">
+                  {archivosImportar.map((a) => (
+                    <li key={a.name}><i className="bi bi-filetype-json" /> {a.name}</li>
+                  ))}
+                </ul>
+              )}
+
+              {errorImportar && <p className="form-error-msg">{errorImportar}</p>}
+
+              {resultadoImportar && (
+                <div className="formularios__importar-resultado">
+                  {resultadoImportar.creados.map((r) => (
+                    <div key={r.formulario_id} className="formularios__importar-item formularios__importar-item--ok">
+                      <i className="bi bi-check-circle" />
+                      <div>
+                        <strong>{r.titulo}</strong>
+                        {(r.sin_mapear.length > 0 || r.branching_sin_resolver.length > 0 || r.duplicados_omitidos.length > 0) && (
+                          <span className="formularios__importar-detalle">
+                            Creado — revisa: {r.sin_mapear.length} campo(s) sin código conocido,{' '}
+                            {r.branching_sin_resolver.length} salto(s) sin resolver,{' '}
+                            {r.duplicados_omitidos.length} duplicado(s) omitido(s).
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {resultadoImportar.fallidos.map((r, i) => (
+                    <div key={i} className="formularios__importar-item formularios__importar-item--error">
+                      <i className="bi bi-x-circle" />
+                      <div>
+                        <strong>{r.titulo}</strong>
+                        <span className="formularios__importar-detalle">{r.motivo}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="formularios__modal-footer">
+                <button type="button" className="form-btn-secundario" onClick={cerrarModalImportar}>
+                  Cerrar
+                </button>
+                <button type="submit" className="form-btn-primario" disabled={importando}>
+                  {importando ? 'Importando…' : 'Importar'}
                 </button>
               </div>
             </form>
