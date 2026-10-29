@@ -71,53 +71,104 @@ function PanelMetricas({ metricas }) {
   )
 }
 
+// ── Agrupa preguntas sueltas + grupos en secciones, en el mismo
+// orden real con el que se respondió (igual que construirEntradas/
+// construirPaginas en FormularioPublico.jsx): una pregunta tipo
+// "seccion" cierra la sección anterior y abre una con su título. ──
+function construirSecciones(estructura) {
+  const entradas = [
+    ...estructura.preguntas
+      .filter((p) => p.grupo_id === null)
+      .map((p) => ({ tipo: 'pregunta', orden: Number(p.orden), data: p })),
+    ...estructura.grupos.map((g) => ({
+      tipo: 'grupo',
+      orden: Number(g.orden),
+      data: g,
+      preguntas: estructura.preguntas.filter((p) => p.grupo_id === g.id),
+    })),
+  ].sort((a, b) => a.orden - b.orden)
+
+  const secciones = [{ titulo: null, subtitulo: null, items: [] }]
+
+  for (const entrada of entradas) {
+    if (entrada.tipo === 'pregunta' && entrada.data.tipo_codigo === 'seccion') {
+      secciones.push({ titulo: entrada.data.titulo, subtitulo: entrada.data.subtitulo, items: [] })
+    } else {
+      secciones[secciones.length - 1].items.push(entrada)
+    }
+  }
+
+  return secciones[0].items.length === 0 && secciones.length > 1 ? secciones.slice(1) : secciones
+}
+
 // ── Traduce respuesta.respuestas (códigos) a algo legible usando
-// la estructura de la versión con la que se envió ──
+// la estructura de la versión con la que se envió. Preguntas
+// numeradas y en negrita, agrupadas por sección cuando el
+// formulario las tiene -- mismo criterio que el correo de Resend
+// (ver backend/app/services/formulario_correo_html.py). ──
 function DetalleRespuesta({ respuesta, estructura }) {
   if (!estructura) {
     return <p className="respuestas__sub">No se encontró la versión del formulario con la que se envió esta respuesta.</p>
   }
 
-  const sueltas = estructura.preguntas.filter((p) => p.grupo_id === null)
-  const grupos = estructura.grupos
+  const secciones = construirSecciones(estructura)
+  const mostrarDivisores = secciones.length > 1
+
+  // Numeración secuencial de preguntas sueltas a través de todo el
+  // documento (no se reinicia por sección), sin mutar una variable
+  // durante el render -- se resuelve por posición en esta lista.
+  const ordenPreguntas = secciones.flatMap((s) =>
+    s.items.filter((e) => e.tipo === 'pregunta').map((e) => e.data.codigo)
+  )
 
   return (
     <div className="respuestas__detalle">
-      {sueltas.length > 0 && (
-        <div className="respuestas__bloque">
-          {sueltas.map((p) => (
-            <div key={p.codigo} className="respuestas__campo">
-              <span className="respuestas__campo-label">{p.titulo}</span>
-              <span className="respuestas__campo-valor">{formatoValor(respuesta.respuestas[p.codigo])}</span>
+      {secciones.map((seccion, idxSeccion) => (
+        <div key={idxSeccion} className="respuestas__seccion">
+          {mostrarDivisores && (
+            <div className="respuestas__seccion-divisor">
+              <span className="respuestas__seccion-numero">Sección {idxSeccion + 1}</span>
+              <span className="respuestas__seccion-titulo">{seccion.titulo}</span>
+              {seccion.subtitulo && <span className="respuestas__seccion-subtitulo">{seccion.subtitulo}</span>}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {grupos.map((g) => {
-        const repeticiones = respuesta.respuestas[g.codigo]
-        if (!Array.isArray(repeticiones) || repeticiones.length === 0) return null
-        const preguntasGrupo = estructura.preguntas.filter((p) => p.grupo_id === g.id)
-
-        return (
-          <div key={g.codigo} className="respuestas__grupo">
-            <h4 className="respuestas__grupo-titulo"><i className="bi bi-collection" /> {g.titulo_template}</h4>
-            <div className="respuestas__grupo-items">
-              {repeticiones.map((rep, i) => (
-                <div key={i} className="respuestas__grupo-item">
-                  <span className="respuestas__grupo-item-numero">{g.titulo_template} {i + 1}</span>
-                  {preguntasGrupo.map((p) => (
-                    <div key={p.codigo} className="respuestas__campo">
-                      <span className="respuestas__campo-label">{p.titulo}</span>
-                      <span className="respuestas__campo-valor">{formatoValor(rep[p.codigo])}</span>
-                    </div>
-                  ))}
+          {seccion.items.map((entrada) => {
+            if (entrada.tipo === 'pregunta') {
+              const p = entrada.data
+              const numero = ordenPreguntas.indexOf(p.codigo) + 1
+              return (
+                <div key={p.codigo} className="respuestas__pregunta">
+                  <span className="respuestas__pregunta-titulo">{numero}. {p.titulo}</span>
+                  <span className="respuestas__pregunta-valor">{formatoValor(respuesta.respuestas[p.codigo])}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
+              )
+            }
+
+            const g = entrada.data
+            const repeticiones = respuesta.respuestas[g.codigo]
+            if (!Array.isArray(repeticiones) || repeticiones.length === 0) return null
+
+            return (
+              <div key={g.codigo} className="respuestas__grupo">
+                {repeticiones.map((rep, i) => (
+                  <div key={i} className="respuestas__grupo-item">
+                    <span className="respuestas__grupo-item-numero">
+                      <i className="bi bi-collection" /> {(g.titulo_template || g.codigo).replace('{n}', i + 1)}
+                    </span>
+                    {entrada.preguntas.map((p) => (
+                      <div key={p.codigo} className="respuestas__pregunta respuestas__pregunta--grupo">
+                        <span className="respuestas__pregunta-titulo">{p.titulo}</span>
+                        <span className="respuestas__pregunta-valor">{formatoValor(rep[p.codigo])}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }

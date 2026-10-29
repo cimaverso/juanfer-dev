@@ -377,17 +377,10 @@ export default function Formularios() {
                         <div className="formularios__acciones">
                           <button
                             className="form-btn-icon"
-                            title="Ver respuestas"
+                            title="Ver respuestas y métricas"
                             onClick={() => navigate(`/admin/formularios/${f.id}/respuestas`)}
                           >
                             <i className="bi bi-inbox" />
-                          </button>
-                          <button
-                            className="form-btn-icon"
-                            title="Ver métricas"
-                            onClick={() => navigate(`/admin/formularios/${f.id}/respuestas#metricas`)}
-                          >
-                            <i className="bi bi-bar-chart" />
                           </button>
                           {f.estado.codigo === 'activo' && (
                             <button
