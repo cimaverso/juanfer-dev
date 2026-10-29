@@ -1,4 +1,4 @@
-"""Endpoint público: regla de negocio (toda respuesta crea/reusa un Cliente), dedupe, rate limit y validación básica."""
+"""Endpoint público: regla de negocio (toda respuesta crea/reusa un Cliente), rate limit y validación básica."""
 import uuid
 
 
@@ -136,13 +136,25 @@ def test_cliente_formularios_respondidos_404_si_no_existe(client, admin_headers)
     assert r_listado.status_code == 404
 
 
-def test_mismo_documento_otra_vez_rechaza(client, admin_headers):
-    _, token = _publicar_formulario_con_tomador(client, admin_headers)
+def test_mismo_documento_puede_responder_otra_vez(client, admin_headers):
+    """
+    Decisión de negocio explícita del usuario: un mismo Cliente SÍ puede
+    diligenciar el mismo formulario varias veces (ej. compra varios
+    productos del mismo tipo) -- no hay dedupe por documento+formulario
+    (se quitó a propósito, ver docs/ESTADO.md; antes rechazaba con 409).
+    """
+    formulario_id, token = _publicar_formulario_con_tomador(client, admin_headers)
 
-    client.post(f"/api/v1/public/formularios/{token}/respuestas", json={"respuestas": _respuestas_validas("333PYTEST")})
-    r_repetido = client.post(f"/api/v1/public/formularios/{token}/respuestas", json={"respuestas": _respuestas_validas("333PYTEST")})
+    r1 = client.post(f"/api/v1/public/formularios/{token}/respuestas", json={"respuestas": _respuestas_validas("333PYTEST")})
+    r2 = client.post(f"/api/v1/public/formularios/{token}/respuestas", json={"respuestas": _respuestas_validas("333PYTEST")})
 
-    assert r_repetido.status_code == 409
+    assert r1.status_code == 201
+    assert r2.status_code == 201
+    assert r1.json()["cliente_id"] == r2.json()["cliente_id"]
+
+    r_listado = client.get(f"/api/v1/clientes/{r1.json()['cliente_id']}/formularios-respondidos", headers=admin_headers)
+    respondidos = [r for r in r_listado.json() if r["formulario_id"] == formulario_id]
+    assert len(respondidos) == 2
 
 
 def test_varias_preguntas_mapeadas_al_mismo_campo_no_se_pisan(client, admin_headers):

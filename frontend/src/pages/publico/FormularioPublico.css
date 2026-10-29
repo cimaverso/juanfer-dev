@@ -159,6 +159,11 @@
   color: var(--color-texto);
 }
 
+.fpub-campo__numero {
+  color: var(--color-texto-sub);
+  font-weight: 400;
+}
+
 .fpub-requerido {
   color: var(--alerta-critico);
 }
@@ -321,6 +326,13 @@
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-texto);
+}
+
+.fpub-grupo__item-seccion {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-texto);
+  margin: var(--space-2) 0 0;
 }
 
 .fpub-grupo__quitar {

@@ -15,6 +15,7 @@ from app.schemas.formulario import (
 from typing import Optional
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+import uuid
 
 
 class FormularioService:
@@ -100,7 +101,13 @@ class FormularioService:
 
     @staticmethod
     def actualizar(db: Session, id: int, data: FormularioUpdate):
-        """Devuelve "categoria_invalida" si data.categoria_codigo no existe en el catálogo."""
+        """
+        Devuelve "categoria_invalida" si data.categoria_codigo no existe en
+        el catálogo; "estado_invalido" si estado_codigo no existe;
+        "estado_activo_requiere_publicar" si se intenta poner 'activo' por
+        acá (solo FormularioVersionService.publicar puede, porque además
+        tiene que fijar version_activa_id).
+        """
         formulario = FormularioService.obtener(db, id)
 
         if not formulario:
@@ -112,8 +119,24 @@ class FormularioService:
         if data.descripcion is not None:
             formulario.descripcion = data.descripcion
 
-        if data.estado_id is not None:
-            formulario.estado_id = data.estado_id
+        if data.estado_codigo is not None:
+            if data.estado_codigo == FormularioEstadoCodigos.ACTIVO:
+                return "estado_activo_requiere_publicar"
+
+            nuevo_estado_id = CatalogoService.get_valor_id(
+                db, CatalogoTipoCodigos.FORMULARIO_ESTADO, data.estado_codigo
+            )
+            if nuevo_estado_id is None:
+                return "estado_invalido"
+
+            if nuevo_estado_id != formulario.estado_id:
+                formulario.estado_id = nuevo_estado_id
+                # Archivar (ya no se puede responder más) o volver a
+                # borrador desde archivado invalida la URL pública vieja
+                # -- se genera un token nuevo en vez de dejar el mismo,
+                # para que un link ya compartido deje de servir (pedido
+                # explícito del usuario, ver docs/ESTADO.md).
+                formulario.token_publico = uuid.uuid4()
 
         if data.categoria_codigo is not None:
             categoria_id = CatalogoService.get_valor_id(
@@ -212,6 +235,20 @@ class FormularioVersionService:
                 for pregunta in preguntas
             ]
         }
+
+    @staticmethod
+    def hay_cambios_sin_publicar(db: Session, formulario: Formulario) -> bool:
+        """
+        Compara la estructura ACTUAL (misma forma que genera _construir_
+        estructura) contra la de la versión activa. Nunca publicado (sin
+        version_activa_id) cuenta como "hay cambios" si ya existe algo
+        que publicar (al menos una pregunta) -- así el botón Publicar
+        del admin se puede deshabilitar cuando no hay nada nuevo.
+        """
+        if formulario.version_activa_id is None:
+            return len(FormularioPreguntaService.listar(db, formulario.id)) > 0
+        actual = FormularioVersionService._construir_estructura(db, formulario)
+        return actual != formulario.version_activa.estructura
 
     @staticmethod
     def publicar(db: Session, formulario_id: int) -> Optional[FormularioVersion]:

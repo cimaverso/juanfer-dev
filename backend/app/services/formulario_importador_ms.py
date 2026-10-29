@@ -24,6 +24,7 @@ from typing import Optional
 
 from app.services.formulario_importador_ms_codigos import (
     CAMPOS_CLIENTE_CRITICOS,
+    CAMPOS_CLIENTE_NOT_NULL,
     CODIGOS_POR_TRACKING_ID,
     FRASES_A_REMOVER_DEL_TITULO,
     PATRON_CONTROL_REPETICION,
@@ -40,6 +41,57 @@ _TIPO_MS_A_CODIGO_SIMPLE = {
 
 _PALABRAS_TELEFONO = re.compile(r"(?i)celular|tel[eé]fono|whatsapp")
 _ENTIDADES_CONOCIDAS = ("asegurado", "delegado")
+
+# Último recurso para detectar un campo CRÍTICO de Cliente (los 4 NOT
+# NULL) cuando ni el trackingId ni el slug derivado del título coinciden
+# con los nombres conocidos de CAMPOS_CLIENTE_CRITICOS. MS Forms no
+# reusa el mismo trackingId para preguntas equivalentes entre formularios
+# distintos (confirmado con los 17 reales: "Número de celular [del
+# tomador]" tiene un trackingId diferente en Autos, Bicicletas y Plan
+# Vive) -- sin esto, esas preguntas quedaban sin vincular a Cliente y el
+# envío público fallaba siempre al crear el Cliente (columnas NOT NULL),
+# ver docs/ESTADO.md. Solo se usa para preguntas sueltas del rol
+# "tomador" (mismo alcance que CAMPOS_CLIENTE_CRITICOS).
+_PATRONES_CAMPO_CRITICO = [
+    (re.compile(r"(?i)tipo\s+de?\s*documento"), "tipo_documento"),
+    (re.compile(r"(?i)numero\s+de?\s*documento"), "numero_documento"),
+    (re.compile(r"(?i)celular"), "celular"),
+    (re.compile(r"(?i)nombres?\s+y\s+apellidos|nombre\s+completo"), "nombre_completo"),
+]
+
+# Título a usar cuando el formulario original de MS Forms NO pregunta
+# un campo crítico del tomador (ej. SURAPET no pide documento; Plan
+# Vive no pide celular del tomador) y hay que agregarlo de cero -- ver
+# _agregar_campos_criticos_faltantes.
+_TITULOS_CAMPO_CRITICO = {
+    "tipo_documento": "Tipo de documento del tomador",
+    "numero_documento": "Número de documento del tomador",
+    "nombre_completo": "Nombres y apellidos completos del tomador",
+    "celular": "Celular del tomador",
+}
+
+
+def _detectar_campo_critico_por_contenido(titulo: str) -> Optional[str]:
+    texto = sin_tildes(titulo)
+    for patron, campo in _PATRONES_CAMPO_CRITICO:
+        if patron.search(texto):
+            return campo
+    return None
+
+
+# "ubicacion" (Cliente.ubicacion, ver DT-028) no es un campo NOT NULL --
+# a diferencia de los 4 de arriba, nunca se agrega si falta (puede
+# quedar null). Pero si el formulario SÍ trae un campo de dirección en
+# la sección del TOMADOR, hay que vincularlo aunque su trackingId no
+# esté en CODIGOS_POR_TRACKING_ID (pedido explícito del usuario, ver
+# docs/ESTADO.md). Fuera de la sección del tomador NUNCA se vincula --
+# eso ya lo garantiza el mismo "if" de más abajo (rol=="tomador" y
+# entidad is None).
+_PATRON_UBICACION = re.compile(r"(?i)\bdireccion\b|\bubicacion\b")
+
+
+def _es_campo_ubicacion_por_contenido(titulo: str) -> bool:
+    return bool(_PATRON_UBICACION.search(sin_tildes(titulo)))
 
 
 def sin_tildes(texto: str) -> str:
@@ -64,6 +116,18 @@ def _derivar_codigo_base(titulo: str) -> str:
 
 def _detectar_rol(titulo: str) -> str:
     texto = sin_tildes(titulo).lower()
+    # "tomador" y "asegurado" juntos (ej. secciones tipo "TUS DATOS
+    # (TOMADOR-ASEGURADO)" en los formularios de SURAPET) describen a la
+    # MISMA persona -- se resuelve como "tomador" porque es el rol que
+    # dispara el vínculo automático a Cliente (ver CAMPOS_CLIENTE_CRITICOS
+    # en formulario_importador_ms_codigos.py). Antes esto ganaba
+    # "asegurado" por revisarse primero, y las preguntas de esa sección
+    # sin la palabra "tomador" en su propio título (ej. "Tipo Documento")
+    # heredaban el rol equivocado y nunca se vinculaban -- bug real
+    # encontrado en EXPEDICIÓN/COTIZACIÓN PÓLIZA MASCOTAS, ver
+    # docs/ESTADO.md.
+    if "tomador" in texto and "asegurado" in texto:
+        return "tomador"
     if "asegurado" in texto:
         return "asegurado"
     if "delegado" in texto:
@@ -268,7 +332,11 @@ def parsear_formulario_ms(data: dict) -> dict:
         # preguntas dentro de un grupo repetible (ver FormularioBuilder.jsx).
         vinculo = None
         if nodo["rol"] == "tomador" and nodo["entidad"] is None and nodo["tipo_codigo"] != "seccion":
-            vinculo = CAMPOS_CLIENTE_CRITICOS.get(base)
+            vinculo = CAMPOS_CLIENTE_CRITICOS.get(base) or CAMPOS_CLIENTE_CRITICOS.get(
+                _detectar_campo_critico_por_contenido(nodo["titulo"])
+            )
+            if not vinculo and _es_campo_ubicacion_por_contenido(nodo["titulo"]):
+                vinculo = CAMPOS_CLIENTE_CRITICOS.get("pais_departamento_ciudad")
         nodo["vinculo_cliente"] = vinculo
         if vinculo:
             # El tipo queda fijo al correcto para esa columna real de
@@ -360,6 +428,34 @@ def parsear_formulario_ms(data: dict) -> dict:
         })
         grupo["preguntas"].append(_a_pregunta(nodo))
 
+    # Paso 6: si el formulario original de MS Forms NO pregunta alguno de
+    # los 4 campos NOT NULL de Cliente (ej. SURAPET no pide documento;
+    # Plan Vive no pide celular del tomador), se agrega la pregunta que
+    # falte directo en la sección del tomador, obligatoria. Sin esto el
+    # formulario se publica igual, pero TODO envío público falla al
+    # intentar crear el Cliente (columnas NOT NULL) -- encontrado al
+    # revisar los 17 formularios reales, ver docs/ESTADO.md.
+    vinculados = {p["mapea_a"]["campo"] for p in preguntas_sueltas if p["mapea_a"]}
+    campos_criticos_agregados = [
+        campo for campo in CAMPOS_CLIENTE_NOT_NULL if campo not in vinculados
+    ]
+    if campos_criticos_agregados:
+        ordenes_tomador = [n["orden"] for n in nodos if n["rol"] == "tomador" and not n["omitir"]]
+        orden_base = max(ordenes_tomador) if ordenes_tomador else 0
+        for i, campo in enumerate(campos_criticos_agregados, start=1):
+            info = CAMPOS_CLIENTE_CRITICOS[campo]
+            preguntas_sueltas.append({
+                "codigo": f"tomador.{campo}",
+                "tipo_codigo": info["tipo_forzado"],
+                "titulo": _TITULOS_CAMPO_CRITICO[campo],
+                "subtitulo": None,
+                "requerida": True,
+                "orden": orden_base + i * 0.1,
+                "configuracion": {"choices": ["CEDULA DE CIUDADANIA", "CEDULA DE EXTRANJERIA"]} if campo == "tipo_documento" else None,
+                "mapea_a": {"entidad": "cliente", "campo": campo},
+                "_ms_forms_id": None,
+            })
+
     return {
         "titulo": form.get("title"),
         "descripcion": form.get("description"),
@@ -369,4 +465,5 @@ def parsear_formulario_ms(data: dict) -> dict:
         "sin_mapear": sin_mapear,
         "branching_sin_resolver": branching_sin_resolver,
         "posibles_controles_repeticion": posibles_controles_repeticion,
+        "campos_criticos_agregados": campos_criticos_agregados,
     }

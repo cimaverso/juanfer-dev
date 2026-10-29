@@ -24,7 +24,10 @@ class FormularioCreate(BaseModel):
 class FormularioUpdate(BaseModel):
     titulo: Optional[str] = None
     descripcion: Optional[str] = None
-    estado_id: Optional[int] = None
+    # Código, no id -- mismo criterio que categoria_codigo (el caller no
+    # debe conocer ids internos del catálogo). "activo" se rechaza acá:
+    # solo /publicar puede activar un formulario (ver FormularioService.actualizar).
+    estado_codigo: Optional[str] = None
     categoria_codigo: Optional[str] = None
     configuracion: Optional[dict] = None
 
@@ -38,6 +41,8 @@ class FormularioRead(BaseModel):
     version_activa_id: Optional[int] = None
     token_publico: uuid.UUID
     configuracion: Optional[dict] = None
+    n_preguntas: int
+    tiene_cambios_sin_publicar: bool
     created_at: datetime
     updated_at: datetime
 

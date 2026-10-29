@@ -135,23 +135,6 @@ class FormularioRespuestaService:
         return db.execute(stmt).scalar_one() >= ENVIOS_MAX_POR_IP
 
     @staticmethod
-    def _ya_respondio(db: Session, formulario_id: int, numero_documento: str) -> bool:
-        estado_completada_id = CatalogoService.get_valor_id(
-            db, CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO, RespuestaEstadoCodigos.COMPLETADA
-        )
-
-        stmt = (
-            select(func.count(FormularioRespuesta.id))
-            .join(Cliente, FormularioRespuesta.cliente_id == Cliente.id)
-            .where(
-                FormularioRespuesta.formulario_id == formulario_id,
-                FormularioRespuesta.estado_id == estado_completada_id,
-                Cliente.numero_documento == numero_documento
-            )
-        )
-        return db.execute(stmt).scalar_one() > 0
-
-    @staticmethod
     def _extraer_campos_cliente(estructura: dict, respuestas: dict) -> dict:
         """
         Recorre las preguntas de la versión publicada con mapea_a.entidad ==
@@ -240,7 +223,10 @@ class FormularioRespuestaService:
                 continue
 
             valor = respuestas.get(codigo)
-            vacio = valor is None or valor == ""
+            # valor == [] cubre una pregunta "opcion" con
+            # configuracion.multiple=true sin ninguna opción marcada --
+            # valor == "" no detecta ese caso porque [] != "".
+            vacio = valor is None or valor == "" or valor == []
 
             if pregunta.get("requerida") and vacio:
                 errores.append(codigo)
@@ -288,9 +274,6 @@ class FormularioRespuestaService:
         if not numero_documento:
             return "faltan_campos_cliente"
 
-        if FormularioRespuestaService._ya_respondio(db, formulario.id, numero_documento):
-            return "ya_respondio"
-
         errores = FormularioRespuestaService._validar_basico(estructura, data.respuestas)
 
         if errores:
@@ -312,7 +295,7 @@ class FormularioRespuestaService:
                 celular=campos_cliente.get("celular"),
                 correo=campos_cliente.get("correo"),
                 ocupacion=campos_cliente.get("ocupacion"),
-                ciudad=campos_cliente.get("ciudad"),
+                ubicacion=campos_cliente.get("ubicacion"),
                 responsable_id=None
             )
             db.add(cliente)

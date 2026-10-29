@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, object_session
 from sqlalchemy import BigInteger, String, DateTime, ForeignKey, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from app.db.base import Base
@@ -138,3 +138,18 @@ class Formulario(Base):
         "FormularioRespuesta",
         back_populates="formulario"
     )
+
+    @property
+    def n_preguntas(self) -> int:
+        return len(self.preguntas)
+
+    @property
+    def tiene_cambios_sin_publicar(self) -> bool:
+        # Import perezoso: formulario.py (servicio) importa este modelo,
+        # importarlo arriba del archivo crearía un ciclo.
+        from app.services.formulario import FormularioVersionService
+
+        db = object_session(self)
+        if db is None:
+            return False
+        return FormularioVersionService.hay_cambios_sin_publicar(db, self)

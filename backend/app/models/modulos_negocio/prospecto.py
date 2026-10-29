@@ -223,7 +223,7 @@ class Prospecto(Base):
     
     @property
     def ciudad(self) -> str:
-        return self.cliente.ciudad
+        return self.cliente.ubicacion
 
     @property
     def estado_nombre(self) -> str:

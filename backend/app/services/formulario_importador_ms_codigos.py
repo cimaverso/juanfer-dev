@@ -36,6 +36,18 @@ CODIGOS_POR_TRACKING_ID: dict[str, str] = {
     "9db9ddb9199840f4b180b002f3740f31": "nps",
     "f038ca4a1dab45db807d0cdb7f5bd6ad": "mensaje_cierre",
     "8d8274cbaa08484abcf1dbb7d3c34848": "referido",
+    # Campos del TOMADOR confirmados estables en los 17 formularios reales
+    # (mismo trackingId, mismo significado en todos donde aparecen) --
+    # distintos de los de "asegurado" de arriba, que usan otro trackingId.
+    "4e9a1b22361e404683667f7a5a919ce8": "fecha_nacimiento",
+    "38e55c7a0f464e1e8c81604e06fb1da6": "genero",
+    "4c06f616347047019fe1879e2c72addf": "telefono_fijo",
+    "ff23183a6a004028b46e64c4173117e9": "es_pep",
+    "bfed33d2aaf2475b964d7950b624276f": "relacion_pep",
+    # Datos bancarios del tomador (formularios de crédito protegido /
+    # renta educativa), confirmados estables.
+    "765da0bd6c1e427eb66d2b749d90f04e": "entidad_bancaria",
+    "53d4dcbade324f60bcf6c56153828726": "numero_cuenta",
     # Secciones y controles de MS Forms que se repiten idénticos en todos
     # los formularios revisados (ver docs/ESTADO.md):
     "3e0e398a96d2478fac01a3802318c052": "encabezado_tomador",
@@ -53,11 +65,36 @@ CODIGOS_POR_TRACKING_ID: dict[str, str] = {
 # admin la vinculara a mano desde el builder. Debe mantenerse igual a
 # CAMPOS_CLIENTE en frontend/src/pages/formularios/FormularioBuilder.jsx;
 # si se agrega un campo ahí, agregarlo también aquí.
+# Pese al nombre, CAMPOS_CLIENTE_CRITICOS (abajo) ya no son solo los 4
+# NOT NULL -- también incluye campos opcionales de Cliente (correo,
+# ocupacion, ubicacion). Esta tupla es la que de verdad son las 4
+# columnas NOT NULL; se usa para detectar y completar lo que falte
+# (ver _agregar_campos_criticos_faltantes en formulario_importador_ms.py).
+CAMPOS_CLIENTE_NOT_NULL = ("tipo_documento", "numero_documento", "nombre_completo", "celular")
+
 CAMPOS_CLIENTE_CRITICOS: dict[str, dict] = {
     "tipo_documento": {"campo": "tipo_documento", "tipo_forzado": "opcion"},
     "numero_documento": {"campo": "numero_documento", "tipo_forzado": "texto"},
     "nombre_completo": {"campo": "nombre_completo", "tipo_forzado": "texto"},
     "celular": {"campo": "celular", "tipo_forzado": "telefono"},
+    "correo": {"campo": "correo", "tipo_forzado": "email"},
+    # "Ocupación del tomador" en MS Forms es Question.Choice (empleado,
+    # independiente, ...) -- se respeta ese tipo (no se fuerza a texto)
+    # aunque Cliente.ocupacion sea una columna de texto libre: el valor
+    # elegido se guarda como string, igual que si un admin la vinculara a
+    # mano. El trackingId de esta pregunta cambia en cada formulario (no
+    # es estable como los demás), por eso no está en
+    # CODIGOS_POR_TRACKING_ID: el código sale de derivar el título
+    # ("Ocupación del tomador" -> "ocupacion"), consistente en los 17
+    # formularios reales revisados.
+    "ocupacion": {"campo": "ocupacion", "tipo_forzado": "opcion"},
+    # "pais_departamento_ciudad": la pregunta real combina país+departamento
+    # +ciudad en un solo texto libre ("País, departamento y ciudad de
+    # residencia" / "Municipio, Departamento y País" según el formulario,
+    # mismo trackingId). Se guarda completo en Cliente.ubicacion a
+    # propósito (decisión del usuario) -- por eso esa columna se llama
+    # "ubicacion" y no "ciudad", ver docs/DEUDA.md DT-028.
+    "pais_departamento_ciudad": {"campo": "ubicacion", "tipo_forzado": "texto"},
 }
 
 # trackingId de preguntas que son solo el control de "¿quieres otro

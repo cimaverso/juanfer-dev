@@ -51,18 +51,21 @@ def test_autos_sin_grupos_repetibles():
     nombre = _buscar(sueltas, "tomador.nombre_completo")
     assert nombre["mapea_a"] == {"entidad": "cliente", "campo": "nombre_completo"}
 
-    # correo no es uno de los 4 campos críticos -> no se vincula solo
+    # correo sí es uno de los campos vinculados a Cliente (ver
+    # docs/ESTADO.md)
     correo = _buscar(sueltas, "tomador.correo")
     assert correo["tipo_codigo"] == "email"
-    assert correo["mapea_a"] is None
+    assert correo["mapea_a"] == {"entidad": "cliente", "campo": "correo"}
 
     # branching simple: "Moto" salta a "Modelo y línea" (sin trackingId
     # conocido, su codigo se derivó por slug del título; el prefijo
-    # "asegurado." sale de la única sección mixta "TOMADOR Y ASEGURADO")
+    # "tomador." sale de la única sección mixta "TOMADOR Y ASEGURADO" --
+    # "tomador"+"asegurado" juntos resuelven a "tomador", ver
+    # _detectar_rol en formulario_importador_ms.py)
     tipo_vehiculo = next(p for p in sueltas if p["titulo"] == "Tipo de vehículo")
     # "branching" es un dict {valor: codigo_destino}, no una lista de
     # {if_value,goto_codigo} -- mismo motivo que "choices" arriba.
-    assert tipo_vehiculo["configuracion"]["branching"] == {"Moto": "asegurado.modelo_y_linea"}
+    assert tipo_vehiculo["configuracion"]["branching"] == {"Moto": "tomador.modelo_y_linea"}
 
     # nada debió quedar sin resolver en este formulario
     assert resultado["branching_sin_resolver"] == []

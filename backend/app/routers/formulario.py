@@ -89,6 +89,12 @@ def actualizar_formulario(id: int, data: FormularioUpdate, db: Session = Depends
     if formulario == "categoria_invalida":
         raise HTTPException(status_code=400, detail="categoria_codigo no corresponde a ningún valor de formulario_categoria")
 
+    if formulario == "estado_invalido":
+        raise HTTPException(status_code=400, detail="estado_codigo no corresponde a ningún valor de formulario_estado")
+
+    if formulario == "estado_activo_requiere_publicar":
+        raise HTTPException(status_code=400, detail="Para activar un formulario usa POST /{id}/publicar, no PUT")
+
     return formulario
 
 

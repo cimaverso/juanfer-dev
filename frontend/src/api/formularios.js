@@ -55,9 +55,14 @@ export async function eliminarFormulario(id) {
 // Importación masiva desde el export JSON de Microsoft Forms. `items` es
 // un array (1 o varios); categoriaCodigo es opcional, si no se envía el
 // backend intenta detectarla por el título (COTIZACIÓN/EXPEDICIÓN).
+// Timeout propio (60s, no los 10s por defecto de axios.js): importar
+// varios formularios reales de una vez (cada uno con decenas/cientos de
+// preguntas) tarda más que una petición normal del admin -- con el
+// timeout por defecto, el front cortaba la espera aunque el backend
+// terminara bien (ver docs/ESTADO.md).
 export async function importarFormularios(items, categoriaCodigo) {
   const params = categoriaCodigo ? { categoria_codigo: categoriaCodigo } : {}
-  const { data } = await api.post('/formularios/importar-ms', items, { params })
+  const { data } = await api.post('/formularios/importar-ms', items, { params, timeout: 60000 })
   return data
 }
 

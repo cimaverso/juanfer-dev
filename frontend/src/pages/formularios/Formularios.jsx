@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   listarFormularios,
   crearFormulario,
+  actualizarFormulario,
   eliminarFormulario,
   importarFormularios,
 } from '../../api/formularios.js'
@@ -204,6 +205,25 @@ export default function Formularios() {
     })
   }
 
+  // Archivar o volver a borrador invalida la URL pública vieja (el
+  // backend genera un token_publico nuevo al cambiar de estado, ver
+  // FormularioService.actualizar) -- se avisa antes de confirmar.
+  function handleCambiarEstado(f, estadoCodigo, mensaje) {
+    setConfirmacion({
+      mensaje,
+      textoConfirmar: estadoCodigo === 'archivado' ? 'Archivar' : 'Volver a borrador',
+      onConfirmar: async () => {
+        setConfirmacion(null)
+        try {
+          const actualizado = await actualizarFormulario(f.id, { estado_codigo: estadoCodigo })
+          setFormularios((prev) => prev.map((x) => (x.id === f.id ? actualizado : x)))
+        } catch (err) {
+          setToast({ tipo: 'error', mensaje: err.response?.data?.detail || 'No se pudo cambiar el estado.' })
+        }
+      },
+    })
+  }
+
   function copiarUrl(token, id) {
     navigator.clipboard.writeText(urlPublica(token)).then(() => {
       setCopiadoId(id)
@@ -311,6 +331,7 @@ export default function Formularios() {
                 <th>Título</th>
                 <th>Categoría</th>
                 <th>Estado</th>
+                <th style={{ width: '1%' }}># Preguntas</th>
                 <th>Creado</th>
                 <th style={{ width: '1%' }}>URL pública</th>
                 <th style={{ width: '1%' }}>Acciones</th>
@@ -319,12 +340,12 @@ export default function Formularios() {
             <tbody>
               {cargando
                 ? Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i}><td colSpan={6} className="formularios__skeleton-fila" /></tr>
+                    <tr key={i}><td colSpan={7} className="formularios__skeleton-fila" /></tr>
                   ))
                 : formularios.length === 0
                   ? (
                     <tr>
-                      <td colSpan={6} className="formularios__vacio">
+                      <td colSpan={7} className="formularios__vacio">
                         <i className="bi bi-file-earmark-text" /> No hay formularios con estos filtros
                       </td>
                     </tr>
@@ -337,6 +358,7 @@ export default function Formularios() {
                       </td>
                       <td><BadgeCategoria categoria={f.categoria} /></td>
                       <td><BadgeEstado estado={f.estado} /></td>
+                      <td className="formularios__n-preguntas">{f.n_preguntas}</td>
                       <td>{new Date(f.created_at).toLocaleDateString('es-CO')}</td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {f.estado.codigo === 'activo' ? (
@@ -367,6 +389,30 @@ export default function Formularios() {
                           >
                             <i className="bi bi-bar-chart" />
                           </button>
+                          {f.estado.codigo === 'activo' && (
+                            <button
+                              className="form-btn-icon"
+                              title="Archivar (deja de poder responderse; invalida la URL pública)"
+                              onClick={() => handleCambiarEstado(
+                                f, 'archivado',
+                                'Al archivar este formulario ya no se podrá responder y su URL pública actual quedará invalidada. ¿Continuar?'
+                              )}
+                            >
+                              <i className="bi bi-archive" />
+                            </button>
+                          )}
+                          {f.estado.codigo === 'archivado' && (
+                            <button
+                              className="form-btn-icon"
+                              title="Volver a borrador (también invalida la URL pública)"
+                              onClick={() => handleCambiarEstado(
+                                f, 'borrador',
+                                'Al volver a borrador la URL pública actual quedará invalidada; tendrás que publicar de nuevo para obtener una nueva. ¿Continuar?'
+                              )}
+                            >
+                              <i className="bi bi-arrow-counterclockwise" />
+                            </button>
+                          )}
                           <button
                             className="form-btn-icon"
                             title="Editar"
@@ -489,11 +535,16 @@ export default function Formularios() {
                       <i className="bi bi-check-circle" />
                       <div>
                         <strong>{r.titulo}</strong>
-                        {(r.sin_mapear.length > 0 || r.branching_sin_resolver.length > 0 || r.duplicados_omitidos.length > 0) && (
+                        {(r.sin_mapear.length > 0 || r.branching_sin_resolver.length > 0 || r.duplicados_omitidos.length > 0 || r.campos_criticos_agregados.length > 0) && (
                           <span className="formularios__importar-detalle">
                             Creado — revisa: {r.sin_mapear.length} campo(s) sin código conocido,{' '}
                             {r.branching_sin_resolver.length} salto(s) sin resolver,{' '}
                             {r.duplicados_omitidos.length} duplicado(s) omitido(s).
+                            {r.campos_criticos_agregados.length > 0 && (
+                              <>
+                                {' '}El formulario original no preguntaba {r.campos_criticos_agregados.join(', ')} del tomador — se agregó como pregunta obligatoria.
+                              </>
+                            )}
                           </span>
                         )}
                       </div>

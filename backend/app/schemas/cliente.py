@@ -13,8 +13,8 @@ class ClienteCreate(ClienteBase):
     celular: str = Field(..., max_length=20)
     correo: str = Field(..., max_length=100)
     ocupacion: str = Field(..., max_length=100)
-    ciudad: str = Field(..., max_length=80)
-    responsable_id: int  
+    ubicacion: str = Field(..., max_length=80)
+    responsable_id: int
 
 class ClienteRead(ClienteBase):
     id: int
@@ -28,7 +28,7 @@ class ClienteRead(ClienteBase):
 class ClienteProspectoRead(ClienteRead):
     correo: Optional[str] = None
     ocupacion: Optional[str] = None
-    ciudad: Optional[str] = None
+    ubicacion: Optional[str] = None
 
 # Actualizar desde Prospecto
 class ClienteUpdate(BaseModel):
@@ -38,4 +38,4 @@ class ClienteUpdate(BaseModel):
     celular: Optional[str]
     correo: Optional[str]
     ocupacion: Optional[str]
-    ciudad: Optional[str]
+    ubicacion: Optional[str]

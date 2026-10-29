@@ -95,6 +95,9 @@ function resolverPagina(paginaIdx, paginas, respuestasSueltas) {
   const controladoPor = {} // { [codigoDestino]: [{ preguntaCodigo, valor }] }
   for (const entrada of pagina.entradas) {
     if (entrada.tipo !== 'pregunta' || entrada.data.tipo_codigo !== 'opcion') continue
+    // Selección múltiple no tiene salto condicional: el valor es un
+    // array y "branching" usa el valor como llave de un dict.
+    if (entrada.data.configuracion?.multiple) continue
 
     for (const [valor, destino] of Object.entries(entrada.data.configuracion?.branching || {})) {
       if (destino === BRANCHING_FIN) continue
@@ -119,6 +122,7 @@ function resolverPagina(paginaIdx, paginas, respuestasSueltas) {
   let overrideDestino = null
   for (const entrada of pagina.entradas) {
     if (entrada.tipo !== 'pregunta' || entrada.data.tipo_codigo !== 'opcion') continue
+    if (entrada.data.configuracion?.multiple) continue
 
     const valor = respuestasSueltas[entrada.data.codigo]
     const destino = entrada.data.configuracion?.branching?.[valor]
@@ -141,22 +145,80 @@ function resolverPagina(paginaIdx, paginas, respuestasSueltas) {
   return { visibles, overrideDestino }
 }
 
+// ── Lista plana de "unidades numerables" de un conjunto de entradas,
+// en el orden en que se van a mostrar: una pregunta suelta cuenta 1,
+// un grupo repetible aporta una unidad por cada una de sus preguntas
+// (no por repetición -- la misma pregunta usa el MISMO número en la
+// repetición #1, #2, #3...). Las "seccion" nunca cuentan: son
+// encabezados (de página, o del bloque dentro de un grupo), no
+// preguntas que diligenciar. ──
+function unidadesNumerables(entradas) {
+  const unidades = []
+  for (const entrada of entradas) {
+    if (entrada.tipo === 'pregunta') {
+      if (entrada.data.tipo_codigo !== 'seccion') unidades.push(entrada.codigo)
+    } else {
+      for (const p of entrada.preguntas) {
+        if (p.tipo_codigo !== 'seccion') unidades.push(`${entrada.codigo}:${p.codigo}`)
+      }
+    }
+  }
+  return unidades
+}
+
+// ── Mapa {codigo: numero} para TODAS las entradas visibles de una
+// página, arrancando en `inicial`. Ojo con el branching: una pregunta
+// que un salto deja oculta no debe "gastar" un número que el usuario
+// nunca vio -- por eso recibe `visibles` (ya filtradas por
+// resolverPagina), no `pagina.entradas` crudas. ──
+function numerarPagina(visibles, inicial) {
+  const mapa = {}
+  let contador = inicial
+  for (const clave of unidadesNumerables(visibles)) {
+    contador += 1
+    mapa[clave] = contador
+  }
+  return mapa
+}
+
 // ============================================================
 // Campo de una pregunta — un solo input según tipo_codigo.
 // ============================================================
-function CampoPregunta({ pregunta, valor, onChange, invalido }) {
+function CampoPregunta({ pregunta, valor, onChange, invalido, numero }) {
   const tipo = pregunta.tipo_codigo
   const id = `campo-${pregunta.codigo}`
 
   return (
     <div className={`fpub-campo ${invalido ? 'fpub-campo--invalido' : ''}`}>
       <label id={id} htmlFor={tipo === 'opcion' || tipo === 'nps' || tipo === 'calificacion' ? undefined : id} className="fpub-campo__label">
+        {numero != null && <span className="fpub-campo__numero">{numero}.</span>}{' '}
         {pregunta.titulo}
         {pregunta.requerida && <span className="fpub-requerido" aria-hidden="true"> *</span>}
       </label>
       {pregunta.subtitulo && <p className="fpub-campo__ayuda">{pregunta.subtitulo}</p>}
 
-      {tipo === 'opcion' ? (
+      {tipo === 'opcion' && pregunta.configuracion?.multiple ? (
+        <div className="fpub-opciones" role="group" aria-labelledby={id}>
+          {(pregunta.configuracion?.choices || []).map((opcion) => {
+            const seleccionadas = Array.isArray(valor) ? valor : []
+            return (
+              <label key={opcion} className="fpub-opcion">
+                <input
+                  type="checkbox"
+                  name={id}
+                  checked={seleccionadas.includes(opcion)}
+                  onChange={() => onChange(
+                    seleccionadas.includes(opcion)
+                      ? seleccionadas.filter((o) => o !== opcion)
+                      : [...seleccionadas, opcion]
+                  )}
+                />
+                {opcion}
+              </label>
+            )
+          })}
+        </div>
+      ) : tipo === 'opcion' ? (
         <div className="fpub-opciones" role="radiogroup" aria-labelledby={id}>
           {(pregunta.configuracion?.choices || []).map((opcion) => (
             <label key={opcion} className="fpub-opcion">
@@ -215,7 +277,7 @@ function CampoPregunta({ pregunta, valor, onChange, invalido }) {
 // ============================================================
 // Bloque de grupo repetible — una tarjeta por repetición.
 // ============================================================
-function GrupoRepetible({ grupo, preguntas, repeticiones, onCambiar, onAgregar, onQuitar, invalidos }) {
+function GrupoRepetible({ grupo, preguntas, repeticiones, onCambiar, onAgregar, onQuitar, invalidos, numeros }) {
   const puedeQuitar = repeticiones.length > grupo.minimo_repeticiones
   const puedeAgregar = !grupo.maximo_repeticiones || repeticiones.length < grupo.maximo_repeticiones
 
@@ -232,13 +294,23 @@ function GrupoRepetible({ grupo, preguntas, repeticiones, onCambiar, onAgregar, 
             )}
           </div>
           {preguntas.map((p) => (
-            <CampoPregunta
-              key={p.codigo}
-              pregunta={p}
-              valor={rep[p.codigo] ?? ''}
-              onChange={(v) => onCambiar(i, p.codigo, v)}
-              invalido={invalidos.has(`${grupo.codigo}:${i}:${p.codigo}`)}
-            />
+            // "seccion" dentro de un grupo es el encabezado del bloque de
+            // MS Forms (ej. "INFORMACIÓN BÁSICA DEL ASEGURADO"), no un
+            // campo que diligenciar -- se muestra como subtítulo, nunca
+            // como input (antes caía al <input type="text"> por defecto
+            // de CampoPregunta, un campo vacío sin sentido).
+            p.tipo_codigo === 'seccion' ? (
+              <p key={p.codigo} className="fpub-grupo__item-seccion">{p.titulo}</p>
+            ) : (
+              <CampoPregunta
+                key={p.codigo}
+                pregunta={p}
+                valor={rep[p.codigo] ?? ''}
+                onChange={(v) => onCambiar(i, p.codigo, v)}
+                invalido={invalidos.has(`${grupo.codigo}:${i}:${p.codigo}`)}
+                numero={numeros[p.codigo]}
+              />
+            )
           ))}
         </div>
       ))}
@@ -278,6 +350,21 @@ export default function FormularioPublico() {
     () => paginas.length > 0 ? resolverPagina(paginaIdx, paginas, respuestasSueltas) : { visibles: [], overrideDestino: null },
     [paginas, paginaIdx, respuestasSueltas]
   )
+
+  // Cuántas preguntas numerables quedaron VISIBLES en las páginas ya
+  // pasadas, con las respuestas actuales -- se recalcula si el usuario
+  // vuelve atrás y cambia una respuesta que oculta/muestra preguntas
+  // antes de la página actual, para que la numeración nunca quede
+  // desfasada.
+  const numeroInicial = useMemo(() => {
+    let total = 0
+    for (let i = 0; i < paginaIdx; i++) {
+      total += unidadesNumerables(resolverPagina(i, paginas, respuestasSueltas).visibles).length
+    }
+    return total
+  }, [paginas, paginaIdx, respuestasSueltas])
+
+  const numeros = useMemo(() => numerarPagina(visibles, numeroInicial), [visibles, numeroInicial])
 
   const cargar = useCallback(async () => {
     try {
@@ -350,7 +437,8 @@ export default function FormularioPublico() {
         const p = entrada.data
         if (p.requerida && p.tipo_codigo !== 'seccion') {
           const valor = respuestasSueltas[p.codigo]
-          if (valor === undefined || valor === '' || valor === null) faltantes.add(p.codigo)
+          const vacio = valor === undefined || valor === '' || valor === null || (Array.isArray(valor) && valor.length === 0)
+          if (vacio) faltantes.add(p.codigo)
         }
       } else {
         const reps = grupoDatos[entrada.codigo] || []
@@ -488,9 +576,10 @@ export default function FormularioPublico() {
           <CampoPregunta
             key={entrada.codigo}
             pregunta={entrada.data}
-            valor={respuestasSueltas[entrada.data.codigo] ?? ''}
+            valor={respuestasSueltas[entrada.data.codigo] ?? (entrada.data.configuracion?.multiple ? [] : '')}
             onChange={(v) => cambiarSuelta(entrada.data.codigo, v)}
             invalido={invalidos.has(entrada.data.codigo)}
+            numero={numeros[entrada.codigo]}
           />
         ) : (
           <div key={entrada.codigo} className="fpub-grupo-bloque">
@@ -503,6 +592,10 @@ export default function FormularioPublico() {
               onAgregar={() => agregarRepeticion(entrada.codigo)}
               onQuitar={(i) => quitarRepeticion(entrada.codigo, i)}
               invalidos={invalidos}
+              numeros={entrada.preguntas.reduce((acc, p) => {
+                acc[p.codigo] = numeros[`${entrada.codigo}:${p.codigo}`]
+                return acc
+              }, {})}
             />
           </div>
         ))}

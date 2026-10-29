@@ -87,7 +87,7 @@ Solo decisiones difíciles de revertir o no obvias. Formato corto.
 - **Alternativas descartadas:** autosave progresivo (soporta recuperar un formulario a medio llenar, pero más superficie sin auth que proteger); motor de validación completo (branching/regex por tipo) en esta etapa (ya identificado como trabajo aparte, ver D-D).
 - **Consecuencias / costo asumido:** el rate limit por IP usa `request.client.host` directo, sin `X-Forwarded-For` (ver DT-016, se rompe detrás de un proxy); los grupos repetibles pueden llegar con datos incompletos o mal tipados sin que el backend lo note.
 - **Revisar si:** aparece abuso real del endpoint público, o se construye el motor de validación completo.
-- **Estado:** vigente
+- **Estado:** vigente salvo el dedupe por documento, retirado — ver D-013 (2026-10-29).
 
 ## D-012 — Restablecer contraseña: código de un solo uso, no clave temporal aplicada (2026-10-28)
 - **Contexto:** al pagar DT-023, propuse que el ADMIN generara una clave temporal ya aplicada (usable para login) que forzara un cambio obligatorio en el siguiente inicio de sesión. El usuario corrigió el diseño antes de implementarlo.
@@ -95,6 +95,14 @@ Solo decisiones difíciles de revertir o no obvias. Formato corto.
 - **Alternativas descartadas:** clave temporal aplicada directo a `password_hash` con flag `debe_cambiar_password` (mi propuesta inicial): funciona, pero exige forzar el cambio en el flujo normal de login (lógica adicional en `authenticate_user` y en `Login.jsx`) y deja una ventana donde la clave temporal es una credencial real y utilizable.
 - **Consecuencias / costo asumido:** una pantalla pública nueva (`RestablecerPassword.jsx`) y 2 endpoints públicos (`/auth/validar-codigo-reset`, `/auth/reset-password`) en vez de reutilizar el flujo de login existente.
 - **Revisar si:** se necesita un flujo de "olvidé mi contraseña" autoservicio (hoy solo lo dispara el ADMIN, no hay autoservicio para el usuario).
+- **Estado:** vigente
+
+## D-013 — Se retira el dedupe por documento del endpoint público (2026-10-29)
+- **Contexto:** D-011 (2026-10-27) fijó que el endpoint público rechaza (409) una segunda respuesta `completada` del mismo `numero_documento` para el mismo formulario. Al importar y probar los 17 formularios reales de MS Forms, el usuario determinó que esa regla no aplica al negocio real: un mismo Cliente puede diligenciar el mismo formulario varias veces (ej. comprar varios productos del mismo tipo).
+- **Decisión:** se elimina por completo la validación de dedupe — `FormularioRespuestaService._ya_respondio` (y su uso en `crear`) y el manejo de `"ya_respondio"` en `app/routers/formulario_publico.py`. Un mismo documento puede generar N respuestas `completada` sobre el mismo formulario; cada envío sigue creando/reusando el mismo `Cliente` (D-009 no cambia). Test actualizado: `test_mismo_documento_puede_responder_otra_vez` (antes esperaba 409, ahora espera 201 en ambos envíos).
+- **Alternativas descartadas:** mantener el dedupe pero con una ventana de tiempo (ej. no permitir la misma respuesta en menos de X minutos) — descartada por el usuario, sin pedirlo; no hay caso de uso real que la motive hoy.
+- **Consecuencias / costo asumido:** nada impide hoy que alguien reenvíe el mismo formulario con el mismo documento repetidamente más allá del rate limit por IP (D-011); si eso se vuelve un problema real (ej. errores de doble clic del usuario público), hay que decidir un mecanismo distinto (ej. deduplicar por contenido+ventana corta, no por documento sin límite).
+- **Revisar si:** aparece un caso real de envíos duplicados no intencionales que convenga filtrar.
 - **Estado:** vigente
 
 ## D-D — Modelo híbrido de formularios confirmado, con identificador público (2026-10-27)

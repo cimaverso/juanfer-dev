@@ -6,19 +6,22 @@ services del builder (para no duplicar las validaciones de catálogo/orden/
 codigo_duplicado que ya tienen).
 
 Si algo falla a mitad de la importación de UN formulario (ej. un
-tipo_codigo que el catálogo no reconoce), se borra el Formulario que ya se
-había creado para ese item -- el cascade de FKs se encarga de sus grupos y
-preguntas -- y se reporta el motivo. Un formulario fallido no afecta a los
-demás del mismo lote (ver importar_formularios_ms).
+tipo_codigo que el catálogo no reconoce, o un error real de DB como un
+texto más largo de lo que la columna permite), se borra el Formulario que
+ya se había creado para ese item -- el cascade de FKs se encarga de sus
+grupos y preguntas -- y se reporta el motivo. Un formulario fallido no
+afecta a los demás del mismo lote (ver importar_formularios_ms).
 """
 
 from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.catalogos.tipo_documento import TipoDocumento
+from app.models.formularios.formulario import Formulario
 from app.schemas.formulario import (
     FormularioCreate,
     FormularioGrupoPreguntaCreate,
@@ -93,7 +96,10 @@ def _crear_pregunta(db: Session, formulario_id: int, grupo_id: Optional[int], pr
         grupo_id=grupo_id,
         codigo=pregunta["codigo"],
         tipo_codigo=pregunta["tipo_codigo"],
-        titulo=pregunta["titulo"][:500],
+        # titulo es Text (sin límite) a propósito: algunas cláusulas
+        # legales reales (habeas data) superan los 1700 caracteres y no
+        # se pueden truncar, ver docs/ESTADO.md.
+        titulo=pregunta["titulo"],
         subtitulo=(pregunta["subtitulo"] or None),
         requerida=pregunta["requerida"],
         orden=_a_decimal_orden(pregunta["orden"]),
@@ -136,11 +142,21 @@ def importar_formulario_ms(db: Session, data: dict, categoria_codigo: Optional[s
 
     try:
         for grupo in parseado["grupos"]:
+            # El orden del grupo NO se autoasigna (quedaría 1, por ser el
+            # primer/único grupo del formulario): se fija al de su
+            # primera pregunta, para que quede en la misma posición
+            # relativa a las preguntas sueltas que tenía en MS Forms.
+            # Sin esto, FormularioPublico.jsx (que mezcla sueltas y
+            # grupos por su propio "orden") mostraba el grupo de
+            # Asegurado ANTES que el Tomador, aunque en MS Forms vaya
+            # después -- bug real encontrado en PAC 60+ ya importado.
+            orden_grupo = _a_decimal_orden(grupo["preguntas"][0]["orden"]) if grupo["preguntas"] else None
             grupo_obj = FormularioGrupoPreguntaService.crear(db, formulario.id, FormularioGrupoPreguntaCreate(
                 codigo=grupo["codigo"],
                 titulo_template=grupo["titulo_template"][:200],
                 minimo_repeticiones=grupo["minimo_repeticiones"],
                 maximo_repeticiones=grupo["maximo_repeticiones"],
+                orden=orden_grupo,
             ))
 
             if isinstance(grupo_obj, str):
@@ -156,6 +172,22 @@ def importar_formulario_ms(db: Session, data: dict, categoria_codigo: Optional[s
         db.delete(formulario)
         db.commit()
         return {"titulo": titulo, "ok": False, "motivo": str(exc)}
+    except SQLAlchemyError as exc:
+        # Un error real de DB (ej. StringDataRightTruncation por un
+        # texto más largo de lo que la columna permite) deja la
+        # transacción en curso inválida -- hay que revertirla ANTES de
+        # poder borrar el formulario a medias, si no el db.delete()
+        # de abajo también falla. Sin este catch, el error subía sin
+        # control y tumbaba el lote completo de /formularios/importar-ms
+        # con un 500, dejando el formulario de este ítem a medio
+        # insertar (bug real: pasó con "Exclusiones" de SURAPET, ver
+        # docs/ESTADO.md).
+        db.rollback()
+        formulario_a_medias = db.get(Formulario, formulario.id)
+        if formulario_a_medias:
+            db.delete(formulario_a_medias)
+            db.commit()
+        return {"titulo": titulo, "ok": False, "motivo": f"error de base de datos: {exc}"}
 
     return {
         "titulo": titulo,
@@ -165,6 +197,7 @@ def importar_formulario_ms(db: Session, data: dict, categoria_codigo: Optional[s
         "branching_sin_resolver": parseado["branching_sin_resolver"],
         "duplicados_omitidos": parseado["duplicados_omitidos"],
         "posibles_controles_repeticion": parseado["posibles_controles_repeticion"],
+        "campos_criticos_agregados": parseado["campos_criticos_agregados"],
     }
 
 

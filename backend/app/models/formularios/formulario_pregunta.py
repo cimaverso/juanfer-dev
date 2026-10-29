@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, Boolean, ForeignKey, Numeric, UniqueConstraint
+from sqlalchemy import BigInteger, String, Text, Boolean, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from app.db.base import Base
 from typing import TYPE_CHECKING, Optional
@@ -65,13 +65,19 @@ class FormularioPregunta(Base):
         nullable=False
     )
 
+    # Text, no String(500): el importador de MS Forms trae preguntas con
+    # texto legal (habeas data, autorizaciones) de hasta ~1800 caracteres
+    # que no se pueden truncar (ver docs/ESTADO.md).
     titulo: Mapped[str] = mapped_column(
-        String(500),
+        Text,
         nullable=False
     )
 
+    # Text, no String(1000): mismo motivo que titulo arriba -- preguntas
+    # reales (ej. "Exclusiones" de SURAPET) traen listas largas en el
+    # subtítulo que superan los 1000 caracteres.
     subtitulo: Mapped[Optional[str]] = mapped_column(
-        String(1000),
+        Text,
         nullable=True
     )
 

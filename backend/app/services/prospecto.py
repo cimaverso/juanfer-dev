@@ -98,7 +98,7 @@ class ProspectoService:
             celular= data.telefono,
             correo= data.correo,
             ocupacion= data.ocupacion,
-            ciudad= data.ciudad,
+            ubicacion= data.ciudad,
             responsable_id= data.responsable_id
         )
         # Se busca cliente, si no existe se registra. El método del ClienteService ya se encarga de manejar la lógica de registro.
@@ -323,7 +323,7 @@ class ProspectoService:
                 celular=cliente_payload.get("telefono"),
                 correo=cliente_payload.get("correo"),
                 ocupacion=cliente_payload.get("ocupacion"),
-                ciudad=cliente_payload.get("ciudad"),
+                ubicacion=cliente_payload.get("ciudad"),
             )
 
             ClienteService.actualizar_cliente(
@@ -439,7 +439,7 @@ class ProspectoService:
                     celular=fila.telefono,
                     correo=fila.correo,
                     ocupacion=fila.ocupacion,
-                    ciudad=fila.ciudad,
+                    ubicacion=fila.ciudad,
                     responsable_id=user.id or fila.res
                 )
             )

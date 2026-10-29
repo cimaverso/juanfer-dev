@@ -57,7 +57,12 @@ class Cliente(Base):
         nullable=True
     )
 
-    ciudad: Mapped[Optional[str]] = mapped_column(
+    # Antes "ciudad": el importador de MS Forms guarda aquí país+
+    # departamento+ciudad combinados cuando el formulario trae ese campo
+    # como un solo texto libre (ver DT-028 / docs/ESTADO.md), por eso se
+    # renombró a "ubicacion" para que el nombre no insinúe solo una ciudad.
+    ubicacion: Mapped[Optional[str]] = mapped_column(
+        "ubicacion",
         String(80),
         nullable=True
     )

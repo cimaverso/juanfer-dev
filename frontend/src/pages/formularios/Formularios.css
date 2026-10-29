@@ -193,6 +193,12 @@
   color: var(--color-texto-light);
 }
 
+.formularios__n-preguntas {
+  text-align: center;
+  color: var(--color-texto-sub);
+  font-weight: 500;
+}
+
 .formularios__acciones {
   display: flex;
   gap: var(--space-1);
@@ -283,6 +289,9 @@
   box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 440px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .formularios__modal-header {
@@ -301,6 +310,8 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .formularios__label {
@@ -326,10 +337,41 @@
   resize: vertical;
 }
 
+/* input[type=file] no acepta padding/border reales en su botón nativo
+   -- se estiliza el botón via ::file-selector-button (buen soporte en
+   navegadores actuales) en vez de dejar el control por defecto del
+   sistema operativo, que se veía sin estilo. */
+.formularios__label input[type="file"] {
+  padding: var(--space-2);
+  cursor: pointer;
+}
+
+.formularios__label input[type="file"]::file-selector-button {
+  margin-right: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-azul);
+  color: var(--color-texto-inv);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.formularios__label input[type="file"]::file-selector-button:hover {
+  background-color: var(--color-azul-hover);
+}
+
 .formularios__modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
+  position: sticky;
+  bottom: 0;
+  padding-top: var(--space-3);
+  margin-top: var(--space-1);
+  background-color: var(--color-superficie);
 }
 
 .formularios__header-acciones {
@@ -364,8 +406,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-height: 260px;
-  overflow-y: auto;
 }
 
 .formularios__importar-item {

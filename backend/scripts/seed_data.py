@@ -178,7 +178,7 @@ def seed():
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.EMAIL, "nombre": "Email", "orden": 3},
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.TELEFONO, "nombre": "Teléfono", "orden": 4},
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.FECHA, "nombre": "Fecha", "orden": 5},
-                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.OPCION, "nombre": "Opción múltiple", "orden": 6},
+                    {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.OPCION, "nombre": "Opción", "orden": 6},
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.NPS, "nombre": "NPS", "orden": 7},
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.SECCION, "nombre": "Sección", "orden": 8},
                     {"tipo_id": formulario_pregunta_tipo_id, "codigo": PreguntaTipoCodigos.CALIFICACION, "nombre": "Calificación", "orden": 9},
