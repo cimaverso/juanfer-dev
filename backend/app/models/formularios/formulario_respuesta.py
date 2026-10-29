@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, ForeignKey, DateTime, func
+from sqlalchemy import BigInteger, ForeignKey, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from app.db.base import Base
 from datetime import datetime
@@ -114,6 +114,32 @@ class FormularioRespuesta(Base):
     )
 
     completado_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+
+    # Notificación por correo (Resend) de esta respuesta al dueño del
+    # negocio. No bloquea la persistencia de la respuesta: se dispara en
+    # background después del commit. 'pendiente' nunca intentado,
+    # 'enviado' u 'fallido' (ver correo_error) tras el intento.
+    correo_estado: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="pendiente"
+    )
+
+    correo_intentos: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0"
+    )
+
+    correo_error: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    correo_enviado_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime,
         nullable=True
     )

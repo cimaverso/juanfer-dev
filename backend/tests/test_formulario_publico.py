@@ -1,5 +1,7 @@
 """Endpoint público: regla de negocio (toda respuesta crea/reusa un Cliente), rate limit y validación básica."""
 import uuid
+from sqlalchemy import select
+from app.models.usuarios_clientes.cliente import Cliente
 
 
 def _publicar_formulario_con_tomador(client, admin_headers):
@@ -263,6 +265,52 @@ def test_seccion_y_alternativas_ocultas_por_branching_no_bloquean_envio(client, 
 
     assert respuesta.status_code == 201
     assert respuesta.json()["cliente_id"] is not None
+
+
+def test_varias_preguntas_de_ubicacion_se_concatenan(client, admin_headers, db_session):
+    """
+    DT-030: a diferencia de numero_documento (una alternativa por tipo,
+    solo una diligenciada a la vez), "Dirección completa" y "País,
+    departamento y ciudad" pueden llegar AMBAS diligenciadas en el mismo
+    envío real -- ninguna debe pisar a la otra, deben quedar las dos en
+    Cliente.ubicacion.
+    """
+    formulario_id, _ = _publicar_formulario_con_tomador(client, admin_headers)
+
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "tomador.direccion", "tipo_codigo": "texto",
+            "titulo": "Dirección completa", "requerida": False,
+            "mapea_a": {"entidad": "cliente", "campo": "ubicacion"}
+        },
+        headers=admin_headers
+    )
+    client.post(
+        f"/api/v1/formularios/{formulario_id}/preguntas",
+        json={
+            "codigo": "tomador.pais_departamento_ciudad", "tipo_codigo": "texto",
+            "titulo": "País, departamento y ciudad", "requerida": False,
+            "mapea_a": {"entidad": "cliente", "campo": "ubicacion"}
+        },
+        headers=admin_headers
+    )
+    client.post(f"/api/v1/formularios/{formulario_id}/publicar", headers=admin_headers)
+    token = client.get(f"/api/v1/formularios/{formulario_id}", headers=admin_headers).json()["token_publico"]
+
+    respuesta = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": {
+            **_respuestas_validas("999PYTEST"),
+            "tomador.direccion": "Calle 10 # 20-30",
+            "tomador.pais_departamento_ciudad": "Colombia, Antioquia, Medellín",
+        }}
+    )
+    assert respuesta.status_code == 201
+
+    cliente = db_session.execute(select(Cliente).where(Cliente.numero_documento == "999PYTEST")).scalar_one()
+    assert "Calle 10 # 20-30" in cliente.ubicacion
+    assert "Colombia, Antioquia, Medellín" in cliente.ubicacion
 
 
 def test_rate_limit_por_ip(client, admin_headers, monkeypatch):

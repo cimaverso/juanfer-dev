@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -12,5 +13,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     SECRET_KEY: str
+    RESEND_APIKEY: Optional[str] = None
+    RESEND_CORREO: Optional[str] = None
+    RESEND_REMITENTE: Optional[str] = None
 
 settings = Settings()

@@ -1,14 +1,21 @@
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from app.core.db import SessionLocal
+from app.core.config import settings
 from app.models.formularios.formulario import Formulario
 from app.models.formularios.formulario_respuesta import FormularioRespuesta
 from app.models.formularios.constantes import CatalogoTipoCodigos, FormularioEstadoCodigos, RespuestaEstadoCodigos, BranchingCodigos
 from app.models.usuarios_clientes.cliente import Cliente
 from app.services.catalogo import CatalogoService
 from app.services.formulario import FormularioService
+from app.services.formulario_correo_html import construir_html
+from app.services.resend_service import ResendService
 from app.schemas.formulario_respuesta import FormularioRespuestaCreate
+
+logger = logging.getLogger(__name__)
 
 # Límite de envíos del endpoint público (RF-010/RNF-003). Valores iniciales,
 # ajustables sin cambio de esquema; no hay infraestructura de rate-limit
@@ -148,20 +155,39 @@ class FormularioRespuestaService:
         documento" — ver branching en docs/modulos/formularios.md). Solo
         una de ellas estará realmente diligenciada; una alternativa vacía
         nunca debe pisar un valor ya encontrado para ese mismo campo.
+
+        Excepción: "ubicacion" (DT-030). A diferencia del caso anterior,
+        aquí SÍ pueden llegar varias preguntas diligenciadas a la vez de
+        forma legítima (ej. "Dirección completa" y "País, departamento y
+        ciudad" en el mismo formulario) y ninguna debe pisar a la otra --
+        se concatenan todas, en el orden en que aparecen en el
+        formulario, en un solo string (coincide con Cliente.ubicacion,
+        columna Text sin estructura).
         """
         campos = {}
+        partes_ubicacion = []
 
         for pregunta in estructura.get("preguntas", []):
             mapea_a = pregunta.get("mapea_a")
 
-            if mapea_a and mapea_a.get("entidad") == "cliente":
-                campo = mapea_a["campo"]
-                valor = respuestas.get(pregunta["codigo"])
+            if not mapea_a or mapea_a.get("entidad") != "cliente":
+                continue
 
+            campo = mapea_a["campo"]
+            valor = respuestas.get(pregunta["codigo"])
+
+            if campo == "ubicacion":
                 if valor not in (None, ""):
-                    campos[campo] = valor
-                elif campo not in campos:
-                    campos[campo] = valor
+                    partes_ubicacion.append(str(valor))
+                continue
+
+            if valor not in (None, ""):
+                campos[campo] = valor
+            elif campo not in campos:
+                campos[campo] = valor
+
+        if partes_ubicacion:
+            campos["ubicacion"] = ", ".join(partes_ubicacion)
 
         return campos
 
@@ -324,3 +350,62 @@ class FormularioRespuestaService:
         db.refresh(nueva_respuesta)
 
         return nueva_respuesta
+
+    @staticmethod
+    def notificar_correo(
+        respuesta_id: int,
+        formulario_titulo: str,
+        estructura: dict,
+        respuestas: dict,
+        cliente_nombre: Optional[str],
+        cliente_documento: Optional[str],
+    ) -> None:
+        """
+        Pensado para ejecutarse en un BackgroundTask del router público,
+        después de que la respuesta ya quedó persistida y confirmada --
+        nunca bloquea ni puede tumbar esa persistencia.
+
+        Deliberadamente no recibe la sesión de la request: construye el
+        correo con los datos ya en memoria y solo abre una sesión propia
+        (corta, de este módulo) para el UPDATE final de estado. Así la
+        llamada a Resend (red, puede tardar) nunca sostiene una conexión
+        del pool mientras espera -- ver DEUDA/discusión de concurrencia
+        del endpoint público.
+
+        Nunca propaga una excepción: un fallo de correo no debe
+        aparecer como error en ningún lado salvo en el log y en
+        `correo_estado`/`correo_error` de la propia respuesta, que queda
+        en 'pendiente' si ni siquiera se pudo actualizar el estado.
+        """
+        try:
+            html = construir_html(formulario_titulo, estructura, respuestas, cliente_nombre, cliente_documento)
+            asunto = f"Nueva respuesta: {formulario_titulo}"
+            if cliente_nombre:
+                asunto += f" — {cliente_nombre}"
+            exito, error = ResendService.enviar(settings.RESEND_CORREO, asunto, html)
+        except Exception as error_inesperado:
+            exito, error = False, f"Error inesperado armando/enviando el correo: {error_inesperado}"
+
+        db = SessionLocal()
+        try:
+            respuesta = db.get(FormularioRespuesta, respuesta_id)
+            if respuesta is None:
+                return
+
+            respuesta.correo_intentos += 1
+
+            if exito:
+                respuesta.correo_estado = "enviado"
+                respuesta.correo_enviado_at = datetime.now(timezone.utc)
+                respuesta.correo_error = None
+            else:
+                respuesta.correo_estado = "fallido"
+                respuesta.correo_error = (error or "")[:500]
+                logger.error("Notificación de formulario_respuesta %s falló: %s", respuesta_id, error)
+
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("No se pudo actualizar correo_estado de formulario_respuesta %s", respuesta_id)
+        finally:
+            db.close()

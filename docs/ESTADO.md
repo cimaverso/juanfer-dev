@@ -1,10 +1,43 @@
 # Estado
-Actualizado por /cierre — 2026-10-29
+Actualizado por /cierre — 2026-10-29 (segunda sesión del día)
 
 ## Siguiente paso (UNO, concreto)
-Arrancar el Dashboard (mencionado por el usuario como el siguiente foco, sin alcance definido todavía): pedirle qué debe mostrar exactamente (qué métricas/módulos, para quién — admin/asesor) antes de tocar código, porque hoy no hay nada construido ahí. El filtro de usuarios por nombre/rol en `UsuariosEmpresa` (pedido en la sesión anterior) sigue sin hacerse — ver "Contexto" abajo.
+Arrancar el Dashboard (reordenar por secciones + métricas de Formularios, siguiente ítem del plan del usuario tras cerrar Resend): pedirle qué debe mostrar exactamente (qué métricas/módulos, para quién — admin/asesor) antes de tocar código, porque hoy no hay nada construido ahí. Después sigue "atender deudas pendientes y demás aspectos mínimos para alistar despliegue" (tercer punto del plan del usuario). El filtro de usuarios por nombre/rol en `UsuariosEmpresa` (pedido hace 2 sesiones) sigue sin hacerse — ver "Contexto" abajo.
 
-## Última sesión (2026-10-29) — Importación de los 17 formularios de MS Forms: completa y cerrada por el usuario
+## Última sesión (2026-10-29, segunda del día) — Feature de correo con Resend: completa y cerrada por el usuario ("Probado y aprobado CHECKED")
+Plan del usuario para después de cerrar formularios: 1) Resend, 2) reordenar Dashboard, 3) atender deudas y alistar despliegue. Esta sesión cerró el punto 1 completo, más dos pulidos de UX en Formularios y un bug de datos real (DT-030). En orden:
+
+- **Resend, async y sin bloquear la persistencia** (D-007): la respuesta pública se guarda y confirma igual que siempre; solo DESPUÉS se programa un `BackgroundTask` que arma el correo y llama a Resend. Ese task no recibe la sesión de la request — usa los datos ya en memoria y abre su propia sesión corta SOLO para el `UPDATE` final de estado, así la llamada de red a Resend nunca sostiene una conexión del pool. Nunca propaga excepción: un fallo de correo no afecta la respuesta pública.
+  - `backend/app/services/resend_service.py`: llamada HTTP directa (`httpx`, promovido a dependencia principal) a la API de Resend, timeout 8s, remitente dinámico (`RESEND_REMITENTE`, default `onboarding@resend.dev`).
+  - `backend/app/services/formulario_correo_html.py`: maqueta el correo fiel al formulario real — mismo algoritmo de secciones/orden que `FormularioPublico.jsx` (preguntas sueltas y grupos intercalados por `orden`, corte en cada pregunta tipo "sección"), preguntas numeradas en negrita, grupos repetibles en tarjetas. Identidad corporativa: insignia CSS con los colores reales del logo (`frontend/public/favicon.svg`, navy `#1B2A4A` + "JF" en `#3B6CB7`) en vez de incrustar el SVG (Outlook/Gmail no lo renderizan bien), wordmark "JUANFER SEGUROS", footer "mensaje generado automáticamente".
+  - `FormularioRespuestaService.notificar_correo`: orquesta ambos, actualiza `correo_estado`/`correo_intentos`/`correo_error`/`correo_enviado_at` (columnas nuevas, migración `924f6a4adb55`). Asunto incluye el nombre del tomador cuando existe.
+  - `Settings`: `RESEND_APIKEY`/`RESEND_CORREO`/`RESEND_REMITENTE` dinámicos por `.env` — cambiar de cuenta/dominio de Resend del cliente no requiere redeploy ni tocar código.
+  - **Probado end to end por el usuario** con el formulario real de autos/motos: "Probado y aprobado CHECKED".
+- **Pool de conexiones ampliado** (D-015, previo a lo de Resend en la misma sesión, pedido explícito: "que no colapse con 100-500 personas enviando formularios al tiempo"): `core/db.py` pasó de `pool_size=5, max_overflow=10` a `pool_size=20, max_overflow=20, pool_timeout=10` (Postgres real tiene `max_connections=100`, verificado). Ver D-007 para por qué el `BackgroundTask` de Resend fue diseñado para no competir por ese pool.
+- **UX de Formularios, dos pulidos pedidos por el usuario:**
+  - Lista (`Formularios.jsx`): "Ver métricas" y "Ver respuestas" (iban al mismo sitio) se fusionaron en un solo botón — de 5 acciones por fila a 4.
+  - Detalle de respuestas (`FormularioRespuestas.jsx`): rediseñado con el mismo criterio del correo — secciones claramente marcadas (solo si el formulario realmente las tiene), preguntas numeradas en negrita, grupos repetibles en tarjetas.
+- **DT-030 resuelto (D-014):** `_extraer_campos_cliente` ya no deja que una pregunta de ubicación pise a otra (ej. "Dirección completa" vs "País, departamento y ciudad") — ahora concatena todas las diligenciadas en un solo string, separado por coma. Test de regresión agregado.
+
+Verificado al cierre:
+- `uv run pytest` desde `backend/` → **65 passed** (4 tests de maquetación/Resend + 1 de concatenación de ubicación, nuevos esta sesión).
+- `npm run lint` / `npx eslint` sobre los archivos tocados → sin errores.
+- `npm run build` desde `frontend/` → sin errores.
+- `Formularios.jsx` (575 líneas) y `FormularioRespuestas.jsx` (316 líneas) bien debajo del límite de 1000.
+- `uv run alembic upgrade head` / `downgrade -1` / `upgrade head` probados para la migración `924f6a4adb55` (head).
+- Servidor arrancado en foreground con pool nuevo, sin errores, cerrado limpio (sin socket fantasma).
+
+## Bloqueos / esperando mi respuesta
+Ninguno.
+
+## Contexto que se pierde si no se escribe
+- **Sin reintento automático de correo** (DT-032): si `correo_estado` queda en `pendiente`/`fallido`, nadie lo reintenta solo. Decisión explícita del usuario: queda así "hasta que el sistema lo haga automático" — no bloquea nada, pero si se reporta que un correo real nunca llegó, revisar primero `FormularioRespuesta.correo_estado`/`correo_error` antes de asumir que es un bug nuevo.
+- **Cobertura de test incompleta en el flujo de correo** (DT-033): el camino HTTP público → `BackgroundTask` → `UPDATE` de `correo_estado` no lo ejercita pytest (aislamiento SAVEPOINT de `conftest.py` usa una conexión distinta a la del background task, que por eso nunca ve la fila). Solo están probadas por separado la maquetación del HTML y la decisión de `ResendService` sin destinatario. Si se toca `notificar_correo`, verificar a mano (como se hizo esta sesión con el usuario) en vez de confiar solo en `pytest`.
+- **`docs/modulos/formularios.md` sigue sin actualizar** con la feature de Resend ni con el resto de esta sesión (fuera de alcance de /cierre sin aprobación aparte, igual que ya se anotó la sesión anterior con D-013/dedupe) — corregir la próxima vez que se edite ese documento.
+- **Pendiente de antes, sin tocar esta sesión**: filtro de usuarios por nombre/rol en `UsuariosEmpresa` (pedido hace 2 sesiones) — sigue sin implementarse, ver "Siguiente paso".
+- **El modelo "confirmar cambios antes de guardar" (sin autosave) sigue diferido**, no descartado (ver detalle en "Sesión anterior" abajo) — nadie lo ha retomado.
+
+## Sesión anterior (2026-10-29, primera del día) — Importación de los 17 formularios de MS Forms: completa y cerrada por el usuario
 El usuario dio por concluida la feat de importación de formularios ("Todo aprobado OK!!"). Resumen de lo que se hizo, en orden:
 
 - **Los 17 formularios reales quedaron importados en la DB real, sin duplicados** (ids 702-718 al cierre de la sesión — el usuario los borró y reimportó limpio después de dos intentos previos con duplicados, que también se limpiaron en el camino).
@@ -35,11 +68,8 @@ Verificado al cierre:
 - Los 17 formularios reales: 0 con campos críticos de Cliente faltantes, 0 con `orden` de grupo inconsistente, importación probada contra la DB real (no solo en SAVEPOINT) para los casos más complejos (PAC 60+, Autos, mascotas cotización/expedición).
 - No probado a mano en el navegador por mí en ningún punto de la sesión (sin servidor corriendo) — el usuario sí lo probó en vivo (reportó el timeout de axios al importar los 17, y confirmó que el cambio de estado sí funciona).
 
-## Bloqueos / esperando mi respuesta
-Ninguno.
-
-## Contexto que se pierde si no se escribe
-- **Dos preguntas distintas pueden mapear a la misma columna `Cliente.ubicacion`** en algunos formularios reales ("Dirección completa..." y "País, departamento y ciudad..." ambas vinculan a `ubicacion`) — si ambas llegan diligenciadas en el mismo envío, la que se procese después pisa a la otra (`_extraer_campos_cliente` no distingue, toma la última no vacía). No resuelto a propósito: el usuario no lo pidió, solo quedó anotado. Si se vuelve a tocar el importador, decidir si se separa en dos columnas o se prioriza una.
+Contexto de esa sesión que sigue siendo relevante:
+- **(Resuelto 2026-10-29, sesión siguiente, ver D-014/DT-030 arriba)** antes decía: dos preguntas distintas podían mapear a la misma columna `Cliente.ubicacion` y una pisaba a la otra.
 - **El modelo "confirmar cambios antes de guardar" (sin autosave) quedó explícitamente diferido**, no descartado. El usuario pidió aplicarlo a "Formularios, Empresa y demás", pero ante el tamaño del cambio (reescribir cómo guarda TODO `FormularioBuilder.jsx`, que ya estaba cerca del límite de 1000 líneas) eligió la versión simple: seguir guardando al vuelo, pero bloquear "Publicar" sin cambios pendientes (`tiene_cambios_sin_publicar`). Si se retoma el modelo completo, el usuario ya aceptó que sea en su propia sesión/plan, empezando solo por Formularios — no mezclarlo con Empresa/Usuarios en el mismo cambio.
 - **`docs/DECISIONES.md` D-011 y `docs/modulos/formularios.md` seguían documentando el dedupe por documento como vigente** — D-011 se anotó como superada en esa parte (ver D-013 nuevo); `docs/modulos/formularios.md` NO se tocó (fuera del alcance de /cierre sin aprobación aparte) y sigue mencionando el dedupe — corregir la próxima vez que se edite ese documento.
 - **Pendiente de antes, sin tocar esta sesión**: filtro de usuarios por nombre/rol en `UsuariosEmpresa` (pedido explícito, sesión anterior) — sigue sin implementarse, ver "Siguiente paso".

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 import uuid
 from app.core.db import get_db
@@ -36,7 +36,13 @@ def obtener_formulario_publico(token_publico: uuid.UUID, db: Session = Depends(g
 
 
 @router.post("/{token_publico}/respuestas", response_model=FormularioRespuestaRead, status_code=201)
-def enviar_respuesta(token_publico: uuid.UUID, data: FormularioRespuestaCreate, request: Request, db: Session = Depends(get_db)):
+def enviar_respuesta(
+    token_publico: uuid.UUID,
+    data: FormularioRespuestaCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
 
@@ -59,5 +65,20 @@ def enviar_respuesta(token_publico: uuid.UUID, data: FormularioRespuestaCreate, 
 
     if isinstance(resultado, tuple) and resultado[0] == "validacion":
         raise HTTPException(status_code=400, detail={"mensaje": "Hay respuestas inválidas o faltantes", "preguntas": resultado[1]})
+
+    # Se capturan los datos ya cargados (sesión todavía viva aquí) antes de
+    # programar el background task -- este no recibe `db`: construye el
+    # correo con estos valores en memoria y solo abre su propia sesión
+    # corta para el UPDATE final (ver FormularioRespuestaService.notificar_correo).
+    formulario = FormularioService.obtener(db, resultado.formulario_id)
+    background_tasks.add_task(
+        FormularioRespuestaService.notificar_correo,
+        resultado.id,
+        formulario.titulo,
+        formulario.version_activa.estructura,
+        resultado.respuestas,
+        resultado.cliente.nombre_completo if resultado.cliente else None,
+        resultado.cliente.numero_documento if resultado.cliente else None,
+    )
 
     return resultado
