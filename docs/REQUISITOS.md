@@ -26,7 +26,7 @@ Nota: los criterios de aceptación de los RF-006 a RF-014 los redactó Claude a 
 | RF-011 | Un administrador puede ver las respuestas enviadas desde el panel. | M | Dado un formulario enviado, cuando el admin abre el panel, entonces ve esa respuesta con sus valores. | formularios | propuesto |
 | RF-012 | Un administrador puede crear, editar y eliminar los catálogos de la base desde el front. | M | Dado un admin autenticado, cuando modifica un catálogo, entonces el cambio se refleja en los formularios y pantallas que lo usan. | catalogos | propuesto |
 | RF-013 | Un formulario puede importarse desde Excel o JSON. | S | [PENDIENTE] — formato de entrada sin definir. | formularios | propuesto |
-| RF-014 | Cada envío de formulario notifica por correo al dueño con una copia o las respuestas, con diseño cuidado, usando Resend. | S | Dado un envío nuevo, cuando se guarda la respuesta, entonces el dueño recibe un correo con su contenido. | formularios | propuesto |
+| RF-014 | Cada envío de formulario notifica por correo al dueño con una copia o las respuestas, con diseño cuidado, usando Resend. | S | Dado un envío nuevo, cuando se guarda la respuesta, entonces el dueño recibe un correo con su contenido. | formularios | hecho (2026-10-29) |
 
 ## No funcionales
 | ID | Atributo | Requisito medible | Cómo se verifica | Estado |
@@ -40,7 +40,7 @@ Nota: los criterios de aceptación de los RF-006 a RF-014 los redactó Claude a 
 | RNF-007 | Mantenibilidad | Ningún `.js` ni `.jsx` supera 1000 líneas. | Conteo de líneas por archivo. | propuesto |
 | RNF-008 | Mantenibilidad | El código nuevo del front usa solo tokens de `global.css`, sin hex sueltos. | `grep` de hex en `src` excluyendo `global.css`. Hoy hay 98 en código existente (ver DEUDA). | propuesto |
 | RNF-009 | Usabilidad | Las pantallas nuevas funcionan en modo claro y oscuro. | Revisión manual en ambos temas. | propuesto |
-| RNF-010 | Fiabilidad | La respuesta se guarda antes de enviar el correo; si Resend falla, la respuesta no se pierde. | Prueba con el envío de correo forzado a fallar. | propuesto |
+| RNF-010 | Fiabilidad | La respuesta se guarda antes de enviar el correo; si Resend falla, la respuesta no se pierde. | Prueba con el envío de correo forzado a fallar. | en curso: el diseño lo garantiza (BackgroundTask después del commit) y hay prueba unitaria de `ResendService` sin destinatario, pero falta una prueba de extremo a extremo con el envío real forzado a fallar (ver DT-033) |
 | RNF-011 | Pruebas | Pruebas automáticas mínimas en el backend para formularios y catálogos. Hoy no hay pytest. | `pytest` pasa. | propuesto |
 | RNF-012 | Rendimiento | [PENDIENTE] — sin medir ni definir. | — | propuesto |
 | RNF-013 | Usabilidad | Todo el front es 100% responsive: sin scroll horizontal ni elementos cortados o inalcanzables en móvil, tablet y escritorio. Prioridad S: importante, no urgente. Anchos de prueba: [PENDIENTE] (propuesta: 360, 768, 1024 y 1280 px). | Revisión manual de cada pantalla en esos anchos, en modo claro y oscuro. | propuesto |
@@ -60,7 +60,7 @@ Nota: los criterios de aceptación de los RF-006 a RF-014 los redactó Claude a 
 - Formato exacto de importación en Excel o JSON. Bloquea RF-013.
 - Texto de autorización de datos y si ya existe uno aprobado. Bloquea RNF-005.
 - Umbral del límite de envíos. Bloquea RNF-003.
-- Dominio de correo del dueño y destinatario exacto. Bloquea RF-014.
+- Dominio propio verificado en Resend: pendiente, pero ya no bloquea RF-014 (se envía desde `onboarding@resend.dev` mientras tanto; destinatario resuelto y dinámico por `.env`, ver D-007).
 - Criterios de aceptación de RF-001 a RF-005: describir el comportamiento actual cuando se revise cada módulo.
 - Estado real de responsive en las pantallas existentes (no auditado) y dispositivos objetivo. Define el alcance de RNF-013.
 - Alcance real de `pages/admin/AdminCatalogos.jsx` (ya existe, sin leer) frente a RF-012: qué catálogos edita y cuáles faltan.

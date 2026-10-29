@@ -38,8 +38,11 @@ cp frontend/.env.example frontend/.env
 | `SECRET_KEY` (backend) | Clave para firmar los JWT | sí | Generar: `python -c "import secrets; print(secrets.token_urlsafe(48))"` | `cadena-larga-aleatoria` |
 | `VITE_API_URL` (frontend) | URL del backend | no | Por defecto `http://localhost:8000` | `http://localhost:8000` |
 | `VITE_USE_MOCK` (frontend) | `true` usa datos locales (`mocks/`) en vez del backend | no | — | `false` |
+| `RESEND_APIKEY` (backend) | API key de la cuenta de Resend | no* | Dashboard de Resend → API Keys | `re_xxxxxxxx` |
+| `RESEND_CORREO` (backend) | Correo que recibe la notificación de cada formulario respondido | no* | — | `nombre@dominio.com` |
+| `RESEND_REMITENTE` (backend) | Remitente del correo | no | Por defecto `onboarding@resend.dev` si falta | `notificaciones@tudominio.com` |
 
-Variables de Resend (correo): todavía no existen en el código; se añaden al implementar RF-014.
+\* Sin `RESEND_APIKEY`/`RESEND_CORREO` el correo simplemente no se envía (`FormularioRespuesta.correo_estado` queda en `fallido`), no rompe nada más.
 Nunca commitear `.env`. Hoy ningún `.env` está rastreado en git y `.gitignore` los cubre (`.env`, `.env.*`, con excepción de `!.env.example`).
 
 ## 4. Base de datos
