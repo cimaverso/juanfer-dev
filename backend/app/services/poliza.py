@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, or_, func, desc, asc, case, extract
+from sqlalchemy import select, or_, and_, func, desc, asc, case, extract
 from app.models.modulos_negocio.poliza import Poliza
 from app.models.usuarios_clientes.cliente import Cliente
 from app.models.catalogos.estado_poliza import EstadoPoliza
@@ -350,7 +350,7 @@ class PolizaService:
         }
     
     @staticmethod
-    def obtener_alertas(db: Session):
+    def obtener_alertas(db: Session, responsable_id: int | None = None):
         dias_sin_exp = func.current_date() - Poliza.fecha_solicitud
 
         nivel_case = case(
@@ -359,6 +359,13 @@ class PolizaService:
             (dias_sin_exp >= 7, "info"),
             else_=None
         )
+
+        condiciones = [
+            Poliza.fecha_expedicion.is_(None),
+            dias_sin_exp >= 7
+        ]
+        if responsable_id is not None:
+            condiciones.append(Poliza.responsable_id == responsable_id)
 
         stmt = (
             select(
@@ -372,22 +379,23 @@ class PolizaService:
             .join(Cliente, Poliza.cliente_id == Cliente.id)
             .join(EstadoPoliza, Poliza.estado_id == EstadoPoliza.id)
             .outerjoin(Usuario, Poliza.responsable_id == Usuario.id)
-            .where(
-                Poliza.fecha_expedicion.is_(None),
-                dias_sin_exp >= 7
-            )
+            .where(*condiciones)
             .order_by(desc(dias_sin_exp))
         )
 
         result = db.execute(stmt).mappings().all()
 
         return result
-    
+
 
     @staticmethod
-    def obtener_produccion_mensual(db: Session):
+    def obtener_produccion_mensual(db: Session, responsable_id: int | None = None):
 
         mes_expr = func.to_char(Poliza.fecha_expedicion, "YYYY-MM")
+
+        condiciones = [Poliza.fecha_expedicion.is_not(None)]
+        if responsable_id is not None:
+            condiciones.append(Poliza.responsable_id == responsable_id)
 
         stmt = (
             select(
@@ -395,9 +403,7 @@ class PolizaService:
                 func.count(Poliza.id).label("total_polizas"),
                 func.coalesce(func.sum(Poliza.prima), 0).label("prima_total"),
             )
-            .where(
-                Poliza.fecha_expedicion.is_not(None)
-            )
+            .where(*condiciones)
             .group_by(mes_expr)
             .order_by(mes_expr.asc())
         )
@@ -405,9 +411,9 @@ class PolizaService:
         result = db.execute(stmt).mappings().all()
 
         return result
-    
+
     @staticmethod
-    def obtener_distribucion_estados(db: Session):
+    def obtener_distribucion_estados(db: Session, responsable_id: int | None = None):
 
         # Mapeo de colores (alineado con el front)
         COLOR_MAP = {
@@ -420,6 +426,10 @@ class PolizaService:
             "Pendiente de complemento": "pendiente",
         }
 
+        join_on = Poliza.estado_id == EstadoPoliza.id
+        if responsable_id is not None:
+            join_on = and_(join_on, Poliza.responsable_id == responsable_id)
+
         stmt = (
             select(
                 EstadoPoliza.id,
@@ -427,7 +437,7 @@ class PolizaService:
                 EstadoPoliza.color,
                 func.count(Poliza.id).label("total")
             )
-            .outerjoin(Poliza, Poliza.estado_id == EstadoPoliza.id)
+            .outerjoin(Poliza, join_on)
             .group_by(EstadoPoliza.id, EstadoPoliza.nombre, EstadoPoliza.color)
             .order_by(EstadoPoliza.id.asc())
         )

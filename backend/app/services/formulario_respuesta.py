@@ -109,6 +109,51 @@ class FormularioRespuestaService:
         }
 
     @staticmethod
+    def metricas_agregadas(db: Session) -> dict:
+        """
+        Resumen para el Dashboard (RF-014/dashboard): mismo cálculo de
+        `metricas` pero sumado sobre todos los formularios, sin desglosar
+        por formulario (ese detalle vive en `metricas` + "Ver métricas").
+        """
+        completada_id = CatalogoService.get_valor_id(
+            db, CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO, RespuestaEstadoCodigos.COMPLETADA
+        )
+        en_progreso_id = CatalogoService.get_valor_id(
+            db, CatalogoTipoCodigos.FORMULARIO_RESPUESTA_ESTADO, RespuestaEstadoCodigos.EN_PROGRESO
+        )
+        activo_id = CatalogoService.get_valor_id(
+            db, CatalogoTipoCodigos.FORMULARIO_ESTADO, FormularioEstadoCodigos.ACTIVO
+        )
+
+        total_formularios_activos = db.execute(
+            select(func.count(Formulario.id)).where(Formulario.estado_id == activo_id)
+        ).scalar_one()
+
+        total = db.execute(select(func.count(FormularioRespuesta.id))).scalar_one()
+
+        completadas = db.execute(
+            select(func.count(FormularioRespuesta.id)).where(
+                FormularioRespuesta.estado_id == completada_id
+            )
+        ).scalar_one()
+
+        en_progreso = db.execute(
+            select(func.count(FormularioRespuesta.id)).where(
+                FormularioRespuesta.estado_id == en_progreso_id
+            )
+        ).scalar_one()
+
+        tasa_completitud = (completadas / total) if total > 0 else 0.0
+
+        return {
+            "total_formularios_activos": total_formularios_activos,
+            "total_respuestas": total,
+            "completadas": completadas,
+            "en_progreso": en_progreso,
+            "tasa_completitud": round(tasa_completitud, 4),
+        }
+
+    @staticmethod
     def listar_por_cliente(db: Session, cliente_id: int) -> list[FormularioRespuesta]:
         stmt = (
             select(FormularioRespuesta)

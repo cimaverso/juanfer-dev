@@ -47,3 +47,12 @@ class FormularioMetricasRead(BaseModel):
     en_progreso: int
     tasa_completitud: float
     serie_diaria: list[FormularioMetricasSerieDia]
+
+
+class FormularioMetricasAgregadasRead(BaseModel):
+    """Resumen agregado de todos los formularios, para el Dashboard."""
+    total_formularios_activos: int
+    total_respuestas: int
+    completadas: int
+    en_progreso: int
+    tasa_completitud: float

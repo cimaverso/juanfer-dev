@@ -13,6 +13,7 @@ import {
   obtenerProduccionMensual,
   obtenerDistribucionEstados,
 } from '../../api/dashboard.js'
+import { obtenerMetricasAgregadas } from '../../api/formularios.js'
 import './Dashboard.css'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -167,6 +168,19 @@ function Skeleton({ className = '' }) {
   return <div className={`dash-skeleton ${className}`} />
 }
 
+// ── Sección con encabezado ────────────────────────────────
+function Seccion({ icono, titulo, children }) {
+  return (
+    <section className="dash-seccion">
+      <h3 className="dash-seccion__titulo">
+        <i className={`bi ${icono}`} />
+        {titulo}
+      </h3>
+      {children}
+    </section>
+  )
+}
+
 // ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
@@ -178,6 +192,7 @@ export default function Dashboard() {
   const [alertas, setAlertas]         = useState([])
   const [produccion, setProduccion]   = useState([])
   const [distribucion, setDistribucion] = useState([])
+  const [metricasFormularios, setMetricasFormularios] = useState(null)
   const [cargando, setCargando]       = useState(true)
   const [error, setError]             = useState(null)
 
@@ -192,11 +207,12 @@ export default function Dashboard() {
         setCargando(true)
         setError(null)
 
-        const [m, a, p, d] = await Promise.all([
+        const [m, a, p, d, mf] = await Promise.all([
           obtenerMetricasDashboard(paramsFiltro),
           obtenerAlertas(paramsFiltro),
           obtenerProduccionMensual(paramsFiltro),
           obtenerDistribucionEstados(),
+          esAdmin ? obtenerMetricasAgregadas() : Promise.resolve(null),
         ])
 
         if (cancelado) return
@@ -205,6 +221,7 @@ export default function Dashboard() {
         setAlertas(a)
         setProduccion(p)
         setDistribucion(d)
+        setMetricasFormularios(mf)
       } catch (err) {
         if (!cancelado) setError('No se pudieron cargar las métricas. Intenta de nuevo.')
         console.error('[Dashboard]', err)
@@ -255,167 +272,212 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── Tarjetas de métricas ─────────────────────────── */}
-      <div className="dash-metricas">
-        {cargando ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="dash-metrica-skeleton" />
-          ))
-        ) : (
-          <>
-            <TarjetaMetrica
-              icono="bi-file-earmark-text"
-              titulo="Total pólizas"
-              valor={metricas.total_polizas}
-              sub={`${metricas.polizas_mes} este mes`}
-              color="azul"
-              animDelay={0}
-            />
-            <TarjetaMetrica
-              icono="bi-patch-check"
-              titulo="Expedidas"
-              valor={metricas.expedidas}
-              sub={`${metricas.tasa_exito}% tasa de éxito`}
-              color="verde"
-              animDelay={60}
-            />
-            <TarjetaMetrica
-              icono="bi-hourglass-split"
-              titulo="En proceso"
-              valor={metricas.en_proceso}
-              sub="requieren seguimiento"
-              color="amarillo"
-              animDelay={120}
-            />
-            <TarjetaMetrica
-              icono="bi-currency-dollar"
-              titulo="Prima total"
-              valor={formatPrima(metricas.prima_total)}
-              sub={`${formatPrima(metricas.prima_mes)} este mes`}
-              color="navy"
-              animDelay={180}
-            />
-            <TarjetaMetrica
-              icono="bi-bell"
-              titulo="Sin expedir"
-              valor={metricas.sin_expedicion}
-              sub={metricas.alertas_criticas > 0 ? `${metricas.alertas_criticas} críticas` : 'al día'}
-              color={metricas.alertas_criticas > 0 ? 'rojo' : 'gris'}
-              animDelay={240}
-            />
-          </>
-        )}
-      </div>
-
-      {/* ── Fila central: gráfico + distribución ─────────── */}
-      <div className="dash-fila">
-
-        {/* Producción mensual */}
-        <div className="dash-panel dash-panel--grande">
-          <div className="dash-panel__header">
-            <div className="dash-panel__titulo-wrap">
-              <i className="bi bi-bar-chart" />
-              <h3 className="dash-panel__titulo">Producción mensual</h3>
-            </div>
-            <span className="dash-panel__hint">Prima expedida por mes</span>
-          </div>
-          {cargando
-            ? <Skeleton className="dash-grafico-skeleton" />
-            : <GraficoBarras datos={produccion} />
-          }
-        </div>
-
-        {/* Distribución por estado */}
-        <div className="dash-panel dash-panel--chico">
-          <div className="dash-panel__header">
-            <div className="dash-panel__titulo-wrap">
-              <i className="bi bi-pie-chart" />
-              <h3 className="dash-panel__titulo">Por estado</h3>
-            </div>
-          </div>
-          {cargando
-            ? <Skeleton className="dash-dist-skeleton" />
-            : <DistribucionEstados datos={distribucion} total={metricas?.total_polizas || 0} />
-          }
-        </div>
-      </div>
-
-      {/* ── Fila inferior: metas + alertas ───────────────── */}
-      <div className="dash-fila">
-
-        {/* Metas del mes */}
-        <div className="dash-panel dash-panel--chico">
-          <div className="dash-panel__header">
-            <div className="dash-panel__titulo-wrap">
-              <i className="bi bi-bullseye" />
-              <h3 className="dash-panel__titulo">Metas del mes</h3>
-            </div>
-          </div>
+      {/* ── Sección: Producción ───────────────────────────── */}
+      <Seccion icono="bi-speedometer2" titulo="Producción">
+        <div className="dash-metricas">
           {cargando ? (
-            <Skeleton className="dash-metas-skeleton" />
+            Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="dash-metrica-skeleton" />
+            ))
           ) : (
-            <div className="dash-metas">
-              <BarraMeta
-                label="Pólizas expedidas"
-                actual={metricas.polizas_mes}
-                meta={metricas.meta_polizas_mes}
-                formatear={(v) => `${v} pólizas`}
+            <>
+              <TarjetaMetrica
+                icono="bi-file-earmark-text"
+                titulo="Total pólizas"
+                valor={metricas.total_polizas}
+                sub={`${metricas.polizas_mes} este mes`}
+                color="azul"
+                animDelay={0}
               />
-              <BarraMeta
-                label="Prima acumulada"
-                actual={metricas.prima_mes}
-                meta={metricas.meta_prima_mes}
-                formatear={formatPrima}
+              <TarjetaMetrica
+                icono="bi-patch-check"
+                titulo="Expedidas"
+                valor={metricas.expedidas}
+                sub={`${metricas.tasa_exito}% tasa de éxito`}
+                color="verde"
+                animDelay={60}
               />
-            </div>
+              <TarjetaMetrica
+                icono="bi-hourglass-split"
+                titulo="En proceso"
+                valor={metricas.en_proceso}
+                sub="requieren seguimiento"
+                color="amarillo"
+                animDelay={120}
+              />
+              <TarjetaMetrica
+                icono="bi-currency-dollar"
+                titulo="Prima total"
+                valor={formatPrima(metricas.prima_total)}
+                sub={`${formatPrima(metricas.prima_mes)} este mes`}
+                color="navy"
+                animDelay={180}
+              />
+              <TarjetaMetrica
+                icono="bi-bell"
+                titulo="Sin expedir"
+                valor={metricas.sin_expedicion}
+                sub={metricas.alertas_criticas > 0 ? `${metricas.alertas_criticas} críticas` : 'al día'}
+                color={metricas.alertas_criticas > 0 ? 'rojo' : 'gris'}
+                animDelay={240}
+              />
+            </>
           )}
         </div>
 
-        {/* Alertas activas */}
-        <div className="dash-panel dash-panel--grande">
-          <div className="dash-panel__header">
-            <div className="dash-panel__titulo-wrap">
-              <i className="bi bi-exclamation-triangle" />
-              <h3 className="dash-panel__titulo">Pólizas sin expedir</h3>
+        <div className="dash-fila">
+          {/* Producción mensual */}
+          <div className="dash-panel dash-panel--grande">
+            <div className="dash-panel__header">
+              <div className="dash-panel__titulo-wrap">
+                <i className="bi bi-bar-chart" />
+                <h3 className="dash-panel__titulo">Producción mensual</h3>
+              </div>
+              <span className="dash-panel__hint">Prima expedida por mes</span>
             </div>
-            {alertas.length > 0 && (
-              <button
-                className="dash-panel__link"
-                onClick={() => navigate('/produccion')}
-              >
-                Ver todas <i className="bi bi-arrow-right" />
-              </button>
+            {cargando
+              ? <Skeleton className="dash-grafico-skeleton" />
+              : <GraficoBarras datos={produccion} />
+            }
+          </div>
+
+          {/* Distribución por estado */}
+          <div className="dash-panel dash-panel--chico">
+            <div className="dash-panel__header">
+              <div className="dash-panel__titulo-wrap">
+                <i className="bi bi-pie-chart" />
+                <h3 className="dash-panel__titulo">Por estado</h3>
+              </div>
+            </div>
+            {cargando
+              ? <Skeleton className="dash-dist-skeleton" />
+              : <DistribucionEstados datos={distribucion} total={metricas?.total_polizas || 0} />
+            }
+          </div>
+        </div>
+      </Seccion>
+
+      {/* ── Sección: Alertas y metas ──────────────────────── */}
+      <Seccion icono="bi-exclamation-triangle" titulo="Alertas y metas">
+        <div className="dash-fila">
+          {/* Metas del mes */}
+          <div className="dash-panel dash-panel--chico">
+            <div className="dash-panel__header">
+              <div className="dash-panel__titulo-wrap">
+                <i className="bi bi-bullseye" />
+                <h3 className="dash-panel__titulo">Metas del mes</h3>
+              </div>
+            </div>
+            {cargando ? (
+              <Skeleton className="dash-metas-skeleton" />
+            ) : (
+              <div className="dash-metas">
+                <BarraMeta
+                  label="Pólizas expedidas"
+                  actual={metricas.polizas_mes}
+                  meta={metricas.meta_polizas_mes}
+                  formatear={(v) => `${v} pólizas`}
+                />
+                <BarraMeta
+                  label="Prima acumulada"
+                  actual={metricas.prima_mes}
+                  meta={metricas.meta_prima_mes}
+                  formatear={formatPrima}
+                />
+              </div>
             )}
           </div>
-          {cargando ? (
-            <Skeleton className="dash-alertas-skeleton" />
-          ) : alertas.length === 0 ? (
-            <div className="dash-alertas__vacio">
-              <i className="bi bi-check-circle" />
-              <span>Todo al día — sin alertas activas</span>
-            </div>
-          ) : (
-            <div className="dash-alertas">
-              {alertas.slice(0, 5).map((a) => (
-                <ItemAlerta
-                  key={a.poliza_id}
-                  alerta={a}
-                  onVerPoliza={(id) => navigate(`/produccion/${id}`)}
-                />
-              ))}
-              {alertas.length > 5 && (
+
+          {/* Alertas activas */}
+          <div className="dash-panel dash-panel--grande">
+            <div className="dash-panel__header">
+              <div className="dash-panel__titulo-wrap">
+                <i className="bi bi-exclamation-triangle" />
+                <h3 className="dash-panel__titulo">Pólizas sin expedir</h3>
+              </div>
+              {alertas.length > 0 && (
                 <button
-                  className="dash-alertas__mas"
+                  className="dash-panel__link"
                   onClick={() => navigate('/produccion')}
                 >
-                  Ver {alertas.length - 5} más en producción
+                  Ver todas <i className="bi bi-arrow-right" />
                 </button>
               )}
             </div>
-          )}
+            {cargando ? (
+              <Skeleton className="dash-alertas-skeleton" />
+            ) : alertas.length === 0 ? (
+              <div className="dash-alertas__vacio">
+                <i className="bi bi-check-circle" />
+                <span>Todo al día — sin alertas activas</span>
+              </div>
+            ) : (
+              <div className="dash-alertas">
+                {alertas.slice(0, 5).map((a) => (
+                  <ItemAlerta
+                    key={a.poliza_id}
+                    alerta={a}
+                    onVerPoliza={(id) => navigate(`/produccion/${id}`)}
+                  />
+                ))}
+                {alertas.length > 5 && (
+                  <button
+                    className="dash-alertas__mas"
+                    onClick={() => navigate('/produccion')}
+                  >
+                    Ver {alertas.length - 5} más en producción
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+      </Seccion>
 
-      </div>
+      {/* ── Sección: Formularios (solo ADMIN) ─────────────── */}
+      {esAdmin && (
+        <Seccion icono="bi-ui-checks-grid" titulo="Formularios">
+          <div className="dash-metricas dash-metricas--formularios">
+            {cargando ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="dash-metrica-skeleton" />
+              ))
+            ) : (
+              <>
+                <TarjetaMetrica
+                  icono="bi-ui-checks-grid"
+                  titulo="Formularios activos"
+                  valor={metricasFormularios?.total_formularios_activos ?? 0}
+                  color="azul"
+                  animDelay={0}
+                />
+                <TarjetaMetrica
+                  icono="bi-inbox"
+                  titulo="Respuestas totales"
+                  valor={metricasFormularios?.total_respuestas ?? 0}
+                  color="navy"
+                  animDelay={60}
+                />
+                <TarjetaMetrica
+                  icono="bi-check-circle"
+                  titulo="Completadas"
+                  valor={metricasFormularios?.completadas ?? 0}
+                  sub={`${metricasFormularios?.en_progreso ?? 0} en progreso`}
+                  color="verde"
+                  animDelay={120}
+                />
+                <TarjetaMetrica
+                  icono="bi-graph-up"
+                  titulo="Tasa de completitud"
+                  valor={`${Math.round((metricasFormularios?.tasa_completitud ?? 0) * 100)}%`}
+                  color="amarillo"
+                  animDelay={180}
+                />
+              </>
+            )}
+          </div>
+        </Seccion>
+      )}
     </div>
   )
 }

@@ -62,3 +62,16 @@ def admin_headers(client):
 
     token = respuesta.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def asesor_headers(client):
+    """Usuario ASESOR real del seed (ver admin_headers): Gina López."""
+    respuesta = client.post(
+        "/api/v1/auth/login",
+        json={"email": "gina@juanfer.com", "password": "123456"}
+    )
+    assert respuesta.status_code == 200, respuesta.text
+
+    token = respuesta.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

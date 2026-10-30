@@ -18,14 +18,20 @@ router = APIRouter(
 def get_metricas(responsable_id: Optional[int] = None, db: Session = Depends(get_db), user = Depends(get_current_user_data)):
     return PolizaService.get_metricas_dashboard(responsable_id, db, user)
 
-@router.get("/alertas", response_model=list[AlertaPoliza]) 
-def get_metricas(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
-    return PolizaService.obtener_alertas(db)
+def _responsable_id_si_asesor(user) -> Optional[int]:
+    rol = getattr(user, "rol", None) or user.get("rol")
+    if rol == "ASESOR":
+        return getattr(user, "id", None) or user.get("id")
+    return None
+
+@router.get("/alertas", response_model=list[AlertaPoliza])
+def get_alertas(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
+    return PolizaService.obtener_alertas(db, _responsable_id_si_asesor(user))
 
 @router.get("/produccion-mensual", response_model=list[ProduccionMensual])
 def get_produccion_mensual(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
-    return PolizaService.obtener_produccion_mensual(db)
+    return PolizaService.obtener_produccion_mensual(db, _responsable_id_si_asesor(user))
 
 @router.get("/distribucion-estados", response_model=list[DistribucionEstado])
 def get_distribucion_estados(db: Session = Depends(get_db), user = Depends(get_current_user_data)):
-    return PolizaService.obtener_distribucion_estados(db)
+    return PolizaService.obtener_distribucion_estados(db, _responsable_id_si_asesor(user))

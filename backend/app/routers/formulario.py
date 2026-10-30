@@ -9,7 +9,7 @@ from app.schemas.formulario import (
     FormularioGrupoPreguntaRead, FormularioGrupoPreguntaCreate, FormularioGrupoPreguntaUpdate,
     FormularioPreguntaRead, FormularioPreguntaCreate, FormularioPreguntaUpdate
 )
-from app.schemas.formulario_respuesta import FormularioRespuestaRead, FormularioMetricasRead
+from app.schemas.formulario_respuesta import FormularioRespuestaRead, FormularioMetricasRead, FormularioMetricasAgregadasRead
 from app.services.formulario import (
     FormularioService, FormularioVersionService,
     FormularioGrupoPreguntaService, FormularioPreguntaService
@@ -141,6 +141,11 @@ def obtener_metricas(formulario_id: int, db: Session = Depends(get_db), user=Dep
         raise HTTPException(status_code=404, detail="El formulario no existe")
 
     return metricas
+
+
+@router.get("/metricas/agregadas", response_model=FormularioMetricasAgregadasRead)
+def obtener_metricas_agregadas(db: Session = Depends(get_db), user=Depends(get_current_user_data), admin=Depends(require_admin)):
+    return FormularioRespuestaService.metricas_agregadas(db)
 
 
 # ── Grupos de pregunta ──────────────────────────────────────────────────

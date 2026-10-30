@@ -92,6 +92,12 @@ export async function obtenerMetricas(formularioId) {
   return data
 }
 
+// Resumen agregado de todos los formularios, para el Dashboard (solo ADMIN).
+export async function obtenerMetricasAgregadas() {
+  const { data } = await api.get('/formularios/metricas/agregadas')
+  return data
+}
+
 // ============================================================
 // GRUPOS DE PREGUNTA (bloques repetibles, ej. "Asegurados")
 // ============================================================
