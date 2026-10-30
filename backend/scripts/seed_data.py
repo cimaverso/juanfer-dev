@@ -68,10 +68,7 @@ def seed():
                     (10, 'En evaluación',      'evaluacion', 10),
                     (11, 'Convertido',         'convertido', 11),
                     (12, 'Descartado',         'descartado', 12)
-                ON CONFLICT (id) DO UPDATE SET
-                    nombre = EXCLUDED.nombre,
-                    color  = EXCLUDED.color,
-                    orden  = EXCLUDED.orden;
+                ON CONFLICT (id) DO NOTHING;
             """))
 
             db.execute(text("""
@@ -89,6 +86,19 @@ def seed():
                 ('031', 'Vida Individual'),
                 ('041', 'SOAT')
                 ON CONFLICT (codigo) DO NOTHING;
+            """))
+
+            db.execute(text("""
+                INSERT INTO producto (nombre)
+                VALUES
+                ('Plan Vive'),
+                ('Plan Vive Plus'),
+                ('PAC Tradicional'),
+                ('SOAT'),
+                ('Plan Salud 60+'),
+                ('Seguro de Viaje'),
+                ('Póliza Cumplimiento Empresarial')
+                ON CONFLICT (nombre) DO NOTHING;
             """))
 
             # ─────────────────────────────
@@ -245,7 +255,7 @@ def seed():
                 text("""
                     INSERT INTO permiso (modulo, accion)
                     VALUES (:mod, :acc)
-                    ON CONFLICT DO NOTHING;
+                    ON CONFLICT (modulo, accion) DO NOTHING;
                 """),
                 [{"mod": m, "acc": a} for m, a in permisos]
             )
