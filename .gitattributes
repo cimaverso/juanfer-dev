@@ -1,0 +1,6 @@
+# Scripts que se ejecutan dentro de contenedores Linux (ver DT-008):
+# con core.autocrlf=true, Windows los convertiría a CRLF al hacer
+# checkout y romperían al correr (shebang / parsing de sh). Alcance
+# mínimo por ahora: solo lo que de verdad corre en Linux; el resto del
+# repo sigue con el comportamiento normal de autocrlf.
+*.sh text eol=lf

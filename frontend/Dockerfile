@@ -8,8 +8,9 @@ WORKDIR /app
 # Copiar package files primero (cache layer eficiente)
 COPY package.json package-lock.json ./
 
-# Instalar dependencias (ci es más rápido y estricto que install)
-RUN npm ci --frozen-lockfile
+# Instalar dependencias (ci es más rápido y estricto que install; ya
+# respeta el lockfile exacto por sí solo, sin flags extra)
+RUN npm ci
 
 # Copiar el resto del código
 COPY . .

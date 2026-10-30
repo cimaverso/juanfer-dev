@@ -13,6 +13,21 @@ router = APIRouter(
 )
 
 
+def _ip_cliente(request: Request) -> str | None:
+    """
+    Detrás de nginx (ver nginx/nginx.conf) todas las requests llegan al
+    backend desde la IP del proxy, no la del navegador real -- el límite
+    por IP (DT-016) dejaba de servir (bloqueaba a todos o a ninguno).
+    nginx sí reenvía la IP real en X-Forwarded-For; si no está (acceso
+    directo al backend, ej. en desarrollo sin nginx), se usa
+    request.client.host como hoy.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else None
+
+
 @router.get("/{token_publico}", response_model=FormularioPublicoRead)
 def obtener_formulario_publico(token_publico: uuid.UUID, db: Session = Depends(get_db)):
     formulario = FormularioService.obtener_por_token(db, token_publico)
@@ -43,7 +58,7 @@ def enviar_respuesta(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    ip = request.client.host if request.client else None
+    ip = _ip_cliente(request)
     user_agent = request.headers.get("user-agent")
 
     resultado = FormularioRespuestaService.crear(db, token_publico, data, ip, user_agent)

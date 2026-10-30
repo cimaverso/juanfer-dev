@@ -326,3 +326,36 @@ def test_rate_limit_por_ip(client, admin_headers, monkeypatch):
     assert r1.status_code == 201
     assert r2.status_code == 201
     assert r3.status_code == 429
+
+
+def test_rate_limit_usa_x_forwarded_for_si_esta_presente(client, admin_headers, monkeypatch):
+    """
+    Detrás de nginx (DT-016) todas las requests llegan con la misma IP de
+    TestClient; si el límite siguiera mirando solo request.client.host,
+    dos IPs reales distintas (vía X-Forwarded-For) competirían por el
+    mismo cupo. Con el fix, cada X-Forwarded-For tiene su propio cupo.
+    """
+    from app.services import formulario_respuesta as modulo_respuesta
+    monkeypatch.setattr(modulo_respuesta, "ENVIOS_MAX_POR_IP", 1)
+
+    _, token = _publicar_formulario_con_tomador(client, admin_headers)
+
+    r1 = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": _respuestas_validas("777PYTEST")},
+        headers={"X-Forwarded-For": "203.0.113.10"},
+    )
+    r2 = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": _respuestas_validas("888PYTEST")},
+        headers={"X-Forwarded-For": "203.0.113.10"},
+    )
+    r3 = client.post(
+        f"/api/v1/public/formularios/{token}/respuestas",
+        json={"respuestas": _respuestas_validas("999PYTEST2")},
+        headers={"X-Forwarded-For": "203.0.113.20"},
+    )
+
+    assert r1.status_code == 201
+    assert r2.status_code == 429
+    assert r3.status_code == 201

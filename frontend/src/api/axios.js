@@ -2,12 +2,20 @@
 // api/axios.js
 // Instancia base de Axios — enchufe hacia FastAPI
 // Para activar mocks: VITE_USE_MOCK=true en .env.local
-// Para apuntar al backend: VITE_API_URL=http://localhost:8000
-// ============================================================
+// Para apuntar al backend en dev nativo: VITE_API_URL=http://localhost:8000
+//
+// VITE_API_URL se resuelve en tiempo de BUILD (Vite lo incrusta en el JS
+// estático), no en runtime. El build de Docker (docker-compose.yml) no
+// pasa esa variable, así que sin este default por modo, el bundle de
+// producción quedaría con "http://localhost:8000" fijo -- inalcanzable
+// detrás de nginx (el backend no publica ese puerto al host) y roto en
+// cualquier dominio que no sea la máquina exacta del desarrollador.
+// Con string vacío, axios llama a rutas relativas (mismo origen que la
+// página), que nginx ya resuelve bajo /api/ sin importar el dominio.
 
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api/v1`,

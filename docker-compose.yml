@@ -11,8 +11,10 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5434:5432"
+    # Sin "ports": solo backend/nginx (red backend_net) necesitan llegar a
+    # la DB; publicarla al host la expone en el VPS (ver docs/DEUDA.md
+    # DT-002). Para inspeccionarla desde fuera: `docker exec -it juanfer_db
+    # psql -U ${DB_USER} -d ${DB_NAME}`, o un túnel SSH puntual.
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -37,7 +39,12 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      # Pisa el DATABASE_URL de backend/.env (que apunta al Postgres local
+      # de desarrollo): dentro del compose el backend habla con el
+      # servicio "db" de este archivo. Driver psycopg (síncrono, ver
+      # CLAUDE.md): el código no usa asyncpg y la dependencia ni está en
+      # pyproject.toml (DT-001).
+      DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     depends_on:
       db:
         condition: service_healthy
